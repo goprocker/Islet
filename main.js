@@ -412,13 +412,14 @@ function sendTheme() {
 
 // ---- Windows banners: off while Islet shows notifications itself ----
 const bannersPath = () => path.join(app.getPath("userData"), "banners.json");
-let bannersSaved = null;
+let bannersSaved = null, bannersMissed = 0;
 function applyBanners(newIds) {
   if (!bannersSaved) { try { bannersSaved = JSON.parse(fs.readFileSync(bannersPath(), "utf8")); } catch { bannersSaved = {}; } }
   const want = config.notifications && config.hideWindowsBanners;
   const before = Object.keys(bannersSaved).length;
-  if (want) notifications.hideBanners(bannersSaved, newIds);
-  else notifications.restoreBanners(bannersSaved);
+  const missed = want ? notifications.hideBanners(bannersSaved, newIds) : (notifications.restoreBanners(bannersSaved), 0);
+  // a full pass tells whether Windows accepted the change; the tray shows it
+  if (!newIds && missed !== bannersMissed) { bannersMissed = missed; buildMenu(); }
   if (Object.keys(bannersSaved).length !== before) fs.writeFileSync(bannersPath(), JSON.stringify(bannersSaved, null, 2));
 }
 
@@ -500,6 +501,7 @@ function buildMenu() {
     },
     { label: "Do Not Disturb", type: "checkbox", checked: dndActive(), click: () => { config.dnd = !config.dnd; saveConfig(); sendDnd(); } },
     { label: "Show notifications", type: "checkbox", checked: config.notifications, click: () => { config.notifications = !config.notifications; saveConfig(); applyBanners(); } },
+    ...(bannersMissed ? [{ label: `Windows banners still on for ${bannersMissed} apps (registry write blocked)`, enabled: false }] : []),
     { label: "Settings…", click: openSettings },
     { label: "Open settings file", click: () => shell.openPath(configPath()) },
     { label: "Start with Windows", type: "checkbox", checked: login(), click: () => { setLogin(!login()); buildMenu(); } },
