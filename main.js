@@ -237,6 +237,17 @@ function startBridge() {
     fs.writeFileSync(flag, "1");
   }
 }
+// clicked notification: open its link, or bring up the app that sent it
+const notifTargets = new Map();
+let notifCount = 0;
+ipcMain.on("openNotification", (_, id) => {
+  const t = notifTargets.get(id);
+  if (!t) return;
+  if (t.url && /^(https?|ms-[\w-]+|whatsapp|tg|slack|discord|msteams|mailto):/i.test(t.url)) shell.openExternal(t.url);
+  // AUMIDs (Store apps and Start Menu apps) open through the Apps folder
+  else if (t.aumid && !/\\/.test(t.aumid)) spawn("explorer.exe", [`shell:AppsFolder\\${t.aumid}`], { detached: true });
+  else if (t.aumid) spawn(t.aumid.replace(/^\{[^}]+\}\\/, process.env.WINDIR + "\\System32\\"), [], { detached: true });
+});
 ipcMain.on("openProject", (_, cwd) => { if (cwd && fs.existsSync(cwd)) shell.openPath(cwd); });
 
 // ---- timer ----
@@ -332,7 +343,13 @@ app.whenReady().then(() => {
   setInterval(refreshSpotifyExtras, 30000);
   notifications.watch(async ({ aumid, xml, ...n }) => {
     if (!config.notifications) return;
-    send("notification", { ...n, icon: await icons.forNotification(aumid, xml) });
+    // what a click opens: the toast's own link when it has one, else the app
+    const launch = xml.match(/<toast[^>]*\blaunch="([^"]+)"/)?.[1]?.replace(/&amp;/g, "&");
+    const protocol = /<toast[^>]*activationType="protocol"/.test(xml) && launch && /^[a-z][\w+.-]*:/i.test(launch);
+    const id = ++notifCount;
+    notifTargets.set(id, protocol ? { url: launch } : { aumid });
+    if (notifTargets.size > 50) notifTargets.delete(notifTargets.keys().next().value);
+    send("notification", { ...n, id, icon: await icons.forNotification(aumid, xml) });
   });
   // reload settings when the file is edited by hand
   fs.watchFile(configPath(), { interval: 2000 }, () => {
