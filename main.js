@@ -267,7 +267,8 @@ function readClaude() {
     s.key = `${s.agent}:${s.cwd ? path.resolve(s.cwd).toLowerCase() : s.project}`; // Windows paths ignore case
     if (!byProject.has(s.key)) byProject.set(s.key, s);
   }
-  const sessions = [...byProject.values()].slice(0, 5);
+  // at most 5, but a session waiting for input always gets in (then newest first)
+  const sessions = [...byProject.values()].sort((a, b) => (b.status === "waiting") - (a.status === "waiting")).slice(0, 5).sort((a, b) => b.time - a.time);
   const key = JSON.stringify(sessions);
   if (key !== lastClaude) { lastClaude = key; send("claude", sessions); }
 }
