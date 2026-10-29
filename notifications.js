@@ -70,7 +70,8 @@ module.exports = { watch };
 // `saved` maps app id -> its previous ShowBanner value (null = not set), to undo exactly.
 const { execFileSync } = require("child_process");
 const fs = require("fs"), os = require("os");
-const KEY = "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings\\";
+// built with join: hand-written backslashes here were lost once already
+const KEY = ["HKEY_CURRENT_USER", "Software", "Microsoft", "Windows", "CurrentVersion", "Notifications", "Settings", ""].join("\\");
 // every app's current ShowBanner value, from one `reg query`
 function readBanners() {
   const out = {};
