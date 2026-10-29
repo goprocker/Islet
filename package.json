@@ -21,6 +21,7 @@
     "claude-bridge.js",
     "hooks/**",
       "media.ps1",
+    "system.ps1",
       "spotify-audio.ps1",
       "spotify-audio.cs",
       "renderer/**"

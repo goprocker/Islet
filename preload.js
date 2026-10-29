@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld("bridge", {
   onCalendar: on("calendar"),
   onTimer: on("timer"),
   onSpotifyIcon: on("spotifyIcon"),
+  onSystem: on("system"),
   onPermission: on("permission"),
   onPermissionGone: on("permissionGone"),
   answerPermission: (id, decision) => ipcRenderer.send("permissionAnswer", id, decision),
