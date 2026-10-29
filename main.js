@@ -1,5 +1,6 @@
 const { app, BrowserWindow, globalShortcut, ipcMain, screen, Tray, Menu, nativeImage, shell, clipboard, dialog, powerMonitor } = require("electron");
 const { spawn } = require("child_process");
+const { StringDecoder } = require("string_decoder");
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
@@ -61,9 +62,11 @@ function createWindow() {
 
 // ---- Spotify via Windows media session ----
 function lines(stream, fn) {
+  // one decoder for the whole stream: a character split across chunks stays whole
+  const decoder = new StringDecoder("utf8");
   let buf = "";
   stream.on("data", d => {
-    buf += d.toString("utf8");
+    buf += decoder.write(d);
     const parts = buf.split("\n");
     buf = parts.pop();
     for (const l of parts) if (l.trim()) fn(l.trim());
