@@ -9,6 +9,8 @@ const calendar = require("./calendar");
 const icons = require("./icons");
 const bridge = require("./claude-bridge");
 const lyrics = require("./lyrics");
+const weather = require("./weather");
+const downloads = require("./downloads");
 
 const W = 580, H = 190;
 const PS = ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File"];
@@ -19,7 +21,7 @@ if (!app.requestSingleInstanceLock()) app.quit();
 
 // ---- settings (userData/config.json) ----
 const configPath = () => path.join(app.getPath("userData"), "config.json");
-const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true, lyrics: true, permissionWaitSeconds: 8, dnd: false, dndFrom: "", dndTo: "", clipboardHistory: true };
+const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true, lyrics: true, permissionWaitSeconds: 8, dnd: false, dndFrom: "", dndTo: "", clipboardHistory: true, weatherCity: "", weatherUnit: "C", downloadsFolder: "" };
 let config = { ...DEFAULTS };
 function loadConfig() {
   try { config = { ...DEFAULTS, ...JSON.parse(fs.readFileSync(configPath(), "utf8")) }; } catch { saveConfig(); }
@@ -254,7 +256,8 @@ let notifCount = 0;
 ipcMain.on("openNotification", (_, id) => {
   const t = notifTargets.get(id);
   if (!t) return;
-  if (t.url && /^(https?|ms-[\w-]+|whatsapp|tg|slack|discord|msteams|mailto):/i.test(t.url)) shell.openExternal(t.url);
+  if (t.file) shell.showItemInFolder(t.file);
+  else if (t.url && /^(https?|ms-[\w-]+|whatsapp|tg|slack|discord|msteams|mailto):/i.test(t.url)) shell.openExternal(t.url);
   // AUMIDs (Store apps and Start Menu apps) open through the Apps folder
   else if (t.aumid && !/\\/.test(t.aumid)) spawn("explorer.exe", [`shell:AppsFolder\\${t.aumid}`], { detached: true });
   else if (t.aumid) spawn(t.aumid.replace(/^\{[^}]+\}\\/, process.env.WINDIR + "\\System32\\"), [], { detached: true });
@@ -329,6 +332,17 @@ ipcMain.on("shelfDrag", (e, p) => {
 });
 // 1x1 transparent fallback: startDrag needs some icon
 const EMPTY_PNG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
+
+// ---- weather + downloads ----
+function startWeather() { weather.poll(config.weatherCity.trim(), config.weatherUnit, w => send("weather", w)); }
+function startDownloads() {
+  const dir = config.downloadsFolder || app.getPath("downloads");
+  downloads.watch(dir, list => send("downloads", list), done => {
+    const id = ++notifCount;
+    notifTargets.set(id, { file: done.path });
+    send("downloadDone", { id, name: done.name });
+  });
+}
 
 // ---- timer ----
 let timerEnd = 0, timerDone;
@@ -420,7 +434,9 @@ app.whenReady().then(() => {
     lastClaude = ""; iconFor = null; readClaude(); refreshSpotifyExtras(); send("timer", timerEnd); sendDnd(true); send("shelf", shelf);
     send("clipboard", clips.map(c => c.replace(/\s+/g, " ").slice(0, 160)));
     calendar.poll(config.calendarIcsUrl, ev => send("calendar", ev));
+    startWeather();
   });
+  startDownloads();
   setInterval(readClaude, 2000);
   setInterval(refreshSpotifyExtras, 30000);
   setInterval(sendDnd, 30000); // schedule edges
@@ -438,9 +454,10 @@ app.whenReady().then(() => {
   });
   // reload settings when the file is edited by hand
   fs.watchFile(configPath(), { interval: 2000 }, () => {
-    const oldUrl = config.calendarIcsUrl;
+    const oldUrl = config.calendarIcsUrl, old = JSON.stringify([config.weatherCity, config.weatherUnit, config.downloadsFolder]);
     loadConfig(); buildMenu(); placeWindow(); applyVisibility(); sendDnd();
     if (config.calendarIcsUrl !== oldUrl) calendar.poll(config.calendarIcsUrl, ev => send("calendar", ev));
+    if (old !== JSON.stringify([config.weatherCity, config.weatherUnit, config.downloadsFolder])) { startWeather(); startDownloads(); }
   });
   screen.on("display-added", () => { buildMenu(); placeWindow(); });
   screen.on("display-removed", () => { buildMenu(); placeWindow(); });
