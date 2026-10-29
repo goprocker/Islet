@@ -27,7 +27,15 @@ function statusFor(event, message) {
   }
 }
 
-function start({ onStatus, onPermission, onPermissionGone }) {
+let waitMs = () => 8000;
+function start({ onStatus, onPermission, onPermissionGone, permissionWait }) {
+  if (permissionWait) waitMs = permissionWait;
+  // a request answered anywhere (notch, terminal, timeout) means Claude is working again
+  const gone = id => {
+    const p = pending.get(id);
+    if (p && status.get(p.session)?.status === "waiting") { status.set(p.session, { status: "working", at: Date.now() }); onStatus(p.session, "working"); }
+    onPermissionGone(id);
+  };
   const server = http.createServer((req, res) => {
     if (req.method !== "POST" || req.url !== "/claude") { res.writeHead(404).end(); return; }
     let body = "";
@@ -39,14 +47,17 @@ function start({ onStatus, onPermission, onPermissionGone }) {
       onStatus(e.session, st);
       // any new activity in a session answers its open permission card elsewhere
       if (e.event !== "PermissionRequest") {
-        for (const [id, p] of pending) if (p.session === e.session) settle(id, null, onPermissionGone);
+        for (const [id, p] of pending) if (p.session === e.session) settle(id, null, gone);
       }
       if (e.event !== "PermissionRequest") { res.writeHead(200).end("{}"); return; }
       const id = nextId++;
-      const timer = setTimeout(() => settle(id, null, onPermissionGone), 24000);
+      // Claude Code holds its terminal prompt while we wait, so keep this short
+      const ms = Math.min(Math.max(waitMs(), 0), 24000);
+      if (!ms) { res.writeHead(200).end("{}"); return; }
+      const timer = setTimeout(() => settle(id, null, gone), ms);
       pending.set(id, { res, timer, session: e.session });
       // hook gave up (Claude Code timed it out or the user answered in the terminal)
-      res.on("close", () => { if (pending.has(id) && !res.writableEnded) settle(id, null, onPermissionGone); });
+      res.on("close", () => { if (pending.has(id) && !res.writableEnded) settle(id, null, gone); });
       onPermission({ id, session: e.session, project: path.basename(e.cwd || ""), tool: e.tool, detail: summarize(e.tool, e.toolInput) });
     });
   });
@@ -57,12 +68,16 @@ function start({ onStatus, onPermission, onPermissionGone }) {
 function settle(id, decision, onGone) {
   const p = pending.get(id);
   if (!p) return;
+  onGone?.(id); // before delete, so it can still see the session
   pending.delete(id);
   clearTimeout(p.timer);
   try { p.res.writeHead(200, { "Content-Type": "application/json" }).end(JSON.stringify({ decision })); } catch {}
-  onGone?.(id);
 }
-const answer = (id, decision, onGone) => settle(id, decision === "allow" || decision === "deny" ? decision : null, onGone);
+function answer(id, decision, onGone) {
+  const p = pending.get(id);
+  if (p) status.set(p.session, { status: "working", at: Date.now() });
+  settle(id, decision === "allow" || decision === "deny" ? decision : null, onGone);
+}
 
 function summarize(tool, input) {
   if (!input) return "";
