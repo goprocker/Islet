@@ -385,7 +385,7 @@ function render() {
 
   // idle: nothing playing, Claude quiet, nothing to show -> a thin line (if enabled)
   const busy = track?.playing || chip || (s && (now - s.time < 60000 || s.status === "waiting"))
-    || notch.classList.contains("charging") || $("pillPriv").childElementCount || !$("pillMoon").hasAttribute("hidden");
+    || notch.classList.contains("charging") || notch.classList.contains("bh") || $("pillPriv").childElementCount || !$("pillMoon").hasAttribute("hidden");
   notch.classList.toggle("quiet", !busy); // plain black pill, just the dot
   notch.classList.toggle("idle", theme.idleHide && !busy);
   fitPill();
