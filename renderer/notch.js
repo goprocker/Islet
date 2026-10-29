@@ -110,7 +110,8 @@ window.bridge.onPower(({ ac: now }) => {
   acTimer = setTimeout(() => {
     if (ac === null || now === ac) { ac = now; return; }
     ac = now;
-    if (!notch.classList.contains("hidden")) window.BlackHole.play(notch, now ? "on" : "off", battery?.level);
+    if (theme?.powerAnim === false) return;
+    if (!notch.classList.contains("hidden")) window.BlackHole.play(notch, now ? "on" : "off", battery?.level, { subtle: theme?.powerAnimStyle === "subtle" });
   }, 200);
 });
 navigator.getBattery?.().then(b => {

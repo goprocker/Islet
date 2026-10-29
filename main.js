@@ -26,7 +26,7 @@ app.on("second-instance", () => openSettings());
 
 // ---- settings (userData/config.json) ----
 const configPath = () => path.join(app.getPath("userData"), "config.json");
-const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true, lyrics: true, permissionWaitSeconds: 8, dnd: false, dndFrom: "", dndTo: "", dndSkipUntil: 0, clipboardHistory: true, weatherCity: "", weatherUnit: "C", downloadsFolder: "", size: "normal", accent: "album", idleHide: false, hideWindowsBanners: true };
+const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true, lyrics: true, permissionWaitSeconds: 8, dnd: false, dndFrom: "", dndTo: "", dndSkipUntil: 0, clipboardHistory: true, weatherCity: "", weatherUnit: "C", downloadsFolder: "", size: "normal", accent: "album", idleHide: false, hideWindowsBanners: true, powerAnim: true, powerAnimStyle: "cinematic" };
 let config = { ...DEFAULTS };
 function loadConfig() {
   try { config = { ...DEFAULTS, ...JSON.parse(fs.readFileSync(configPath(), "utf8")) }; } catch { saveConfig(); }
@@ -410,6 +410,7 @@ ipcMain.handle("settings:save", (_, v) => {
     size: ["compact", "normal", "large"].includes(v.size) ? v.size : "normal",
     accent: /^#[0-9a-f]{6}$/i.test(v.accent) ? v.accent : "album",
     idleHide: !!v.idleHide, hideInFullscreen: !!v.hideInFullscreen,
+    powerAnim: !!v.powerAnim, powerAnimStyle: v.powerAnimStyle === "subtle" ? "subtle" : "cinematic",
     notifications: !!v.notifications, hideWindowsBanners: !!v.hideWindowsBanners, dnd: !!v.dnd, dndFrom: time(v.dndFrom), dndTo: time(v.dndTo),
     permissionWaitSeconds: Math.min(24, Math.max(0, Math.round(Number(v.permissionWaitSeconds) || 0))),
     lyrics: !!v.lyrics, spotifyClientId: str(v.spotifyClientId, 100),
@@ -431,7 +432,7 @@ ipcMain.handle("settings:save", (_, v) => {
 // ---- look: size, accent colour, hide when idle ----
 function sendTheme() {
   win?.webContents.setZoomFactor(scale());
-  send("theme", { accent: /^#[0-9a-f]{6}$/i.test(config.accent) ? config.accent : "album", idleHide: !!config.idleHide });
+  send("theme", { accent: /^#[0-9a-f]{6}$/i.test(config.accent) ? config.accent : "album", idleHide: !!config.idleHide, powerAnim: config.powerAnim !== false, powerAnimStyle: config.powerAnimStyle === "subtle" ? "subtle" : "cinematic" });
 }
 
 // ---- Windows banners: off while Islet shows notifications itself ----
