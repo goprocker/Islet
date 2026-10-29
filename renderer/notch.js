@@ -333,3 +333,16 @@ function drawWave(cv, n, gap) {
   drawWave($("mini"), 6, 3); drawWave($("wave"), 7, 3);
   requestAnimationFrame(frame);
 })();
+
+// ---- mic / camera / screen capture in use ----
+window.bridge.onSystem(d => {
+  const kinds = [["mic", "Microphone", d.mic], ["cam", "Camera", d.cam], ["screen", "Screen capture", d.screen]];
+  for (const box of [$("pillPriv"), $("priv")]) {
+    box.replaceChildren(...kinds.filter(([, , apps]) => apps?.length).map(([cls, label, apps]) => {
+      const i = document.createElement("i");
+      i.className = cls;
+      i.title = `${label} in use: ${apps.join(", ")}`;
+      return i;
+    }));
+  }
+});

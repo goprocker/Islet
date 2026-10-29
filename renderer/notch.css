@@ -158,3 +158,11 @@ button.play svg { width: 19px; height: 19px; }
 .permBtns .allow { background: var(--warn); color: #000; }
 .permBtns .allow:hover { background: #ffc466; }
 .permBtns .deny { background: #2c2c2e; }
+
+/* privacy: orange = microphone, green = camera, red = screen capture (like iOS) */
+.priv { display: inline-flex; gap: 4px; align-items: center; flex: none; }
+.priv:empty { display: none; }
+.priv i { width: 6px; height: 6px; border-radius: 50%; }
+.priv .mic { background: #ff9f0a; box-shadow: 0 0 5px #ff9f0a; }
+.priv .cam { background: #30d158; box-shadow: 0 0 5px #30d158; }
+.priv .screen { background: #ff453a; box-shadow: 0 0 5px #ff453a; }

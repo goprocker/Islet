@@ -18,7 +18,7 @@ if (!app.requestSingleInstanceLock()) app.quit();
 
 // ---- settings (userData/config.json) ----
 const configPath = () => path.join(app.getPath("userData"), "config.json");
-const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true };
+const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true };
 let config = { ...DEFAULTS };
 function loadConfig() {
   try { config = { ...DEFAULTS, ...JSON.parse(fs.readFileSync(configPath(), "utf8")) }; } catch { saveConfig(); }
@@ -93,7 +93,27 @@ function startAudio() {
   const timer = setInterval(() => { if (latest) { send("levels", latest.split(",").map(Number)); latest = null; } }, 33);
   audio.on("exit", () => { clearInterval(timer); if (!app.isQuitting) setTimeout(startAudio, 2000); });
 }
-ipcMain.on("volume", (_, delta) => {
+// ---- mic / camera / screen capture in use + fullscreen apps ----
+let sys, fullscreen = false;
+function startSystem() {
+  sys = spawn("powershell.exe", [...PS, path.join(__dirname, "system.ps1")], { windowsHide: true });
+  lines(sys.stdout, l => {
+    let d; try { d = JSON.parse(l); } catch { return; }
+    send("system", d);
+    fullscreen = d.fullscreen;
+    applyVisibility();
+  });
+  sys.on("exit", () => { if (!app.isQuitting) setTimeout(startSystem, 2000); });
+}
+// out of the way during games and videos (unless turned off in settings)
+function applyVisibility() {
+  if (!win) return;
+  const hide = fullscreen && config.hideInFullscreen;
+  if (hide && win.isVisible()) win.hide();
+  else if (!hide && !win.isVisible()) win.showInactive();
+}
+
+ipcMain.on("volume",(_, delta) => {
   if (Number.isFinite(delta)) audio?.stdin.write(`vol ${delta}\n`);
 });
 
@@ -303,6 +323,7 @@ app.whenReady().then(() => {
   makeTray();
   startMedia();
   startAudio();
+  startSystem();
   win.webContents.on("did-finish-load", () => {
     lastClaude = ""; spotifyIconSent = false; readClaude(); refreshSpotifyExtras(); send("timer", timerEnd);
     calendar.poll(config.calendarIcsUrl, ev => send("calendar", ev));
@@ -316,7 +337,7 @@ app.whenReady().then(() => {
   // reload settings when the file is edited by hand
   fs.watchFile(configPath(), { interval: 2000 }, () => {
     const oldUrl = config.calendarIcsUrl;
-    loadConfig(); buildMenu(); placeWindow();
+    loadConfig(); buildMenu(); placeWindow(); applyVisibility();
     if (config.calendarIcsUrl !== oldUrl) calendar.poll(config.calendarIcsUrl, ev => send("calendar", ev));
   });
   screen.on("display-added", () => { buildMenu(); placeWindow(); });
@@ -324,4 +345,4 @@ app.whenReady().then(() => {
   globalShortcut.register("Control+Alt+N", () => send("toggle"));
 });
 app.on("window-all-closed", e => e.preventDefault());
-app.on("will-quit", () => { globalShortcut.unregisterAll(); media?.kill(); audio?.kill(); });
+app.on("will-quit", () => { globalShortcut.unregisterAll(); media?.kill(); audio?.kill(); sys?.kill(); });
