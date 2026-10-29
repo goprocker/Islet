@@ -46,6 +46,16 @@
       </div>
     </div>
     <div class="music" id="music" title="Scroll to change Spotify volume">
+      <section class="panel" id="clipPanel" hidden aria-label="Clipboard history">
+        <header><b>Clipboard</b><button class="link" id="clipClear">Clear</button></header>
+        <ol id="clipList"></ol>
+        <p class="empty" id="clipEmpty">Copy some text and it shows up here. Click an item to copy it again.</p>
+      </section>
+      <section class="panel" id="shelfPanel" hidden aria-label="File shelf">
+        <header><b>Shelf</b><button class="link" id="shelfAddBtn">Add files</button></header>
+        <ul id="shelfList"></ul>
+        <p class="empty" id="shelfEmpty">Drop files here to hold them, then drag them out anywhere.</p>
+      </section>
       <div class="albumv" id="albumv" hidden>
         <img class="art bg" alt="">
         <img class="art big" alt="">
@@ -74,6 +84,8 @@
     </div>
     <nav class="tools" aria-label="Islet tools">
       <button id="dndBtn" aria-pressed="false" title="Do Not Disturb: pause notification pop-ups"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></button>
+      <button id="clipBtn" aria-pressed="false" title="Clipboard history"><svg viewBox="0 0 24 24"><path d="M9 2h6a1 1 0 0 1 1 1v1h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2V3a1 1 0 0 1 1-1zm1 2v1h4V4zM6 6v14h12V6h-2v1H8V6zm2 4h8v2H8zm0 4h6v2H8z"/></svg></button>
+      <button id="shelfBtn" aria-pressed="false" title="File shelf"><svg viewBox="0 0 24 24"><path d="M3 5a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zm2 0v14h14V7h-8.8l-2-2z"/></svg></button>
     </nav>
   </div>
 </div>
