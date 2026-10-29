@@ -168,21 +168,26 @@ function recentTranscripts() {
   return found.sort((a, b) => b.m - a.m);
 }
 function describe(block) {
-  const i = block.input || {};
+  const i = typeof block.input === "string" ? { command: block.input } : block.input || {};
+  const short = value => String(value || "").replace(/\s+/g, " ").trim().slice(0, 60);
   const file = i.file_path ? path.basename(i.file_path) : "";
   switch (block.name) {
     case "Edit": case "MultiEdit": return `Edited ${file}`;
     case "Write": return `Wrote ${file}`;
     case "Read": return `Read ${file}`;
-    case "Bash": case "PowerShell": return i.description || `Ran ${String(i.command || "").slice(0, 60)}`;
+    // Codex hooks canonicalize shell tools to Bash; accept raw tool names too.
+    case "Bash": case "PowerShell": case "exec_command": case "shell": case "shell_command":
+      return short(i.description) || `Ran ${short(Array.isArray(i.command) ? i.command.join(" ") : i.command || i.cmd) || "shell command"}`;
     case "Grep": case "Glob": return `Searched for ${i.pattern}`;
     case "WebSearch": return `Searched the web for ${i.query}`;
     case "WebFetch": return `Fetched ${i.url}`;
     case "Agent": case "Task": return `Started agent: ${i.description || ""}`;
+    case "spawn_agent": return `Started agent: ${short(i.description || i.message) || "task"}`;
+    case "update_plan": return "Updated plan";
     case "apply_patch": {
-      // Codex edits: "*** Update File: src/a.js" lines in the patch
-      const files = [...String(i.command || i.input || "").matchAll(/\*\*\* (?:Update|Add) File: (.+)/g)].map(m => path.basename(m[1].trim()));
-      return files.length ? `Edited ${files.join(", ")}` : "Edited files";
+      // Hooks send the patch in command; include deletions and rename targets.
+      const files = [...String(i.command || i.input || "").matchAll(/^\*\*\* (?:Update File|Add File|Delete File|Move to): (.+)$/gm)].map(m => path.basename(m[1].trim()));
+      return files.length ? `Edited ${[...new Set(files)].join(", ")}` : "Edited files";
     }
     default: return `Used ${block.name}`;
   }
