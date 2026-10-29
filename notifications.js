@@ -70,7 +70,8 @@ module.exports = { watch };
 // `saved` maps app id -> its previous ShowBanner value (null = not set), to undo exactly.
 const { execFileSync } = require("child_process");
 const fs = require("fs"), os = require("os");
-const KEY = "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings\\";
+// built with join: hand-written backslashes here were lost once already
+const KEY = ["HKEY_CURRENT_USER", "Software", "Microsoft", "Windows", "CurrentVersion", "Notifications", "Settings", ""].join("\\");
 // every app's current ShowBanner value, from one `reg query`
 function readBanners() {
   const out = {};
@@ -111,10 +112,11 @@ function hideBanners(saved, ids) {
     if (!(id in saved)) saved[id] = id in now ? now[id] : null;
     changes[id] = 0;
   }
-  if (!Object.keys(changes).length) return;
+  if (!Object.keys(changes).length) return 0;
   writeBanners(changes);
   const after = readBanners(), missed = Object.keys(changes).filter(id => after[id] !== 0).length;
   if (missed) console.warn(`banners: ${missed} of ${Object.keys(changes).length} apps still show Windows banners`);
+  return missed; // apps whose banner is still on
 }
 function restoreBanners(saved) {
   writeBanners(saved);
