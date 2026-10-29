@@ -108,23 +108,38 @@ function summarize(tool, input) {
 }
 
 // ---- hook install: ~/.claude/settings.json and, when Codex is set up, ~/.codex/hooks.json ----
+// A missing file is an empty config. A file that can't be read or isn't a JSON object
+// throws, so install/uninstall never replace it with only Islet's hooks.
 function readJson(file) {
-  try { return JSON.parse(fs.readFileSync(file, "utf8")); } catch { return {}; }
+  let text;
+  try { text = fs.readFileSync(file, "utf8"); } catch (e) {
+    if (e.code === "ENOENT") return {};
+    throw new Error(`Couldn't read ${file} (${e.code || e.message}). Islet left it unchanged.`);
+  }
+  let s;
+  try { s = JSON.parse(text); } catch (e) {
+    throw new Error(`${file} isn't valid JSON (${e.message}). Fix it and try again; Islet left it unchanged.`);
+  }
+  const lists = s?.hooks === undefined || (s.hooks && typeof s.hooks === "object" && !Array.isArray(s.hooks) && Object.values(s.hooks).every(Array.isArray));
+  if (!s || typeof s !== "object" || Array.isArray(s) || !lists) throw new Error(`${file} doesn't look like a hooks settings file. Islet left it unchanged.`);
+  return s;
 }
 const targets = () => [
   { file: SETTINGS, events: EVENTS, arg: "" },
   ...(fs.existsSync(CODEX_DIR) ? [{ file: CODEX_HOOKS, events: CODEX_EVENTS, arg: " codex" }] : []),
 ];
 function hasHooks(t) {
-  const s = readJson(t.file);
+  let s;
+  try { s = readJson(t.file); } catch { return false; }
   return t.events.every(ev => JSON.stringify(s.hooks?.[ev] || []).includes(MARK));
 }
 function installed() { return hasHooks(targets()[0]); }
 function install() {
-  for (const t of targets()) {
-    const s = readJson(t.file);
+  // read and check every file before writing any, so a bad one stops the whole install
+  for (const { t, s } of targets().map(t => ({ t, s: readJson(t.file) }))) {
     if (fs.existsSync(t.file)) fs.copyFileSync(t.file, t.file + ".islet-backup");
     s.hooks ||= {};
+    fs.mkdirSync(path.dirname(t.file), { recursive: true }); // ~/.claude may not exist yet
     for (const ev of t.events) {
       const list = (s.hooks[ev] || []).filter(g => !JSON.stringify(g).includes(MARK));
       list.push({
@@ -137,8 +152,7 @@ function install() {
   }
 }
 function uninstall() {
-  for (const t of targets()) {
-    const s = readJson(t.file);
+  for (const { t, s } of targets().map(t => ({ t, s: readJson(t.file) }))) {
     if (!s.hooks) continue;
     for (const ev of Object.keys(s.hooks)) {
       s.hooks[ev] = s.hooks[ev].filter(g => !JSON.stringify(g).includes(MARK));
