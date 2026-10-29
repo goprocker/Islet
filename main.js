@@ -12,7 +12,9 @@ const lyrics = require("./lyrics");
 const weather = require("./weather");
 const downloads = require("./downloads");
 
-const W = 580, H = 190;
+const BASE_W = 580, BASE_H = 190;
+const SCALES = { compact: 0.85, normal: 1, large: 1.2 };
+const scale = () => SCALES[config.size] || 1;
 const PS = ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File"];
 const MEDIA = [...PS, path.join(__dirname, "media.ps1")];
 let win, tray, media, audio;
@@ -21,7 +23,7 @@ if (!app.requestSingleInstanceLock()) app.quit();
 
 // ---- settings (userData/config.json) ----
 const configPath = () => path.join(app.getPath("userData"), "config.json");
-const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true, lyrics: true, permissionWaitSeconds: 8, dnd: false, dndFrom: "", dndTo: "", clipboardHistory: true, weatherCity: "", weatherUnit: "C", downloadsFolder: "" };
+const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true, lyrics: true, permissionWaitSeconds: 8, dnd: false, dndFrom: "", dndTo: "", clipboardHistory: true, weatherCity: "", weatherUnit: "C", downloadsFolder: "", size: "normal", accent: "album", idleHide: false };
 let config = { ...DEFAULTS };
 function loadConfig() {
   try { config = { ...DEFAULTS, ...JSON.parse(fs.readFileSync(configPath(), "utf8")) }; } catch { saveConfig(); }
@@ -35,11 +37,13 @@ function targetDisplay() {
 }
 function placeWindow() {
   const { bounds } = targetDisplay();
+  const W = Math.round(BASE_W * scale()), H = Math.round(BASE_H * scale());
   win.setBounds({ x: Math.round(bounds.x + (bounds.width - W) / 2), y: bounds.y, width: W, height: H });
+  win.webContents.setZoomFactor(scale());
 }
 function createWindow() {
   win = new BrowserWindow({
-    width: W, height: H,
+    width: BASE_W, height: BASE_H,
     frame: false, transparent: true, resizable: false, movable: false,
     skipTaskbar: true, hasShadow: false, focusable: true, show: false,
     webPreferences: { preload: path.join(__dirname, "preload.js") },
@@ -333,6 +337,12 @@ ipcMain.on("shelfDrag", (e, p) => {
 // 1x1 transparent fallback: startDrag needs some icon
 const EMPTY_PNG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
 
+// ---- look: size, accent colour, hide when idle ----
+function sendTheme() {
+  win?.webContents.setZoomFactor(scale());
+  send("theme", { accent: /^#[0-9a-f]{6}$/i.test(config.accent) ? config.accent : "album", idleHide: !!config.idleHide });
+}
+
 // ---- weather + downloads ----
 function startWeather() { weather.poll(config.weatherCity.trim(), config.weatherUnit, w => send("weather", w)); }
 function startDownloads() {
@@ -431,7 +441,7 @@ app.whenReady().then(() => {
   startAudio();
   startSystem();
   win.webContents.on("did-finish-load", () => {
-    lastClaude = ""; iconFor = null; readClaude(); refreshSpotifyExtras(); send("timer", timerEnd); sendDnd(true); send("shelf", shelf);
+    lastClaude = ""; iconFor = null; readClaude(); refreshSpotifyExtras(); send("timer", timerEnd); sendDnd(true); send("shelf", shelf); sendTheme();
     send("clipboard", clips.map(c => c.replace(/\s+/g, " ").slice(0, 160)));
     calendar.poll(config.calendarIcsUrl, ev => send("calendar", ev));
     startWeather();
@@ -455,7 +465,7 @@ app.whenReady().then(() => {
   // reload settings when the file is edited by hand
   fs.watchFile(configPath(), { interval: 2000 }, () => {
     const oldUrl = config.calendarIcsUrl, old = JSON.stringify([config.weatherCity, config.weatherUnit, config.downloadsFolder]);
-    loadConfig(); buildMenu(); placeWindow(); applyVisibility(); sendDnd();
+    loadConfig(); buildMenu(); placeWindow(); applyVisibility(); sendDnd(); sendTheme();
     if (config.calendarIcsUrl !== oldUrl) calendar.poll(config.calendarIcsUrl, ev => send("calendar", ev));
     if (old !== JSON.stringify([config.weatherCity, config.weatherUnit, config.downloadsFolder])) { startWeather(); startDownloads(); }
   });

@@ -8,6 +8,7 @@ let track = null, lastArt = null, extras = { connected: false };
 let sessions = [], pinned = null;       // Claude projects; pinned = project the user picked
 let timerEnd = 0, event = null, volShownUntil = 0, volume = null;
 let wx = null, dls = [];             // weather, downloads in progress
+let theme = { accent: "album", idleHide: false };
 
 // ---- open / close; window is click-through except over the notch ----
 function setOpen(o) { notch.classList.toggle("open", o); notch.setAttribute("aria-expanded", o); }
@@ -239,6 +240,7 @@ $("cProject").onclick =() => { const s = shown(); if (s?.cwd) window.bridge.open
 
 // tint the notch with the album art's dominant colour
 function accentFrom(src) {
+  if (theme.accent !== "album") return; // a fixed accent from settings wins
   const img = new Image();
   img.onload = () => {
     const c = document.createElement("canvas"); c.width = c.height = 16;
@@ -345,6 +347,11 @@ function render() {
     $("cAgo").textContent = ago(now - s.time);
     notch.classList.toggle("live", now - s.time < 60000);
   }
+
+  // idle: nothing playing, Claude quiet, nothing to show -> a thin line (if enabled)
+  const busy = track?.playing || chip || (s && (now - s.time < 60000 || s.status === "waiting"))
+    || notch.classList.contains("charging") || $("pillPriv").childElementCount || !$("pillMoon").hasAttribute("hidden");
+  notch.classList.toggle("idle", theme.idleHide && !busy);
 }
 setInterval(render, 500);
 render();
@@ -478,3 +485,12 @@ notch.addEventListener("drop", e => {
 window.bridge.onWeather(w => { wx = w; render(); });
 window.bridge.onDownloads(list => { dls = list; render(); });
 window.bridge.onDownloadDone(d => toast({ id: d.id, app: "Downloads", badge: "↓", color: "#0a84ff", title: d.name, body: "Downloaded. Click to show in folder." }));
+
+// ---- look ----
+window.bridge.onTheme(t => {
+  theme = t;
+  if (t.accent !== "album") document.documentElement.style.setProperty("--accent", t.accent);
+  else if (track?.art) accentFrom(track.art);
+  else document.documentElement.style.removeProperty("--accent");
+  render();
+});

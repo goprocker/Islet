@@ -18,6 +18,7 @@ contextBridge.exposeInMainWorld("bridge", {
   toggleDnd: () => ipcRenderer.send("toggleDnd"),
   onClipboard: on("clipboard"),
   onWeather: on("weather"),
+  onTheme: on("theme"),
   onDownloads: on("downloads"),
   onDownloadDone: on("downloadDone"),
   copyClip: i => ipcRenderer.send("copyClip", i),
