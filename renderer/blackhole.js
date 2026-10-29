@@ -169,7 +169,7 @@
     timers.forEach(clearTimeout); timers = [];
   }
 
-  function play(notch, kind, level) {
+  function play(notch, kind, level, opts = {}) {
     stop();
     canvas ||= document.getElementById("bhCanvas");
     ctx ||= canvas.getContext("2d");
@@ -189,7 +189,7 @@
     // text beats
     later(on ? 1450 : 200, () => view.classList.add("show-pct"));
     later(on ? 1550 : 950, () => { if (!on) label.textContent = "RUNNING ON BATTERY"; view.classList.add("show-label"); });
-    if (on) later(1400, () => view.classList.add("wave"));
+    if (on && !opts.subtle) later(1400, () => view.classList.add("wave"));
     later(on ? 2000 : 950, () => { state = on ? "CHARGING_DISPLAY" : "BATTERY_DISPLAY"; });
     later(collapseAt, () => { state = "COLLAPSING"; notch.classList.remove("bh"); });
     later(total, () => { stop(); state = "IDLE"; ctx.clearRect(0, 0, canvas.width, canvas.height); view.className = "bhv"; });
@@ -204,6 +204,7 @@
     const frame = now => {
       const t = now - t0;
       (on ? connect : disconnect)(t, s);
+      if (opts.subtle) { s.partA = 0; s.ripple = -1; s.boost *= 0.3; s.glow *= 0.5; s.speed *= 0.6; s.pointA *= 0.6; }
       s.phase += (now - last) * 0.06 * s.speed; last = now;
       draw(s);
       raf = t < collapseAt + 380 && !notch.classList.contains("hidden") ? requestAnimationFrame(frame) : 0;
