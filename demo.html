@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Notch demo</title>
+<style>
+  :root {
+    --ink: #000;
+    --text: #f5f5f7;
+    --muted: #8e8e93;
+    --line: #1c1c1e;
+    --accent: #e8a33d;
+    --claude: #c9b8ff;
+    --desk: #5a6b7d;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    min-height: 100vh;
+    font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+    color: var(--text);
+    background: radial-gradient(120% 90% at 30% 10%, #8aa0b5, var(--desk) 55%, #2b3540);
+  }
+  .hint { position: fixed; bottom: 24px; left: 0; right: 0; text-align: center; color: #e6edf3cc; font-size: 14px; }
+  kbd { background: #0004; padding: 2px 6px; border-radius: 5px; font-family: inherit; }
+
+  .notch {
+    position: fixed; top: 8px; left: 50%; transform: translateX(-50%);
+    width: 236px; height: 38px; border-radius: 19px;
+    background: var(--ink); overflow: hidden; cursor: pointer;
+    box-shadow: 0 10px 30px #0006;
+    transition: width .5s cubic-bezier(.34,1.4,.5,1), height .5s cubic-bezier(.34,1.4,.5,1), border-radius .5s;
+  }
+  .notch.open { width: min(452px, calc(100vw - 32px)); height: 214px; border-radius: 32px; cursor: default; }
+  .notch:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  /* compact */
+  .pill { display: flex; align-items: center; gap: 10px; height: 38px; padding: 0 14px 0 8px; transition: opacity .2s; }
+  .pill .art { width: 24px; height: 24px; border-radius: 7px; }
+  .pill canvas { margin-left: auto; }
+  .pill time { font-size: 13px; font-variant-numeric: tabular-nums; color: var(--muted); }
+  .open .pill { opacity: 0; pointer-events: none; }
+
+  /* expanded */
+  .full { position: absolute; inset: 0; padding: 18px 20px 14px; opacity: 0; pointer-events: none; transition: opacity .25s .1s; }
+  .open .full { opacity: 1; pointer-events: auto; }
+  .row { display: flex; align-items: center; gap: 14px; }
+  .full .art { width: 56px; height: 56px; border-radius: 14px; flex: none; }
+  .meta { min-width: 0; flex: 1; }
+  .title { font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .artist { font-size: 13px; color: var(--muted); }
+  .clock { align-self: flex-start; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  .bar { display: flex; align-items: center; gap: 10px; margin-top: 14px; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .track { flex: 1; height: 4px; border-radius: 2px; background: #ffffff26; position: relative; }
+  .track i { position: absolute; inset: 0 auto 0 0; border-radius: 2px; background: var(--accent); }
+
+  .ctl { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+  .buttons { display: flex; gap: 6px; }
+  button { background: none; border: 0; color: var(--text); width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; cursor: pointer; }
+  button:hover { background: #ffffff14; }
+  button:focus-visible { outline: 2px solid var(--accent); }
+  button svg { width: 20px; height: 20px; fill: currentColor; }
+  button.play svg { width: 26px; height: 26px; }
+
+  .claude { display: flex; align-items: center; gap: 10px; margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 12.5px; }
+  .claude b { color: var(--claude); font-weight: 600; flex: none; }
+  .claude span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+  .claude small { color: var(--muted); flex: none; }
+  .claude .new { animation: in .4s ease; }
+  @keyframes in { from { opacity: 0; transform: translateY(4px); } }
+
+  @media (prefers-reduced-motion: reduce) { .notch, .full, .pill { transition: none; } .claude .new { animation: none; } }
+</style>
+</head>
+<body>
+<div class="notch" id="notch" tabindex="0" role="button" aria-expanded="false" aria-label="Now playing. Press to expand">
+  <div class="pill">
+    <div class="art"></div>
+    <canvas id="mini" width="60" height="20"></canvas>
+    <time id="pillTime"></time>
+  </div>
+  <div class="full">
+    <div class="row">
+      <div class="art"></div>
+      <div class="meta">
+        <div class="title" id="title"></div>
+        <div class="artist" id="artist"></div>
+      </div>
+      <div class="clock" id="clock"></div>
+    </div>
+    <div class="bar"><span id="pos">0:00</span><div class="track"><i id="prog"></i></div><span id="dur">0:00</span></div>
+    <div class="ctl">
+      <canvas id="wave" width="150" height="28"></canvas>
+      <div class="buttons">
+        <button id="prev" aria-label="Previous song"><svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
+        <button id="play" class="play" aria-label="Pause"><svg viewBox="0 0 24 24" id="playIcon"></svg></button>
+        <button id="next" aria-label="Next song"><svg viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg></button>
+      </div>
+    </div>
+    <div class="claude" aria-live="polite"><b>Claude</b><span id="cText"></span><small id="cAgo"></small></div>
+  </div>
+</div>
+<p class="hint">Click the notch or press <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>N</kbd>. Demo data, no real sync yet.</p>
+
+<script>
+const songs = [
+  { title: "Midnight Static", artist: "Lumen Drive", dur: 214, c1: "#e8a33d", c2: "#8a3b12" },
+  { title: "Paper Satellites", artist: "Neon Harbor", dur: 187, c1: "#4fc3f7", c2: "#1a3a6b" },
+  { title: "Slow Bloom", artist: "Juniper & Ash", dur: 242, c1: "#f06292", c2: "#4a1942" },
+];
+const claudeFeed = [
+  "Edited notch/main.js — added global hotkey",
+  "Ran npm start",
+  "Read media.ps1",
+  "Wrote renderer/wave.js",
+  "Fixed loopback audio permission",
+];
+let i = 0, pos = 37, playing = true, cIdx = 0, cTime = Date.now();
+const $ = id => document.getElementById(id);
+const notch = $("notch");
+const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+const PLAY = '<path d="M7 4v16l13-8z"/>', PAUSE = '<path d="M6 4h4v16H6zM14 4h4v16h-4z"/>';
+
+function load() {
+  const s = songs[i];
+  document.documentElement.style.setProperty("--accent", s.c1);
+  document.querySelectorAll(".art").forEach(a => a.style.background = `linear-gradient(135deg, ${s.c1}, ${s.c2})`);
+  $("title").textContent = s.title; $("artist").textContent = s.artist; $("dur").textContent = fmt(s.dur);
+}
+function render() {
+  const s = songs[i];
+  $("pos").textContent = fmt(pos);
+  $("prog").style.width = (pos / s.dur * 100) + "%";
+  $("playIcon").innerHTML = playing ? PAUSE : PLAY;
+  $("play").setAttribute("aria-label", playing ? "Pause" : "Play");
+  const t = new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  $("clock").textContent = t; $("pillTime").textContent = t;
+  const ago = Math.round((Date.now() - cTime) / 1000);
+  $("cAgo").textContent = ago < 5 ? "now" : ago < 60 ? `${ago}s ago` : `${Math.round(ago / 60)}m ago`;
+}
+function pushClaude() {
+  const el = $("cText");
+  el.textContent = claudeFeed[cIdx++ % claudeFeed.length];
+  el.classList.remove("new"); void el.offsetWidth; el.classList.add("new");
+  cTime = Date.now();
+}
+function toggle() {
+  const o = notch.classList.toggle("open");
+  notch.setAttribute("aria-expanded", o);
+}
+notch.addEventListener("click", e => { if (!e.target.closest("button") && !notch.classList.contains("open") || e.target === notch) toggle(); });
+notch.addEventListener("keydown", e => { if (e.target === notch && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); toggle(); } if (e.key === "Escape") notch.classList.remove("open"); });
+document.addEventListener("keydown", e => { if (e.ctrlKey && e.altKey && e.key.toLowerCase() === "n") toggle(); });
+document.addEventListener("click", e => { if (!notch.contains(e.target)) notch.classList.remove("open"); });
+$("play").onclick = () => { playing = !playing; render(); };
+$("next").onclick = () => { i = (i + 1) % songs.length; pos = 0; load(); render(); };
+$("prev").onclick = () => { if (pos > 3) pos = 0; else i = (i + songs.length - 1) % songs.length, pos = 0; load(); render(); };
+
+// wave: fake spectrum now, real AnalyserNode in the app
+const bars = new Array(24).fill(0);
+function drawWave(cv, n, gap) {
+  const x = cv.getContext("2d"), w = cv.width, h = cv.height, bw = (w - gap * (n - 1)) / n;
+  x.clearRect(0, 0, w, h);
+  x.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--accent");
+  for (let k = 0; k < n; k++) {
+    const v = Math.max(0.08, bars[Math.floor(k * bars.length / n)]);
+    const bh = v * h;
+    x.beginPath(); x.roundRect(k * (bw + gap), (h - bh) / 2, bw, bh, bw / 2); x.fill();
+  }
+}
+const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let t = 0;
+(function frame() {
+  t += 0.06;
+  for (let k = 0; k < bars.length; k++) {
+    const target = playing ? (0.35 + 0.65 * Math.abs(Math.sin(t * (1 + k % 5 * 0.3) + k)) * Math.random() ** 0.4) : 0;
+    bars[k] += (target - bars[k]) * (still ? 1 : 0.25);
+  }
+  drawWave($("mini"), 8, 3); drawWave($("wave"), 18, 3);
+  requestAnimationFrame(frame);
+})();
+setInterval(() => {
+  if (playing) { pos++; if (pos >= songs[i].dur) { i = (i + 1) % songs.length; pos = 0; load(); } }
+  render();
+}, 1000);
+setInterval(pushClaude, 6000);
+load(); pushClaude(); render();
+</script>
+</body>
+</html>
