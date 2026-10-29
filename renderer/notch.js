@@ -378,3 +378,18 @@ window.bridge.onSystem(d => {
     }));
   }
 });
+
+// ---- album view ----
+$("artBtn").addEventListener("click", () => { if (track?.art) { $("albumv").hidden = false; renderAlbum(); } });
+$("albumv").addEventListener("click", () => { $("albumv").hidden = true; });
+// closes with the notch so it doesn't reappear on next hover
+new MutationObserver(() => { if (!notch.classList.contains("open")) $("albumv").hidden = true; })
+  .observe(notch, { attributes: true, attributeFilter: ["class"] });
+function renderAlbum() {
+  if ($("albumv").hidden || !track) return;
+  $("albumv").querySelectorAll("img").forEach(i => { if (i.src !== track.art) i.src = track.art; });
+  $("aTitle").textContent = track.title || "";
+  $("aArtist").textContent = track.artist || "";
+  $("aLyric").textContent = lyricLines ? lyricNow : "";
+}
+setInterval(renderAlbum, 500);
