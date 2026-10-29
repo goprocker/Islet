@@ -12,7 +12,7 @@ const lyrics = require("./lyrics");
 const weather = require("./weather");
 const downloads = require("./downloads");
 
-const BASE_W = 580, BASE_H = 190;
+const BASE_W = 672, BASE_H = 190;
 const SCALES = { compact: 0.85, normal: 1, large: 1.2 };
 const scale = () => SCALES[config.size] || 1;
 const PS = ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File"];

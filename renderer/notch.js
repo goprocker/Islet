@@ -106,6 +106,7 @@ navigator.getBattery?.().then(b => {
       el.title = b.charging ? `Charging, ${pct}%` : `Battery ${pct}%`;
     }
     $("batt").hidden = false;
+    $("power").textContent = b.charging ? (b.level >= 1 ? "Fully charged" : "Charging") : "On battery";
     $("pillBatt").hidden = !b.charging; // pill only shows it while plugged in
     notch.classList.toggle("charging", b.charging);
   };
@@ -265,11 +266,12 @@ window.bridge.onLyrics(l => { lyricLines = l; lyricNow = ""; render(); });
 
 function render() {
   const now = Date.now();
-  // left of the controls: clock, or the volume right after a scroll
-  const clock = $("clock");
+  // time column: clock, and under it the date, or the volume right after a scroll
+  const d = new Date(), date = $("date");
   const showVol = now < volShownUntil && volume !== null;
-  clock.textContent = showVol ? `Volume ${Math.round(volume * 100)}%` : new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-  clock.classList.toggle("vol", showVol);
+  $("clock").textContent = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  date.textContent = showVol ? `Volume ${Math.round(volume * 100)}%` : d.toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" });
+  date.classList.toggle("vol", showVol);
 
   if (track) {
     $("title").textContent = track.title || "Unknown";
