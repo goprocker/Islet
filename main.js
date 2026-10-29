@@ -26,7 +26,7 @@ app.on("second-instance", () => openSettings());
 
 // ---- settings (userData/config.json) ----
 const configPath = () => path.join(app.getPath("userData"), "config.json");
-const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true, lyrics: true, permissionWaitSeconds: 8, dnd: false, dndFrom: "", dndTo: "", clipboardHistory: true, weatherCity: "", weatherUnit: "C", downloadsFolder: "", size: "normal", accent: "album", idleHide: false, hideWindowsBanners: true };
+const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true, lyrics: true, permissionWaitSeconds: 8, dnd: false, dndFrom: "", dndTo: "", dndSkipUntil: 0, clipboardHistory: true, weatherCity: "", weatherUnit: "C", downloadsFolder: "", size: "normal", accent: "album", idleHide: false, hideWindowsBanners: true };
 let config = { ...DEFAULTS };
 function loadConfig() {
   try { config = { ...DEFAULTS, ...JSON.parse(fs.readFileSync(configPath(), "utf8")) }; } catch { saveConfig(); }
@@ -306,20 +306,35 @@ ipcMain.on("openNotification", (_, id) => {
 ipcMain.on("openProject", (_, cwd) => { if (cwd && fs.existsSync(cwd)) shell.openPath(cwd); });
 
 // ---- Do Not Disturb: manual switch, or a daily window like 22:00 -> 07:00 ----
-function dndActive() {
-  if (config.dnd) return true;
+// the daily window: when it is on right now, the time it ends (ms), else 0
+function dndWindowEnd(d = new Date()) {
   const mins = s => { const m = /^(\d{1,2}):(\d{2})$/.exec(s || ""); return m ? Number(m[1]) * 60 + Number(m[2]) : null; };
   const from = mins(config.dndFrom), to = mins(config.dndTo);
-  if (from === null || to === null || from === to) return false;
-  const d = new Date(), now = d.getHours() * 60 + d.getMinutes();
-  return from < to ? now >= from && now < to : now >= from || now < to; // window may cross midnight
+  if (from === null || to === null || from === to) return 0;
+  const now = d.getHours() * 60 + d.getMinutes();
+  const inside = from < to ? now >= from && now < to : now >= from || now < to; // window may cross midnight
+  if (!inside) return 0;
+  const end = new Date(d); end.setHours(Math.floor(to / 60), to % 60, 0, 0);
+  if (end <= d) end.setDate(end.getDate() + 1);
+  return end.getTime();
+}
+function dndActive(d = new Date()) {
+  if (config.dnd) return true;
+  const end = dndWindowEnd(d);
+  return !!end && !(config.dndSkipUntil >= end); // turned off for this window by hand
+}
+// the button and tray item: turn whatever is on off (manual and today's window), or turn it on
+function toggleDnd() {
+  if (dndActive()) { config.dnd = false; config.dndSkipUntil = dndWindowEnd() || config.dndSkipUntil; }
+  else { config.dnd = true; config.dndSkipUntil = 0; }
+  saveConfig(); sendDnd(); buildMenu();
 }
 let lastDnd = null;
 function sendDnd(force) {
   const on = dndActive();
   if (force || on !== lastDnd) { lastDnd = on; send("dnd", on); if (tray) buildMenu(); }
 }
-ipcMain.on("toggleDnd", () => { config.dnd = !config.dnd; saveConfig(); sendDnd(); });
+ipcMain.on("toggleDnd", toggleDnd);
 
 // ---- clipboard history: last 5 copied texts, kept in memory only ----
 let clips = [], lastClip = clipboard.readText();
@@ -520,7 +535,7 @@ function buildMenu() {
       label: "Connect to Claude Code and Codex", type: "checkbox", checked: bridge.installed(),
       click: () => { try { bridge.installed() ? bridge.uninstall() : bridge.install(); } catch (e) { dialog.showErrorBox("Islet couldn't change the hooks", e.message); } buildMenu(); },
     },
-    { label: "Do Not Disturb", type: "checkbox", checked: dndActive(), click: () => { config.dnd = !config.dnd; saveConfig(); sendDnd(); } },
+    { label: "Do Not Disturb", type: "checkbox", checked: dndActive(), click: toggleDnd },
     { label: "Show notifications", type: "checkbox", checked: config.notifications, click: () => { config.notifications = !config.notifications; saveConfig(); applyBanners(); } },
     ...(bannersMissed ? [{ label: `Windows banners still on for ${bannersMissed} apps (registry write blocked)`, enabled: false }] : []),
     { label: "Settings…", click: openSettings },
