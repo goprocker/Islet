@@ -129,7 +129,8 @@ body {
 .batt .shell { fill: none; stroke: currentColor; stroke-width: 1; opacity: .6; }
 .batt .cap { fill: currentColor; opacity: .6; }
 .batt .lvl { fill: currentColor; }
-.batt .bolt { fill: #000; }
+/* white bolt with a dark edge: visible over the green fill and over the empty part */
+.batt .bolt { fill: #fff; stroke: #000; stroke-width: .7; paint-order: stroke; stroke-linejoin: round; }
 .batt.charging { color: var(--ok); }
 .batt.low { color: #ff5f57; }
 .pill .batt { margin-left: 2px; }

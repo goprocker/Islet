@@ -94,7 +94,7 @@ window.bridge.onNotification(n => toast({ ...n, color: APP_COLORS[n.app] }));
 // battery: tell when the charger goes in or out, and once when it gets low
 function battIcon(level, charging) {
   const w = Math.max(1, Math.round(14 * level));
-  return `<svg viewBox="0 0 20 10" aria-hidden="true"><rect class="shell" x=".5" y=".5" width="16" height="9" rx="2.5"/><rect class="cap" x="17.5" y="3" width="1.5" height="4" rx=".7"/><rect class="lvl" x="1.5" y="1.5" width="${w}" height="7" rx="1.5"/>${charging ? '<path class="bolt" d="M9.6 1.2 6 5.6h2.4L7.6 8.8 11.2 4.4H8.8z"/>' : ""}</svg>`;
+  return `<svg viewBox="0 0 20 10" aria-hidden="true"><rect class="shell" x=".5" y=".5" width="16" height="9" rx="2.5"/><rect class="cap" x="17.5" y="3" width="1.5" height="4" rx=".7"/><rect class="lvl" x="1.5" y="1.5" width="${w}" height="7" rx="1.5"/>${charging ? '<path class="bolt" d="M10.2 .4 5.4 5.8h2.9L7.2 9.6 12 4.2H9.1z"/>' : ""}</svg>`;
 }
 navigator.getBattery?.().then(b => {
   const show = () => {
