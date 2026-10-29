@@ -75,6 +75,7 @@ body {
 .sessions button { width: auto; height: 18px; border-radius: 9px; padding: 0 7px; font: inherit; font-size: 10.5px; color: var(--muted); background: #1c1c1e; display: flex; align-items: center; gap: 4px; }
 .sessions button[aria-pressed="true"] { color: var(--text); background: #2c2c2e; }
 .sessions button i { width: 5px; height: 5px; border-radius: 50%; background: var(--claude); }
+.sessions button[data-agent="codex"] i { background: #7cc4ff; }
 .sessions button[data-status="waiting"] i { background: var(--warn); }
 .sessions button[data-status="done"] i { background: var(--ok); }
 .claude em { font-style: normal; font-size: 11px; color: var(--muted); }

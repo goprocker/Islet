@@ -179,6 +179,11 @@ function describe(block) {
     case "WebSearch": return `Searched the web for ${i.query}`;
     case "WebFetch": return `Fetched ${i.url}`;
     case "Agent": case "Task": return `Started agent: ${i.description || ""}`;
+    case "apply_patch": {
+      // Codex edits: "*** Update File: src/a.js" lines in the patch
+      const files = [...String(i.command || i.input || "").matchAll(/\*\*\* (?:Update|Add) File: (.+)/g)].map(m => path.basename(m[1].trim()));
+      return files.length ? `Edited ${files.join(", ")}` : "Edited files";
+    }
     default: return `Used ${block.name}`;
   }
 }
@@ -228,15 +233,27 @@ function readSession(t) {
     if (actions.length === 3) break;
   }
   if (!actions.length) return null;
-  return { id: t.p, project: cwd ? path.basename(cwd) : "Claude", cwd, status, actions, time: actions[0].time };
+  return { id: t.p, agent: "claude", project: cwd ? path.basename(cwd) : "Claude", cwd, status, actions, time: actions[0].time };
+}
+// Codex sessions come straight from its hooks (claude-bridge.js)
+function codexSessions() {
+  const out = [];
+  for (const [id, s] of bridge.codex) {
+    if (Date.now() - s.at > 30 * 60 * 1000) { bridge.codex.delete(id); continue; }
+    const actions = s.actions.map(a => ({ action: a.text ? a.text.replace(/\s+/g, " ").slice(0, 120) : describe({ name: a.tool, input: a.toolInput || {} }), time: a.time }));
+    if (!actions.length) actions.push({ action: "Started", time: s.at });
+    out.push({ id, agent: "codex", project: s.cwd ? path.basename(s.cwd) : "Codex", cwd: s.cwd, status: s.status, actions, time: s.at });
+  }
+  return out;
 }
 let lastClaude = "";
 function readClaude() {
-  // one entry per project: its most recent session
+  // one entry per agent + project: its most recent session; Claude and Codex mixed, newest first
   const byProject = new Map();
-  for (const t of recentTranscripts().slice(0, 12)) {
-    const s = readSession(t);
-    if (s && !byProject.has(s.project)) byProject.set(s.project, s);
+  const all = [...recentTranscripts().slice(0, 12).map(readSession), ...codexSessions()].filter(Boolean);
+  for (const s of all.sort((a, b) => b.time - a.time)) {
+    const key = `${s.agent}:${s.project}`;
+    if (!byProject.has(key)) byProject.set(key, s);
   }
   const sessions = [...byProject.values()].slice(0, 5);
   const key = JSON.stringify(sessions);
@@ -255,6 +272,12 @@ function startBridge() {
   if (!fs.existsSync(flag)) {
     try { bridge.install(); } catch (e) { console.warn("hook install", e.message); }
     fs.writeFileSync(flag, "1");
+  }
+  // Codex support came later: add its hooks once for people who already had Claude's
+  const codexFlag = path.join(app.getPath("userData"), "codex-hooks-set");
+  if (!fs.existsSync(codexFlag) && bridge.installed()) {
+    try { bridge.install(); } catch (e) { console.warn("codex hook install", e.message); }
+    fs.writeFileSync(codexFlag, "1");
   }
 }
 // clicked notification: open its link, or bring up the app that sent it
@@ -467,7 +490,7 @@ function buildMenu() {
         },
       },
     {
-      label: "Connect to Claude Code (exact status + Allow/Deny)", type: "checkbox", checked: bridge.installed(),
+      label: "Connect to Claude Code and Codex", type: "checkbox", checked: bridge.installed(),
       click: () => { try { bridge.installed() ? bridge.uninstall() : bridge.install(); } catch (e) { console.warn(e.message); } buildMenu(); },
     },
     { label: "Do Not Disturb", type: "checkbox", checked: dndActive(), click: () => { config.dnd = !config.dnd; saveConfig(); sendDnd(); } },
