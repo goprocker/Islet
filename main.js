@@ -7,6 +7,7 @@ const spotify = require("./spotify-web");
 const notifications = require("./notifications");
 const calendar = require("./calendar");
 const icons = require("./icons");
+const bridge = require("./claude-bridge");
 
 const W = 540, H = 190;
 const PS = ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File"];
@@ -155,6 +156,7 @@ function readSession(t) {
     try { const e = JSON.parse(l); if (e.type === "assistant" || e.type === "user") entries.push(e); } catch {}
   }
   if (!entries.length) return null;
+  const sessionId = path.basename(t.p, ".jsonl");
   // status from the very last entry + how long the transcript has been quiet:
   // a tool call nobody answered for a while usually means a permission prompt
   const last = entries[0];
@@ -167,6 +169,12 @@ function readSession(t) {
     const wait = ["Bash", "PowerShell"].includes(tool?.name) ? 30000 : 6000;
     if (hasTool && idle > wait) status = "waiting";
     else if (!hasTool && idle > 4000) status = "done";
+  }
+  // exact status from Claude Code hooks beats the guess
+  const hooked = bridge.status.get(sessionId);
+  if (hooked) {
+    if (hooked.status === "ended") return null;
+    status = hooked.status;
   }
   const actions = [];
   let cwd = "";
@@ -194,6 +202,20 @@ function readClaude() {
   const sessions = [...byProject.values()].slice(0, 5);
   const key = JSON.stringify(sessions);
   if (key !== lastClaude) { lastClaude = key; send("claude", sessions); }
+}
+ipcMain.on("permissionAnswer", (_, id, decision) => bridge.answer(id, decision, gone => send("permissionGone", gone)));
+function startBridge() {
+  bridge.start({
+    onStatus: () => { lastClaude = ""; readClaude(); },
+    onPermission: p => send("permission", p),
+    onPermissionGone: id => send("permissionGone", id),
+  });
+  // hooks are installed once automatically; the tray item can remove them
+  const flag = path.join(app.getPath("userData"), "hooks-set");
+  if (!fs.existsSync(flag)) {
+    try { bridge.install(); } catch (e) { console.warn("hook install", e.message); }
+    fs.writeFileSync(flag, "1");
+  }
 }
 ipcMain.on("openProject", (_, cwd) => { if (cwd && fs.existsSync(cwd)) shell.openPath(cwd); });
 
@@ -249,6 +271,10 @@ function buildMenu() {
           refreshSpotifyExtras(); buildMenu();
         },
       },
+    {
+      label: "Connect to Claude Code (exact status + Allow/Deny)", type: "checkbox", checked: bridge.installed(),
+      click: () => { try { bridge.installed() ? bridge.uninstall() : bridge.install(); } catch (e) { console.warn(e.message); } buildMenu(); },
+    },
     { label: "Show notifications", type: "checkbox", checked: config.notifications, click: () => { config.notifications = !config.notifications; saveConfig(); } },
     { label: "Open settings file", click: () => shell.openPath(configPath()) },
     { label: "Start with Windows", type: "checkbox", checked: login(), click: () => { setLogin(!login()); buildMenu(); } },
@@ -273,6 +299,7 @@ app.whenReady().then(() => {
   ipcMain.on("hover", (_, over) => win.setIgnoreMouseEvents(!over, { forward: true }));
   enableLoginOnFirstRun();
   createWindow();
+  startBridge();
   makeTray();
   startMedia();
   startAudio();
