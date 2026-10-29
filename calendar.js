@@ -39,22 +39,43 @@ function nextOccurrence(start, rr, now) {
   return null;
 }
 
+// every "NAME;params:value" line of one VEVENT, as { prop, value }
+function props(body, name) {
+  return [...body.matchAll(new RegExp(`^${name}([;:][^:\\n]*)?:(.*)$`, "gm"))].map(m => ({ prop: m[1] || "", value: m[2].trim() }));
+}
+// all times listed on EXDATE / RECURRENCE-ID lines (comma-separated values allowed)
+function times(list) {
+  return list.flatMap(p => p.value.split(",").map(v => parseDate(p.prop, v.trim())?.getTime())).filter(Number.isFinite);
+}
+
 function nextEvent(ics, now = new Date()) {
-  let best = null;
-  for (const block of unfold(ics).split("BEGIN:VEVENT").slice(1)) {
+  const events = unfold(ics).split("BEGIN:VEVENT").slice(1).map(block => {
     const body = block.split("END:VEVENT")[0];
-    const get = name => {
-      const m = body.match(new RegExp(`^${name}([^:\\n]*):(.*)$`, "m"));
-      return m ? { prop: m[1], value: m[2].trim() } : null;
-    };
+    const get = name => props(body, name)[0] || null;
+    return { body, get, uid: get("UID")?.value || "", rid: times(props(body, "RECURRENCE-ID"))[0] };
+  });
+  // a series' single changed or cancelled dates come as their own VEVENT with the same UID
+  // and a RECURRENCE-ID: the series skips those dates, the override stands on its own
+  const overridden = new Map();
+  for (const e of events) if (e.uid && e.rid !== undefined) (overridden.get(e.uid) || overridden.set(e.uid, new Set()).get(e.uid)).add(e.rid);
+  let best = null;
+  for (const { body, get, uid, rid } of events) {
+    if (/^CANCELLED$/i.test(get("STATUS")?.value || "")) continue;
     const ds = get("DTSTART");
     if (!ds) continue;
     let start = parseDate(ds.prop, ds.value);
     if (!start) continue;
-    const rr = get("RRULE")?.value || "";
+    const rr = rid === undefined ? get("RRULE")?.value || "" : ""; // an override is one date
     if (rr) {
-      start = nextOccurrence(start, rr, now);
-      if (!start) continue;
+      const skip = new Set([...times(props(body, "EXDATE")), ...(overridden.get(uid) || [])]);
+      let from = now;
+      for (let i = 0; i < 100; i++) {
+        start = nextOccurrence(start, rr, from);
+        if (!start || !skip.has(start.getTime())) break;
+        from = new Date(start.getTime() + 1);
+        start = parseDate(ds.prop, ds.value);
+      }
+      if (!start || skip.has(start.getTime())) continue;
     }
     if (start < now) continue;
     const summary = (get("SUMMARY")?.value || "Event").replace(/\\,/g, ",").replace(/\\n/g, " ");
