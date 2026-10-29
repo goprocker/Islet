@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Islet: a Dynamic-Island style notch for Windows: Spotify now playing + latest Claude Code activity",
   "main": "main.js",
+  "license": "MIT",
   "scripts": {
     "start": "electron .",
     "dist": "electron-builder --win nsis"
@@ -28,7 +29,8 @@
     "system.ps1",
       "spotify-audio.ps1",
       "spotify-audio.cs",
-      "renderer/**"
+      "renderer/**",
+      "LICENSE"
     ],
     "win": {
       "target": "nsis",
