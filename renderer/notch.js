@@ -7,6 +7,7 @@ const PLAY = '<path d="M7 4v16l13-8z"/>', PAUSE = '<path d="M6 4h4v16H6zM14 4h4v
 let track = null, lastArt = null, extras = { connected: false };
 let sessions = [], pinned = null;       // Claude projects; pinned = project the user picked
 let timerEnd = 0, event = null, volShownUntil = 0, volume = null;
+let wx = null, dls = [];             // weather, downloads in progress
 
 // ---- open / close; window is click-through except over the notch ----
 function setOpen(o) { notch.classList.toggle("open", o); notch.setAttribute("aria-expanded", o); }
@@ -313,6 +314,13 @@ function render() {
     timerEnd = 0;
     toast({ app: "Timer", badge: "⏱", color: "#5e5ce6", title: "Time's up", body: "Your timer has finished." });
   }
+  // then a download in progress
+  if (!side && dls.length) {
+    const d = dls[0], mb = d.bytes / 1048576;
+    side = `↓ ${d.name} ${mb >= 1 ? mb.toFixed(1) + " MB" : Math.round(d.bytes / 1024) + " KB"}${dls.length > 1 ? ` +${dls.length - 1}` : ""}`;
+    chip = `↓ ${mb.toFixed(0)} MB`;
+    soon = true;
+  }
   if (!side && event) {
     const mins = Math.round((event.start - now) / 60000);
     if (mins < -5) event = null;
@@ -324,7 +332,10 @@ function render() {
       if (mins <= 5 && eventPeeked !== event.start) { eventPeeked = event.start; toast({ app: "Calendar", badge: "📅", color: "#e8453c", title: event.title, body: mins <= 0 ? "Starting now" : `Starts in ${mins} min` }); }
     }
   }
+  // nothing else to say: the weather
+  if (!side && wx) side = wx.error ? "" : `${wx.icon} ${wx.temp}°${wx.unit}`;
   $("side").textContent = side;
+  $("side").title = wx && !wx.error ? `${wx.label}, ${wx.temp}°${wx.unit} in ${wx.place}` : wx?.error || "";
   $("side").classList.toggle("soon", soon);
   $("pillChip").textContent = chip;
   notch.classList.toggle("wide", !!chip);
@@ -462,3 +473,8 @@ notch.addEventListener("drop", e => {
   $("shelfPanel").classList.remove("dropping");
   if (e.dataTransfer.files.length) window.bridge.shelfAddFiles(e.dataTransfer.files);
 });
+
+// ---- weather + downloads ----
+window.bridge.onWeather(w => { wx = w; render(); });
+window.bridge.onDownloads(list => { dls = list; render(); });
+window.bridge.onDownloadDone(d => toast({ id: d.id, app: "Downloads", badge: "↓", color: "#0a84ff", title: d.name, body: "Downloaded. Click to show in folder." }));

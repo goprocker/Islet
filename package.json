@@ -19,6 +19,8 @@
       "calendar.js",
     "icons.js",
     "lyrics.js",
+    "weather.js",
+    "downloads.js",
     "claude-bridge.js",
     "hooks/**",
       "media.ps1",
