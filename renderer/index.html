@@ -11,6 +11,7 @@
   <div class="pill">
     <img class="art" alt="">
     <span class="priv" id="pillPriv"></span>
+    <svg class="moon" id="pillMoon" viewBox="0 0 24 24" aria-label="Do Not Disturb on" hidden><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
     <span class="chip" id="pillChip"></span>
     <i class="dot" aria-hidden="true"></i>
     <canvas id="mini" width="40" height="14"></canvas>
@@ -71,6 +72,9 @@
         <span class="side" id="side"></span>
       </div>
     </div>
+    <nav class="tools" aria-label="Islet tools">
+      <button id="dndBtn" aria-pressed="false" title="Do Not Disturb: pause notification pop-ups"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></button>
+    </nav>
   </div>
 </div>
 <script src="notch.js"></script>

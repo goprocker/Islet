@@ -25,7 +25,7 @@ body {
 }
 .notch.wide { width: 210px; }
 .notch.toast { width: 360px; height: 62px; border-radius: 0 0 22px 22px; }
-.notch.open { width: 500px; height: 150px; border-radius: 0 0 26px 26px; }
+.notch.open { width: 532px; height: 150px; border-radius: 0 0 26px 26px; }
 .notch.hidden { width: 0; height: 0; }
 .notch:focus-visible { box-shadow: inset 0 0 0 1.5px var(--accent); }
 
@@ -60,7 +60,7 @@ body {
 .tmeta span { color: #d1d1d6; }
 
 /* expanded */
-.full { padding: 12px 18px 10px; display: grid; grid-template-columns: 140px 1fr; gap: 16px; }
+.full { padding: 12px 10px 10px 18px; display: grid; grid-template-columns: 140px 1fr 26px; gap: 14px; }
 
 .claude { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding-right: 16px; border-right: 1px solid var(--faint); }
 .who { display: flex; align-items: center; gap: 6px; }
@@ -173,7 +173,7 @@ button.play svg { width: 19px; height: 19px; }
 /* album view: big art over a blurred copy of itself, click to close */
 .music { position: relative; }
 #artBtn { cursor: zoom-in; }
-.albumv { position: absolute; inset: -12px -18px -10px -16px; display: flex; align-items: center; gap: 14px; padding: 12px 18px; overflow: hidden; cursor: zoom-out; z-index: 2; background: #000; border-radius: 0 0 26px 0; }
+.albumv { position: absolute; inset: -12px -7px -10px -16px; display: flex; align-items: center; gap: 14px; padding: 12px 18px; overflow: hidden; cursor: zoom-out; z-index: 2; background: #000; border-radius: 0; }
 .albumv .bg { position: absolute; inset: -30px; width: calc(100% + 60px); height: calc(100% + 60px); filter: blur(28px) saturate(1.4) brightness(.55); }
 .albumv .big { position: relative; width: 104px; height: 104px; border-radius: 14px; box-shadow: 0 8px 24px #0008; flex: none; }
 .ainfo { position: relative; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
@@ -181,3 +181,10 @@ button.play svg { width: 19px; height: 19px; }
 .ainfo span { color: #ffffffb0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ainfo em { font-style: normal; color: #fff; font-size: 12px; margin-top: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .albumv:not([hidden]) { animation: in .25s ease; }
+
+/* tools: slim column on the right of the open notch */
+.tools { display: flex; flex-direction: column; gap: 4px; align-items: center; padding-left: 4px; border-left: 1px solid var(--faint); }
+.tools button { width: 24px; height: 24px; color: var(--muted); }
+.tools button svg { width: 14px; height: 14px; }
+.tools button[aria-pressed="true"] { color: #bf8cff; background: #bf8cff22; }
+.moon { width: 11px; height: 11px; fill: #bf8cff; flex: none; }

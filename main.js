@@ -10,7 +10,7 @@ const icons = require("./icons");
 const bridge = require("./claude-bridge");
 const lyrics = require("./lyrics");
 
-const W = 540, H = 190;
+const W = 580, H = 190;
 const PS = ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File"];
 const MEDIA = [...PS, path.join(__dirname, "media.ps1")];
 let win, tray, media, audio;
@@ -19,7 +19,7 @@ if (!app.requestSingleInstanceLock()) app.quit();
 
 // ---- settings (userData/config.json) ----
 const configPath = () => path.join(app.getPath("userData"), "config.json");
-const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true, lyrics: true, permissionWaitSeconds: 8 };
+const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true, lyrics: true, permissionWaitSeconds: 8, dnd: false, dndFrom: "", dndTo: "" };
 let config = { ...DEFAULTS };
 function loadConfig() {
   try { config = { ...DEFAULTS, ...JSON.parse(fs.readFileSync(configPath(), "utf8")) }; } catch { saveConfig(); }
@@ -261,6 +261,22 @@ ipcMain.on("openNotification", (_, id) => {
 });
 ipcMain.on("openProject", (_, cwd) => { if (cwd && fs.existsSync(cwd)) shell.openPath(cwd); });
 
+// ---- Do Not Disturb: manual switch, or a daily window like 22:00 -> 07:00 ----
+function dndActive() {
+  if (config.dnd) return true;
+  const mins = s => { const m = /^(\d{1,2}):(\d{2})$/.exec(s || ""); return m ? Number(m[1]) * 60 + Number(m[2]) : null; };
+  const from = mins(config.dndFrom), to = mins(config.dndTo);
+  if (from === null || to === null || from === to) return false;
+  const d = new Date(), now = d.getHours() * 60 + d.getMinutes();
+  return from < to ? now >= from && now < to : now >= from || now < to; // window may cross midnight
+}
+let lastDnd = null;
+function sendDnd(force) {
+  const on = dndActive();
+  if (force || on !== lastDnd) { lastDnd = on; send("dnd", on); if (tray) buildMenu(); }
+}
+ipcMain.on("toggleDnd", () => { config.dnd = !config.dnd; saveConfig(); sendDnd(); });
+
 // ---- timer ----
 let timerEnd = 0, timerDone;
 function setTimer(min) {
@@ -317,6 +333,7 @@ function buildMenu() {
       label: "Connect to Claude Code (exact status + Allow/Deny)", type: "checkbox", checked: bridge.installed(),
       click: () => { try { bridge.installed() ? bridge.uninstall() : bridge.install(); } catch (e) { console.warn(e.message); } buildMenu(); },
     },
+    { label: "Do Not Disturb", type: "checkbox", checked: dndActive(), click: () => { config.dnd = !config.dnd; saveConfig(); sendDnd(); } },
     { label: "Show notifications", type: "checkbox", checked: config.notifications, click: () => { config.notifications = !config.notifications; saveConfig(); } },
     { label: "Open settings file", click: () => shell.openPath(configPath()) },
     { label: "Start with Windows", type: "checkbox", checked: login(), click: () => { setLogin(!login()); buildMenu(); } },
@@ -347,13 +364,14 @@ app.whenReady().then(() => {
   startAudio();
   startSystem();
   win.webContents.on("did-finish-load", () => {
-    lastClaude = ""; iconFor = null; readClaude(); refreshSpotifyExtras(); send("timer", timerEnd);
+    lastClaude = ""; iconFor = null; readClaude(); refreshSpotifyExtras(); send("timer", timerEnd); sendDnd(true);
     calendar.poll(config.calendarIcsUrl, ev => send("calendar", ev));
   });
   setInterval(readClaude, 2000);
   setInterval(refreshSpotifyExtras, 30000);
+  setInterval(sendDnd, 30000); // schedule edges
   notifications.watch(async ({ aumid, xml, ...n }) => {
-    if (!config.notifications) return;
+    if (!config.notifications || dndActive()) return;
     // what a click opens: the toast's own link when it has one, else the app
     const launch = xml.match(/<toast[^>]*\blaunch="([^"]+)"/)?.[1]?.replace(/&amp;/g, "&");
     const protocol = /<toast[^>]*activationType="protocol"/.test(xml) && launch && /^[a-z][\w+.-]*:/i.test(launch);
@@ -365,7 +383,7 @@ app.whenReady().then(() => {
   // reload settings when the file is edited by hand
   fs.watchFile(configPath(), { interval: 2000 }, () => {
     const oldUrl = config.calendarIcsUrl;
-    loadConfig(); buildMenu(); placeWindow(); applyVisibility();
+    loadConfig(); buildMenu(); placeWindow(); applyVisibility(); sendDnd();
     if (config.calendarIcsUrl !== oldUrl) calendar.poll(config.calendarIcsUrl, ev => send("calendar", ev));
   });
   screen.on("display-added", () => { buildMenu(); placeWindow(); });

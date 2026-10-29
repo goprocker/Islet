@@ -393,3 +393,11 @@ function renderAlbum() {
   $("aLyric").textContent = lyricLines ? lyricNow : "";
 }
 setInterval(renderAlbum, 500);
+
+// ---- Do Not Disturb ----
+window.bridge.onDnd(on => {
+  $("dndBtn").setAttribute("aria-pressed", on);
+  $("dndBtn").title = on ? "Do Not Disturb is on. Click to turn off." : "Do Not Disturb: pause notification pop-ups";
+  $("pillMoon").toggleAttribute("hidden", !on); // svg has no .hidden property
+});
+$("dndBtn").onclick = () => window.bridge.toggleDnd();
