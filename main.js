@@ -59,14 +59,16 @@ function lines(stream, fn) {
     for (const l of parts) if (l.trim()) fn(l.trim());
   });
 }
-let lastTitle = "", spotifyIconSent = false;
+let lastTitle = "", iconFor = null; // player whose logo the page has
 function startMedia() {
   media = spawn("powershell.exe", [...MEDIA, "watch"], { windowsHide: true });
   lines(media.stdout, l => {
     let d; try { d = JSON.parse(l); } catch { return; }
-    if (d.active && !spotifyIconSent) {
-      spotifyIconSent = true;
-      icons.forSpotify().then(icon => icon ? send("spotifyIcon", icon) : (spotifyIconSent = false));
+    // logo of whichever player is shown (Spotify, a browser, VLC...)
+    if (d.active && d.source && d.source !== iconFor) {
+      const src = iconFor = d.source;
+      (/spotify/i.test(src) ? icons.forSpotify() : icons.forNotification(src))
+        .then(icon => send("spotifyIcon", icon || null));
     }
     send("media", d);
     const key = d.active ? `${d.title}|${d.artist}` : "";
@@ -336,7 +338,7 @@ app.whenReady().then(() => {
   startAudio();
   startSystem();
   win.webContents.on("did-finish-load", () => {
-    lastClaude = ""; spotifyIconSent = false; readClaude(); refreshSpotifyExtras(); send("timer", timerEnd);
+    lastClaude = ""; iconFor = null; readClaude(); refreshSpotifyExtras(); send("timer", timerEnd);
     calendar.poll(config.calendarIcsUrl, ev => send("calendar", ev));
   });
   setInterval(readClaude, 2000);

@@ -151,7 +151,7 @@ $("music").addEventListener("wheel", e => {
   window.bridge.volume(e.deltaY < 0 ? 0.05 : -0.05);
 }, { passive: false });
 window.bridge.onVolume(v => { volume = v; volShownUntil = Date.now() + 1500; render(); });
-window.bridge.onSpotifyIcon(src => { $("spIcon").src = src; });
+window.bridge.onSpotifyIcon(src => { src ? ($("spIcon").src = src) : $("spIcon").removeAttribute("src"); });
 window.bridge.onSpotifyExtras(d => { extras = d; render(); });
 
 window.bridge.onMedia(d => {
@@ -276,7 +276,7 @@ function render() {
     $("prog").style.width = (track.duration ? pos / track.duration * 100 : 0) + "%";
   } else {
     $("title").textContent = "Nothing playing";
-    $("artist").textContent = "Open Spotify to see what's playing";
+    $("artist").textContent = "Play music in Spotify or a browser to see it here";
     $("pos").textContent = $("dur").textContent = "0:00";
     $("prog").style.width = "0";
   }
@@ -284,7 +284,8 @@ function render() {
   $("playIcon").innerHTML = playing ? PAUSE : PLAY;
   $("play").setAttribute("aria-label", playing ? "Pause" : "Play");
 
-  $("like").hidden = !track;
+  // like only works for Spotify (its shortcut or Web API)
+  $("like").hidden = !track || !/spotify/i.test(track.source || "");
   const likedNow = extras.connected ? !!extras.liked : now < likeFlashUntil;
   $("like").setAttribute("aria-pressed", likedNow);
   $("like").setAttribute("aria-label", extras.connected ? (extras.liked ? "Remove from Liked Songs" : "Save to Liked Songs") : "Like or unlike in Spotify");
