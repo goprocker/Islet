@@ -397,7 +397,8 @@ ipcMain.handle("settings:save", (_, v) => {
     downloadsFolder: str(v.downloadsFolder, 500), clipboardHistory: !!v.clipboardHistory,
   };
   config = next;
-  saveConfig(); // the settings-file watcher applies everything
+  saveConfig(); // the settings-file watcher applies the rest
+  applyServices();
   if (!!v.hooks !== bridge.installed()) { try { v.hooks ? bridge.install() : bridge.uninstall(); } catch (e) { console.warn(e.message); } }
   if (!!v.login !== login()) setLogin(!!v.login);
   buildMenu();
@@ -434,6 +435,18 @@ function nextScreen() {
 
 // ---- weather + downloads ----
 function startWeather() { weather.poll(config.weatherCity.trim(), config.weatherUnit, w => send("weather", w)); }
+// restart calendar, weather and downloads when their settings differ from what they run with.
+// Compared with the last applied values, not the previous `config`: the settings window
+// replaces `config` before the file watcher fires.
+let applied = null;
+function applyServices() {
+  const now = { ics: config.calendarIcsUrl, wx: [config.weatherCity, config.weatherUnit].join("|"), dl: config.downloadsFolder };
+  if (!applied) { applied = now; return; } // first run: started by did-finish-load / startDownloads()
+  if (now.ics !== applied.ics) calendar.poll(config.calendarIcsUrl, ev => send("calendar", ev));
+  if (now.wx !== applied.wx) startWeather();
+  if (now.dl !== applied.dl) startDownloads();
+  applied = now;
+}
 function startDownloads() {
   const dir = config.downloadsFolder || app.getPath("downloads");
   downloads.watch(dir, list => send("downloads", list), done => {
@@ -538,6 +551,7 @@ app.whenReady().then(() => {
     startWeather();
   });
   startDownloads();
+  applyServices(); // remember what the services started with
   setInterval(readClaude, 2000);
   setInterval(refreshSpotifyExtras, 30000);
   setInterval(sendDnd, 30000); // schedule edges
@@ -557,10 +571,7 @@ app.whenReady().then(() => {
   });
   // reload settings when the file is edited by hand
   fs.watchFile(configPath(), { interval: 2000 }, () => {
-    const oldUrl = config.calendarIcsUrl, old = JSON.stringify([config.weatherCity, config.weatherUnit, config.downloadsFolder]);
-    loadConfig(); buildMenu(); placeWindow(); applyVisibility(); sendDnd(); sendTheme(); applyBanners();
-    if (config.calendarIcsUrl !== oldUrl) calendar.poll(config.calendarIcsUrl, ev => send("calendar", ev));
-    if (old !== JSON.stringify([config.weatherCity, config.weatherUnit, config.downloadsFolder])) { startWeather(); startDownloads(); }
+    loadConfig(); buildMenu(); placeWindow(); applyVisibility(); sendDnd(); sendTheme(); applyBanners(); applyServices();
   });
   screen.on("display-added", () => { buildMenu(); placeWindow(); });
   screen.on("display-removed", () => { buildMenu(); placeWindow(); });
