@@ -26,7 +26,8 @@ notch.addEventListener("mouseleave", () => {
   hovering = false;
   window.bridge.hover(false);
   clearTimeout(hoverTimer);
-  hoverTimer = setTimeout(() => setOpen(false), 400);
+  // an open permission card keeps the notch open
+  hoverTimer = setTimeout(() => { if (!perms.length) setOpen(false); }, 400);
 });
 window.bridge.onToggle(() => {
   // hotkey cycles: pill -> open -> hidden -> pill
@@ -40,7 +41,7 @@ function peek(ms) {
   if (notch.classList.contains("hidden") || hovering) return;
   setOpen(true);
   clearTimeout(hoverTimer);
-  hoverTimer = setTimeout(() => { if (!hovering) setOpen(false); }, ms);
+  hoverTimer = setTimeout(() => { if (!hovering && !perms.length) setOpen(false); }, ms);
 }
 
 // ---- toasts: notifications, battery, timer; one at a time ----
@@ -188,7 +189,33 @@ function renderClaude() {
   $("cSessions").closest(".claude").classList.toggle("multi", sessions.length > 1);
   render();
 }
-$("cProject").onclick = () => { const s = shown(); if (s?.cwd) window.bridge.openProject(s.cwd); };
+// ---- permission requests from Claude Code hooks: Allow / Deny right here ----
+const perms = [];
+function showPerm() {
+  const p = perms[0];
+  notch.classList.toggle("has-perm", !!p);
+  $("perm").hidden = !p;
+  if (!p) { if (!hovering) setOpen(false); return; }
+  pinned = null;
+  $("permTool").textContent = `Allow ${p.tool}${p.project ? ` in ${p.project}` : ""}?`;
+  $("permDetail").textContent = p.detail;
+  clearTimeout(hoverTimer);
+  if (!notch.classList.contains("hidden")) setOpen(true); // stays open until answered
+}
+function answerPerm(decision) {
+  const p = perms.shift();
+  if (p) window.bridge.answerPermission(p.id, decision);
+  showPerm();
+}
+$("permAllow").onclick = () => answerPerm("allow");
+$("permDeny").onclick = () => answerPerm("deny");
+window.bridge.onPermission(p => { perms.push(p); showPerm(); });
+window.bridge.onPermissionGone(id => {
+  const i = perms.findIndex(p => p.id === id);
+  if (i >= 0) { perms.splice(i, 1); showPerm(); }
+});
+
+$("cProject").onclick =() => { const s = shown(); if (s?.cwd) window.bridge.openProject(s.cwd); };
 
 // tint the notch with the album art's dominant colour
 function accentFrom(src) {
