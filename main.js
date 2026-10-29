@@ -253,12 +253,13 @@ function codexSessions() {
 }
 let lastClaude = "";
 function readClaude() {
-  // one entry per agent + project: its most recent session; Claude and Codex mixed, newest first
+  // one entry per agent + project folder: its most recent session; Claude and Codex mixed,
+  // newest first. Keyed by the full folder, so two "app" folders stay apart.
   const byProject = new Map();
   const all = [...recentTranscripts().slice(0, 12).map(readSession), ...codexSessions()].filter(Boolean);
   for (const s of all.sort((a, b) => b.time - a.time)) {
-    const key = `${s.agent}:${s.project}`;
-    if (!byProject.has(key)) byProject.set(key, s);
+    s.key = `${s.agent}:${s.cwd ? path.resolve(s.cwd).toLowerCase() : s.project}`; // Windows paths ignore case
+    if (!byProject.has(s.key)) byProject.set(s.key, s);
   }
   const sessions = [...byProject.values()].slice(0, 5);
   const key = JSON.stringify(sessions);
