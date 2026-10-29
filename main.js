@@ -275,14 +275,13 @@ function startBridge() {
   // hooks are installed once automatically; the tray item can remove them
   const flag = path.join(app.getPath("userData"), "hooks-set");
   if (!fs.existsSync(flag)) {
-    try { bridge.install(); } catch (e) { console.warn("hook install", e.message); }
-    fs.writeFileSync(flag, "1");
+    // the flag is only set once it worked, so a broken settings file is retried next start
+    try { bridge.install(); fs.writeFileSync(flag, "1"); } catch (e) { console.warn("hook install", e.message); }
   }
   // Codex support came later: add its hooks once for people who already had Claude's
   const codexFlag = path.join(app.getPath("userData"), "codex-hooks-set");
   if (!fs.existsSync(codexFlag) && bridge.installed()) {
-    try { bridge.install(); } catch (e) { console.warn("codex hook install", e.message); }
-    fs.writeFileSync(codexFlag, "1");
+    try { bridge.install(); fs.writeFileSync(codexFlag, "1"); } catch (e) { console.warn("codex hook install", e.message); }
   }
 }
 // clicked notification: open its link, or bring up the app that sent it
@@ -399,8 +398,9 @@ ipcMain.handle("settings:save", (_, v) => {
   config = next;
   saveConfig(); // the settings-file watcher applies the rest
   applyServices();
-  if (!!v.hooks !== bridge.installed()) { try { v.hooks ? bridge.install() : bridge.uninstall(); } catch (e) { console.warn(e.message); } }
   if (!!v.login !== login()) setLogin(!!v.login);
+  // a hooks file Islet can't read is reported in the settings window ("Couldn't save: …")
+  if (!!v.hooks !== bridge.installed()) { try { v.hooks ? bridge.install() : bridge.uninstall(); } finally { buildMenu(); } }
   buildMenu();
   return settingsView();
 });
@@ -510,7 +510,7 @@ function buildMenu() {
       },
     {
       label: "Connect to Claude Code and Codex", type: "checkbox", checked: bridge.installed(),
-      click: () => { try { bridge.installed() ? bridge.uninstall() : bridge.install(); } catch (e) { console.warn(e.message); } buildMenu(); },
+      click: () => { try { bridge.installed() ? bridge.uninstall() : bridge.install(); } catch (e) { dialog.showErrorBox("Islet couldn't change the hooks", e.message); } buildMenu(); },
     },
     { label: "Do Not Disturb", type: "checkbox", checked: dndActive(), click: () => { config.dnd = !config.dnd; saveConfig(); sendDnd(); } },
     { label: "Show notifications", type: "checkbox", checked: config.notifications, click: () => { config.notifications = !config.notifications; saveConfig(); applyBanners(); } },
