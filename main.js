@@ -8,6 +8,7 @@ const notifications = require("./notifications");
 const calendar = require("./calendar");
 const icons = require("./icons");
 const bridge = require("./claude-bridge");
+const lyrics = require("./lyrics");
 
 const W = 540, H = 190;
 const PS = ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File"];
@@ -18,7 +19,7 @@ if (!app.requestSingleInstanceLock()) app.quit();
 
 // ---- settings (userData/config.json) ----
 const configPath = () => path.join(app.getPath("userData"), "config.json");
-const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true };
+const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true, lyrics: true };
 let config = { ...DEFAULTS };
 function loadConfig() {
   try { config = { ...DEFAULTS, ...JSON.parse(fs.readFileSync(configPath(), "utf8")) }; } catch { saveConfig(); }
@@ -72,7 +73,14 @@ function startMedia() {
     }
     send("media", d);
     const key = d.active ? `${d.title}|${d.artist}` : "";
-    if (key !== lastTitle) { lastTitle = key; refreshSpotifyExtras(); }
+    if (key !== lastTitle) {
+      lastTitle = key;
+      refreshSpotifyExtras();
+      send("lyrics", null);
+      if (d.active && config.lyrics && d.title && d.duration > 30) {
+        lyrics.get(d.title, d.artist || "", d.duration).then(l => { if (lastTitle === key) send("lyrics", l); });
+      }
+    }
   });
   media.on("exit", () => { if (!app.isQuitting) setTimeout(startMedia, 2000); });
 }

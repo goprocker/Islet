@@ -18,6 +18,7 @@
       "notifications.js",
       "calendar.js",
     "icons.js",
+    "lyrics.js",
     "claude-bridge.js",
     "hooks/**",
       "media.ps1",
