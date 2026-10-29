@@ -41,7 +41,7 @@ window.addEventListener("blur", () => {
 window.bridge.onToggle(() => {
   // hotkey cycles: pill -> open -> hidden -> pill
   if (notch.classList.contains("hidden")) notch.classList.remove("hidden");
-  else if (notch.classList.contains("open")) { setOpen(false); notch.classList.add("hidden"); }
+  else if (notch.classList.contains("open")) { setOpen(false); window.BlackHole.cancel(notch); notch.classList.add("hidden"); }
   else setOpen(true);
 });
 
