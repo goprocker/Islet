@@ -1,0 +1,43 @@
+{
+  "name": "islet",
+  "version": "0.1.0",
+  "description": "Islet: a Dynamic-Island style notch for Windows: Spotify now playing + latest Claude Code activity",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis"
+  },
+  "build": {
+    "appId": "com.gopin.islet",
+    "productName": "Islet",
+    "asar": false,
+    "files": [
+      "main.js",
+      "preload.js",
+      "spotify-web.js",
+      "notifications.js",
+      "calendar.js",
+    "icons.js",
+      "media.ps1",
+      "spotify-audio.ps1",
+      "spotify-audio.cs",
+      "renderer/**"
+    ],
+    "win": {
+      "target": "nsis",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "runAfterFinish": true
+    }
+  },
+  "devDependencies": {
+    "electron": "37.10.3",
+    "electron-builder": "^25.1.8"
+  },
+  "allowScripts": {
+    "electron@37.10.3": true
+  }
+}
