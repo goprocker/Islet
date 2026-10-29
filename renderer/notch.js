@@ -257,6 +257,9 @@ function accentFrom(src) {
   img.src = src;
 }
 
+let lyricLines = null, lyricNow = "";
+window.bridge.onLyrics(l => { lyricLines = l; lyricNow = ""; render(); });
+
 function render() {
   const now = Date.now();
   // left of the controls: clock, or the volume right after a scroll
@@ -274,6 +277,12 @@ function render() {
     pos = Math.min(Math.max(pos, 0), track.duration || 0);
     $("pos").textContent = fmt(pos); $("dur").textContent = fmt(track.duration || 0);
     $("prog").style.width = (track.duration ? pos / track.duration * 100 : 0) + "%";
+    // current lyric line (slightly early so it lands with the singing)
+    if (lyricLines) {
+      let cur = null;
+      for (const l of lyricLines) { if (l.t <= pos + 0.3) cur = l; else break; }
+      lyricNow = cur ? (cur.line || "♪") : "";
+    }
   } else {
     $("title").textContent = "Nothing playing";
     $("artist").textContent = "Play music in Spotify or a browser to see it here";
@@ -290,7 +299,10 @@ function render() {
   $("like").setAttribute("aria-pressed", likedNow);
   $("like").setAttribute("aria-label", extras.connected ? (extras.liked ? "Remove from Liked Songs" : "Save to Liked Songs") : "Like or unlike in Spotify");
   $("like").title = extras.connected ? "" : "Like / unlike (sends Alt+Shift+B to Spotify)";
-  $("upnext").textContent = extras.next ? `Up next: ${extras.next.title} · ${extras.next.artist}` : "";
+  // lyrics win over "up next" when the song has them
+  const lyricShown = !!(lyricLines && track);
+  $("upnext").textContent = lyricShown ? lyricNow : extras.next ? `Up next: ${extras.next.title} · ${extras.next.artist}` : "";
+  $("upnext").classList.toggle("lyric", lyricShown);
 
   // right of the controls + pill chip: running timer beats the next meeting
   let side = "", chip = "", soon = false;
