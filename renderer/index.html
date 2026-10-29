@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'">
+<title>Islet</title>
+<link rel="stylesheet" href="notch.css">
+</head>
+<body>
+<div class="notch" id="notch" tabindex="0" role="button" aria-expanded="false" aria-label="Now playing. Hover to expand">
+  <div class="pill">
+    <img class="art" alt="">
+    <span class="chip" id="pillChip"></span>
+    <i class="dot" aria-hidden="true"></i>
+    <canvas id="mini" width="40" height="14"></canvas>
+    <span class="batt" id="pillBatt" hidden></span>
+  </div>
+
+  <div class="toastv" role="status" aria-live="polite">
+    <span class="badge" id="tBadge"></span>
+    <div class="tmeta">
+      <small id="tApp"></small>
+      <b id="tTitle"></b>
+      <span id="tBody"></span>
+    </div>
+  </div>
+
+  <div class="full">
+    <div class="claude" aria-live="polite">
+      <div class="who">
+        <i class="dot" aria-hidden="true"></i>
+        <button class="project" id="cProject" title="Open project folder">Claude</button>
+        <div class="sessions" id="cSessions"></div>
+        <small id="cAgo"></small>
+      </div>
+      <em id="cStatus"></em>
+      <ol id="cActions"><li>No activity yet</li></ol>
+    </div>
+    <div class="music" id="music" title="Scroll to change Spotify volume">
+      <div class="row">
+        <img class="art" alt="">
+        <div class="meta">
+          <div class="title" id="title">Nothing playing</div>
+          <div class="from"><img id="spIcon" class="appicon" alt="Spotify"><span class="artist" id="artist">Open Spotify to see what's playing</span></div>
+        </div>
+        <button id="like" class="like" aria-label="Save to Liked Songs" hidden><svg viewBox="0 0 24 24"><path d="M12 20.5 4.3 13a4.9 4.9 0 0 1 6.9-7l.8.8.8-.8a4.9 4.9 0 0 1 6.9 7z"/></svg></button>
+        <canvas id="wave" width="44" height="18"></canvas>
+      </div>
+      <div class="bar"><span id="pos">0:00</span><div class="seek" id="seekArea" title="Click to jump"><div class="track"><i id="prog"></i></div></div><span id="dur">0:00</span></div>
+      <div class="upnext" id="upnext"></div>
+      <div class="ctl">
+        <span class="left"><time id="clock"></time><span class="batt" id="batt" hidden></span></span>
+        <div class="buttons">
+          <button id="prev" aria-label="Previous song"><svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
+          <button id="play" class="play" aria-label="Play"><svg viewBox="0 0 24 24" id="playIcon"><path d="M7 4v16l13-8z"/></svg></button>
+          <button id="next" aria-label="Next song"><svg viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg></button>
+        </div>
+        <span class="side" id="side"></span>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="notch.js"></script>
+</body>
+</html>
