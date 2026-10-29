@@ -187,10 +187,13 @@ window.bridge.onMedia(d => {
   const before = track ? `${track.title}|${track.artist}` : null;
   track = d.active ? { ...d, at: Date.now() } : null;
   if (track && before && before !== `${track.title}|${track.artist}`) peek(2500);
-  if (track && track.art && track.art !== lastArt) {
-    lastArt = track.art;
-    document.querySelectorAll(".art").forEach(a => a.src = track.art);
-    accentFrom(track.art);
+  const art = track?.art || null;
+  if (art !== lastArt) {
+    // a song or player without a cover, or nothing playing: don't keep the last cover
+    lastArt = art;
+    document.querySelectorAll(".art").forEach(a => art ? (a.src = art) : a.removeAttribute("src"));
+    if (art) accentFrom(art);
+    else if (theme.accent === "album") document.documentElement.style.removeProperty("--accent");
   }
   render();
 });
