@@ -19,7 +19,7 @@ if (!app.requestSingleInstanceLock()) app.quit();
 
 // ---- settings (userData/config.json) ----
 const configPath = () => path.join(app.getPath("userData"), "config.json");
-const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true, lyrics: true };
+const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true, lyrics: true, permissionWaitSeconds: 8 };
 let config = { ...DEFAULTS };
 function loadConfig() {
   try { config = { ...DEFAULTS, ...JSON.parse(fs.readFileSync(configPath(), "utf8")) }; } catch { saveConfig(); }
@@ -239,6 +239,7 @@ function startBridge() {
     onStatus: () => { lastClaude = ""; readClaude(); },
     onPermission: p => send("permission", p),
     onPermissionGone: id => send("permissionGone", id),
+    permissionWait: () => Number(config.permissionWaitSeconds ?? 8) * 1000,
   });
   // hooks are installed once automatically; the tray item can remove them
   const flag = path.join(app.getPath("userData"), "hooks-set");
