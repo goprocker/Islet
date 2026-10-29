@@ -26,7 +26,7 @@ app.on("second-instance", () => openSettings());
 
 // ---- settings (userData/config.json) ----
 const configPath = () => path.join(app.getPath("userData"), "config.json");
-const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true, lyrics: true, permissionWaitSeconds: 8, dnd: false, dndFrom: "", dndTo: "", clipboardHistory: true, weatherCity: "", weatherUnit: "C", downloadsFolder: "", size: "normal", accent: "album", idleHide: false };
+const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true, lyrics: true, permissionWaitSeconds: 8, dnd: false, dndFrom: "", dndTo: "", clipboardHistory: true, weatherCity: "", weatherUnit: "C", downloadsFolder: "", size: "normal", accent: "album", idleHide: false, hideWindowsBanners: true };
 let config = { ...DEFAULTS };
 function loadConfig() {
   try { config = { ...DEFAULTS, ...JSON.parse(fs.readFileSync(configPath(), "utf8")) }; } catch { saveConfig(); }
@@ -361,7 +361,7 @@ ipcMain.handle("settings:save", (_, v) => {
     size: ["compact", "normal", "large"].includes(v.size) ? v.size : "normal",
     accent: /^#[0-9a-f]{6}$/i.test(v.accent) ? v.accent : "album",
     idleHide: !!v.idleHide, hideInFullscreen: !!v.hideInFullscreen,
-    notifications: !!v.notifications, dnd: !!v.dnd, dndFrom: time(v.dndFrom), dndTo: time(v.dndTo),
+    notifications: !!v.notifications, hideWindowsBanners: !!v.hideWindowsBanners, dnd: !!v.dnd, dndFrom: time(v.dndFrom), dndTo: time(v.dndTo),
     permissionWaitSeconds: Math.min(24, Math.max(0, Math.round(Number(v.permissionWaitSeconds) || 0))),
     lyrics: !!v.lyrics, spotifyClientId: str(v.spotifyClientId, 100),
     weatherCity: str(v.weatherCity, 100), weatherUnit: v.weatherUnit === "F" ? "F" : "C",
@@ -380,6 +380,27 @@ ipcMain.handle("settings:save", (_, v) => {
 function sendTheme() {
   win?.webContents.setZoomFactor(scale());
   send("theme", { accent: /^#[0-9a-f]{6}$/i.test(config.accent) ? config.accent : "album", idleHide: !!config.idleHide });
+}
+
+// ---- Windows banners: off while Islet shows notifications itself ----
+const bannersPath = () => path.join(app.getPath("userData"), "banners.json");
+let bannersSaved = null;
+function applyBanners(newIds) {
+  if (!bannersSaved) { try { bannersSaved = JSON.parse(fs.readFileSync(bannersPath(), "utf8")); } catch { bannersSaved = {}; } }
+  const want = config.notifications && config.hideWindowsBanners;
+  const before = Object.keys(bannersSaved).length;
+  if (want) notifications.hideBanners(bannersSaved, newIds);
+  else notifications.restoreBanners(bannersSaved);
+  if (Object.keys(bannersSaved).length !== before) fs.writeFileSync(bannersPath(), JSON.stringify(bannersSaved, null, 2));
+}
+
+// ---- move to the next screen (tray menu or Ctrl+Alt+M) ----
+function nextScreen() {
+  const all = screen.getAllDisplays();
+  if (all.length < 2) return;
+  const i = all.findIndex(d => d.id === targetDisplay().id);
+  config.displayId = all[(i + 1) % all.length].id;
+  saveConfig(); placeWindow(); buildMenu();
 }
 
 // ---- weather + downloads ----
@@ -429,7 +450,7 @@ function buildMenu() {
       ],
     },
     {
-      label: "Show on screen", enabled: displays.length > 1, submenu: displays.map((d, i) => ({
+      label: "Show on screen (Ctrl+Alt+M: next)", enabled: displays.length > 1, submenu: displays.map((d, i) => ({
         label: `Screen ${i + 1} (${d.size.width}×${d.size.height})`, type: "radio", checked: d.id === current,
         click: () => { config.displayId = d.id; saveConfig(); placeWindow(); },
       })),
@@ -450,7 +471,7 @@ function buildMenu() {
       click: () => { try { bridge.installed() ? bridge.uninstall() : bridge.install(); } catch (e) { console.warn(e.message); } buildMenu(); },
     },
     { label: "Do Not Disturb", type: "checkbox", checked: dndActive(), click: () => { config.dnd = !config.dnd; saveConfig(); sendDnd(); } },
-    { label: "Show notifications", type: "checkbox", checked: config.notifications, click: () => { config.notifications = !config.notifications; saveConfig(); } },
+    { label: "Show notifications", type: "checkbox", checked: config.notifications, click: () => { config.notifications = !config.notifications; saveConfig(); applyBanners(); } },
     { label: "Settings…", click: openSettings },
     { label: "Open settings file", click: () => shell.openPath(configPath()) },
     { label: "Start with Windows", type: "checkbox", checked: login(), click: () => { setLogin(!login()); buildMenu(); } },
@@ -492,7 +513,9 @@ app.whenReady().then(() => {
   setInterval(sendDnd, 30000); // schedule edges
   setInterval(pollClipboard, 1000);
   loadShelf();
+  applyBanners();
   notifications.watch(async ({ aumid, xml, ...n }) => {
+    if (aumid && bannersSaved && !(aumid in bannersSaved)) applyBanners([aumid]); // an app seen for the first time
     if (!config.notifications || dndActive()) return;
     // what a click opens: the toast's own link when it has one, else the app
     const launch = xml.match(/<toast[^>]*\blaunch="([^"]+)"/)?.[1]?.replace(/&amp;/g, "&");
@@ -505,13 +528,14 @@ app.whenReady().then(() => {
   // reload settings when the file is edited by hand
   fs.watchFile(configPath(), { interval: 2000 }, () => {
     const oldUrl = config.calendarIcsUrl, old = JSON.stringify([config.weatherCity, config.weatherUnit, config.downloadsFolder]);
-    loadConfig(); buildMenu(); placeWindow(); applyVisibility(); sendDnd(); sendTheme();
+    loadConfig(); buildMenu(); placeWindow(); applyVisibility(); sendDnd(); sendTheme(); applyBanners();
     if (config.calendarIcsUrl !== oldUrl) calendar.poll(config.calendarIcsUrl, ev => send("calendar", ev));
     if (old !== JSON.stringify([config.weatherCity, config.weatherUnit, config.downloadsFolder])) { startWeather(); startDownloads(); }
   });
   screen.on("display-added", () => { buildMenu(); placeWindow(); });
   screen.on("display-removed", () => { buildMenu(); placeWindow(); });
   globalShortcut.register("Control+Alt+N", () => send("toggle"));
+  globalShortcut.register("Control+Alt+M", nextScreen);
 });
 app.on("window-all-closed", e => e.preventDefault());
-app.on("will-quit", () => { globalShortcut.unregisterAll(); media?.kill(); audio?.kill(); sys?.kill(); });
+app.on("will-quit", () => { globalShortcut.unregisterAll(); if (bannersSaved) { notifications.restoreBanners(bannersSaved); fs.writeFileSync(bannersPath(), "{}"); } media?.kill(); audio?.kill(); sys?.kill(); });

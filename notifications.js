@@ -64,3 +64,59 @@ function watch(onNew) {
 }
 
 module.exports = { watch };
+
+// Windows' own banners (bottom right). Islet shows the pop-up instead, so it can
+// turn each app's banner off; notifications still reach the notification centre.
+// `saved` maps app id -> its previous ShowBanner value (null = not set), to undo exactly.
+const { execFileSync } = require("child_process");
+const fs = require("fs"), os = require("os");
+const KEY = "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings\\";
+// every app's current ShowBanner value, from one `reg query`
+function readBanners() {
+  const out = {};
+  try {
+    let id = null;
+    const text = execFileSync("reg", ["query", KEY.slice(0, -1), "/s", "/v", "ShowBanner"], { encoding: "utf8", windowsHide: true, stdio: ["ignore", "pipe", "ignore"] });
+    for (const line of text.split(/\r?\n/)) {
+      if (line.startsWith(KEY)) id = line.slice(KEY.length);
+      const m = line.match(/^\s+ShowBanner\s+REG_DWORD\s+0x([0-9a-f]+)/i);
+      if (m && id) out[id] = parseInt(m[1], 16);
+    }
+  } catch {}
+  return out;
+}
+// one `reg import` for all changes (null deletes the value)
+function writeBanners(values) {
+  const ids = Object.keys(values);
+  if (!ids.length) return;
+  const body = ids.map(id => `[${KEY}${id}]\r\n"ShowBanner"=${values[id] === null ? "-" : "dword:" + values[id].toString(16).padStart(8, "0")}\r\n`).join("\r\n");
+  const file = path.join(os.tmpdir(), `islet-banners-${process.pid}.reg`);
+  fs.writeFileSync(file, "﻿Windows Registry Editor Version 5.00\r\n\r\n" + body, "utf16le");
+  try { execFileSync("reg", ["import", file], { windowsHide: true, stdio: "ignore" }); } catch (e) { console.warn("banners", e.message); }
+  fs.rmSync(file, { force: true });
+}
+function hideBanners(saved, ids) {
+  if (!ids) {
+    try {
+      const { DatabaseSync } = require("node:sqlite");
+      const db = new DatabaseSync(DB, { readOnly: true });
+      ids = db.prepare("select PrimaryId id from NotificationHandler").all().map(r => r.id).filter(Boolean);
+      db.close();
+    } catch { ids = []; }
+  }
+  ids = ids.filter(id => !(id in saved) && !/[\]\r\n]/.test(id));
+  if (!ids.length) return;
+  const now = readBanners(), changes = {};
+  for (const id of ids) {
+    saved[id] = id in now ? now[id] : null;
+    changes[id] = 0;
+  }
+  writeBanners(changes);
+}
+function restoreBanners(saved) {
+  writeBanners(saved);
+  for (const id in saved) delete saved[id];
+}
+
+module.exports.hideBanners = hideBanners;
+module.exports.restoreBanners = restoreBanners;
