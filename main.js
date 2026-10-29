@@ -165,7 +165,8 @@ function recentTranscripts() {
       const p = path.join(dir, e.name);
       if (e.isDirectory()) walk(p);
       else if (e.name.endsWith(".jsonl")) {
-        const m = fs.statSync(p).mtimeMs;
+        let m;
+        try { m = fs.statSync(p).mtimeMs; } catch { continue; } // deleted or locked since readdir
         if (Date.now() - m < 30 * 60 * 1000) found.push({ p, m });
       }
     }
