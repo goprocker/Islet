@@ -27,25 +27,13 @@
     </div>
   </div>
 
-  <div class="arcv" aria-hidden="true">
-    <div class="reactor">
-      <i class="wave"></i><i class="wave w2"></i>
-      <svg viewBox="0 0 100 100">
-        <g class="r-ticks"><rect class="tick" x="49.2" y="3" width="1.6" height="5" transform="rotate(0 50 50)"/><rect class="tick" x="49.2" y="3" width="1.6" height="5" transform="rotate(15 50 50)"/><rect class="tick" x="49.2" y="3" width="1.6" height="5" transform="rotate(30 50 50)"/><rect class="tick" x="49.2" y="3" width="1.6" height="5" transform="rotate(45 50 50)"/><rect class="tick" x="49.2" y="3" width="1.6" height="5" transform="rotate(60 50 50)"/><rect class="tick" x="49.2" y="3" width="1.6" height="5" transform="rotate(75 50 50)"/><rect class="tick" x="49.2" y="3" width="1.6" height="5" transform="rotate(90 50 50)"/><rect class="tick" x="49.2" y="3" width="1.6" height="5" transform="rotate(105 50 50)"/><rect class="tick" x="49.2" y="3" width="1.6" height="5" transform="rotate(120 50 50)"/><rect class="tick" x="49.2" y="3" width="1.6" height="5" transform="rotate(135 50 50)"/><rect class="tick" x="49.2" y="3" width="1.6" height="5" transform="rotate(150 50 50)"/><rect class="tick" x="49.2" y="3" width="1.6" height="5" transform="rotate(165 50 50)"/><rect class="tick" x="49.2" y="3" width="1.6" height="5" transform="rotate(180 50 50)"/><rect class="tick" x="49.2" y="3" width="1.6" height="5" transform="rotate(195 50 50)"/><rect class="tick" x="49.2" y="3" width="1.6" height="5" transform="rotate(210 50 50)"/><rect class="tick" x="49.2" y="3" width="1.6" height="5" transform="rotate(225 50 50)"/><rect class="tick" x="49.2" y="3" width="1.6" height="5" transform="rotate(240 50 50)"/><rect class="tick" x="49.2" y="3" width="1.6" height="5" transform="rotate(255 50 50)"/><rect class="tick" x="49.2" y="3" width="1.6" height="5" transform="rotate(270 50 50)"/><rect class="tick" x="49.2" y="3" width="1.6" height="5" transform="rotate(285 50 50)"/><rect class="tick" x="49.2" y="3" width="1.6" height="5" transform="rotate(300 50 50)"/><rect class="tick" x="49.2" y="3" width="1.6" height="5" transform="rotate(315 50 50)"/><rect class="tick" x="49.2" y="3" width="1.6" height="5" transform="rotate(330 50 50)"/><rect class="tick" x="49.2" y="3" width="1.6" height="5" transform="rotate(345 50 50)"/></g>
-        <circle class="r-ring" cx="50" cy="50" r="40"/>
-        <g class="r-coils"><rect class="coil" x="46" y="17" width="8" height="11" rx="1.5" transform="rotate(0 50 50)"/><rect class="coil" x="46" y="17" width="8" height="11" rx="1.5" transform="rotate(36 50 50)"/><rect class="coil" x="46" y="17" width="8" height="11" rx="1.5" transform="rotate(72 50 50)"/><rect class="coil" x="46" y="17" width="8" height="11" rx="1.5" transform="rotate(108 50 50)"/><rect class="coil" x="46" y="17" width="8" height="11" rx="1.5" transform="rotate(144 50 50)"/><rect class="coil" x="46" y="17" width="8" height="11" rx="1.5" transform="rotate(180 50 50)"/><rect class="coil" x="46" y="17" width="8" height="11" rx="1.5" transform="rotate(216 50 50)"/><rect class="coil" x="46" y="17" width="8" height="11" rx="1.5" transform="rotate(252 50 50)"/><rect class="coil" x="46" y="17" width="8" height="11" rx="1.5" transform="rotate(288 50 50)"/><rect class="coil" x="46" y="17" width="8" height="11" rx="1.5" transform="rotate(324 50 50)"/></g>
-        <circle class="r-inner" cx="50" cy="50" r="24"/>
-        <path class="r-tri" d="M50 33 65 59H35z"/>
-        <circle class="r-core" cx="50" cy="50" r="10"/>
-      </svg>
+  <div class="bhv" aria-live="polite">
+    <canvas id="bhCanvas"></canvas>
+    <div class="bhmeta">
+      <b id="bhPct"></b>
+      <small id="bhLabel"></small>
     </div>
-    <div class="arcmeta">
-      <small>J.A.R.V.I.S. <span>// power systems</span></small>
-      <b><span id="arcPct">0</span>%</b>
-      <span class="arcbar"><i id="arcFill"></i></span>
-      <em>Arc reactor online</em>
-    </div>
-    <i class="arcscan"></i>
+    <i class="bhwave" aria-hidden="true"></i>
   </div>
 
   <div class="full">
@@ -117,6 +105,7 @@
     </nav>
   </div>
 </div>
+<script src="blackhole.js"></script>
 <script src="notch.js"></script>
 </body>
 </html>

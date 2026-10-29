@@ -59,7 +59,7 @@ let toastBusy = false;
 function toast(t) { toasts.push(t); if (!toastBusy) nextToast(); }
 function nextToast() {
   const t = toasts.shift();
-  if (!t || notch.classList.contains("hidden")) { toastBusy = false; notch.classList.remove("toast", "arc"); return; }
+  if (!t || notch.classList.contains("hidden")) { toastBusy = false; notch.classList.remove("toast"); return; }
   toastBusy = true;
   // real app logo when we have one, else a coloured letter / emoji badge
   const badge = $("tBadge");
@@ -74,19 +74,6 @@ function nextToast() {
   $("tTitle").textContent = t.title || "";
   $("tBody").textContent = t.body || "";
   notch.classList.add("toast");
-  notch.classList.toggle("arc", !!t.arc);
-  if (t.arc) {
-    // count the % up while the bar fills, synced to the reactor boot
-    $("arcFill").style.width = "0";
-    requestAnimationFrame(() => requestAnimationFrame(() => { $("arcFill").style.width = `${t.arc * 100}%`; }));
-    const start = performance.now(), to = Math.round(t.arc * 100);
-    const tick = now => {
-      const k = Math.min(1, (now - start - 900) / 1200);
-      $("arcPct").textContent = Math.round(to * Math.max(0, 1 - (1 - k) ** 3));
-      if (k < 1 && notch.classList.contains("arc")) requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
-  }
   current = t;
   const end = () => {
     // hovered pop-ups wait for the pointer to leave
@@ -99,7 +86,7 @@ let current = null, toastTimer;
 function endToast() {
   clearTimeout(toastTimer);
   current = null;
-  notch.classList.remove("toast", "arc");
+  notch.classList.remove("toast");
   setTimeout(nextToast, 450);
 }
 $("notch").querySelector(".toastv").addEventListener("click", () => {
@@ -114,7 +101,20 @@ function battIcon(level, charging) {
   const w = Math.max(1, Math.round(14 * level));
   return `<svg viewBox="0 0 20 10" aria-hidden="true"><rect class="shell" x=".5" y=".5" width="16" height="9" rx="2.5"/><rect class="cap" x="17.5" y="3" width="1.5" height="4" rx=".7"/><rect class="lvl" x="1.5" y="1.5" width="${w}" height="7" rx="1.5"/>${charging ? '<path class="bolt" d="M10.2 .4 5.4 5.8h2.9L7.2 9.6 12 4.2H9.1z"/>' : ""}</svg>`;
 }
+let battery = null;
+// plug in / unplug: black hole. Only real transitions play (first report just sets the state),
+// flaky connectors are debounced, and a new event interrupts whatever is playing
+let ac = null, acTimer;
+window.bridge.onPower(({ ac: now }) => {
+  clearTimeout(acTimer);
+  acTimer = setTimeout(() => {
+    if (ac === null || now === ac) { ac = now; return; }
+    ac = now;
+    if (!notch.classList.contains("hidden")) window.BlackHole.play(notch, now ? "on" : "off", battery?.level);
+  }, 200);
+});
 navigator.getBattery?.().then(b => {
+  battery = b;
   const show = () => {
     const pct = Math.round(b.level * 100);
     for (const el of [$("batt"), $("pillBatt")]) {
@@ -141,9 +141,6 @@ navigator.getBattery?.().then(b => {
   });
   let warned = false;
   const pct = () => `${Math.round(b.level * 100)}%`;
-  b.addEventListener("chargingchange", () => toast(b.charging
-    ? { app: "Battery", badge: "⚡", color: "#30a14e", title: "Charging", body: pct(), arc: b.level, ms: 4200 }
-    : { app: "Battery", badge: "🔋", title: "On battery", body: pct() }));
   b.addEventListener("levelchange", () => {
     if (!b.charging && b.level <= 0.2 && !warned) { warned = true; toast({ app: "Battery", badge: "!", color: "#d1453b", title: "Battery low", body: `${pct()} left. Plug in soon.` }); }
     if (b.level > 0.25) warned = false;

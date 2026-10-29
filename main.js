@@ -1,4 +1,4 @@
-const { app, BrowserWindow, globalShortcut, ipcMain, screen, Tray, Menu, nativeImage, shell, clipboard, dialog } = require("electron");
+const { app, BrowserWindow, globalShortcut, ipcMain, screen, Tray, Menu, nativeImage, shell, clipboard, dialog, powerMonitor } = require("electron");
 const { spawn } = require("child_process");
 const fs = require("fs");
 const path = require("path");
@@ -567,7 +567,12 @@ app.whenReady().then(() => {
   startMedia();
   startAudio();
   startSystem();
+  // AC/DC: powerMonitor rides on WM_POWERBROADCAST, so no polling. The renderer dedupes and debounces;
+  // resume re-sends in case the charger changed while asleep
+  const sendPower = () => send("power", { ac: !powerMonitor.isOnBatteryPower() });
+  for (const ev of ["on-ac", "on-battery", "resume"]) powerMonitor.on(ev, sendPower);
   win.webContents.on("did-finish-load", () => {
+    sendPower();
     lastClaude = ""; iconFor = null; readClaude(); refreshSpotifyExtras(); send("timer", timerEnd); sendDnd(true); send("shelf", shelf); sendTheme();
     send("clipboard", clips.map(c => c.replace(/\s+/g, " ").slice(0, 160)));
     calendar.poll(config.calendarIcsUrl, ev => send("calendar", ev));

@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld("bridge", {
   onTimer: on("timer"),
   onSpotifyIcon: on("spotifyIcon"),
   onSystem: on("system"),
+  onPower: on("power"),
   onLyrics: on("lyrics"),
   onDnd: on("dnd"),
   toggleDnd: () => ipcRenderer.send("toggleDnd"),
