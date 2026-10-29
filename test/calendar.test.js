@@ -27,3 +27,20 @@ test("unsupported FREQ is not guessed", () => {
 test("single event later today", () => {
   assert.strictEqual(nextEvent(ics(""), new Date("2026-10-26T09:00:00Z")).start, Date.parse("2026-10-26T10:00:00Z"));
 });
+
+test("old daily series without an end is still found", () => {
+  const old = `BEGIN:VEVENT\nDTSTART:20000101T100000Z\nRRULE:FREQ=DAILY\nSUMMARY:Old\nEND:VEVENT`;
+  assert.strictEqual(nextEvent(old, new Date("2026-10-29T09:00:00Z")).start, Date.parse("2026-10-29T10:00:00Z"));
+});
+test("COUNT still ends a long-running series after skipping ahead", () => {
+  const ev = count => `BEGIN:VEVENT\nDTSTART:20260101T100000Z\nRRULE:FREQ=WEEKLY;BYDAY=MO,TH;COUNT=${count}\nSUMMARY:W\nEND:VEVENT`;
+  // 2026-01-01 is a Thursday; Thu 29 Oct is occurrence 87 (Jan 1 + 43 weeks x 2), Mon 26 Oct is 86
+  assert.strictEqual(nextEvent(ev(87), new Date("2026-10-29T09:00:00Z")).start, Date.parse("2026-10-29T10:00:00Z"));
+  assert.strictEqual(nextEvent(ev(86), new Date("2026-10-29T09:00:00Z")), null);
+});
+test("100 daily series from 2007 are fast", () => {
+  const one = `BEGIN:VEVENT\nDTSTART:20070101T100000Z\nRRULE:FREQ=DAILY;INTERVAL=3\nSUMMARY:X\nEND:VEVENT\n`;
+  const t = performance.now();
+  nextEvent(one.repeat(100), new Date("2026-10-29T09:00:00Z"));
+  assert.ok(performance.now() - t < 50, `took ${performance.now() - t} ms`);
+});
