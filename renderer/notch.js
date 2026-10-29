@@ -171,7 +171,7 @@ window.bridge.onMedia(d => {
 
 // ---- Claude ----
 const STATUS = { working: "Working", waiting: "Needs you", done: "Done" };
-const keyOf = s => `${s.agent}:${s.project}`;
+const keyOf = s => s.key; // agent + full project folder, set in main.js
 const shown = () => sessions.find(s => keyOf(s) === pinned)
   // nothing picked: whoever needs you, else the most recent
   || sessions.find(s => s.status === "waiting") || sessions[0];
@@ -206,7 +206,7 @@ function renderClaude() {
     b.dataset.status = x.status;
     b.setAttribute("aria-pressed", x === s);
     b.dataset.agent = x.agent;
-    b.title = `${x.agent === "codex" ? "Codex" : "Claude"} · ${x.project}: ${STATUS[x.status]}`;
+    b.title = `${x.agent === "codex" ? "Codex" : "Claude"} · ${x.cwd || x.project}: ${STATUS[x.status]}`;
     b.append(document.createElement("i"), x.project);
     // first click picks the project, clicking the picked one opens its folder
     b.onclick = () => { if (x === shown() && x.cwd) window.bridge.openProject(x.cwd); else { pinned = keyOf(x); renderClaude(); } };
