@@ -1,5 +1,6 @@
 // Next calendar event from a private iCal (.ics) link (Google / Outlook "secret address").
-// Handles single events and simple weekly/daily repeats; skips all-day events.
+// Handles single events and DAILY / WEEKLY repeats (INTERVAL, COUNT, UNTIL, BYDAY);
+// skips all-day events and doesn't guess other repeat rules.
 let timer = null;
 
 function unfold(ics) { return ics.replace(/\r?\n[ \t]/g, ""); }
@@ -11,6 +12,31 @@ function parseDate(prop, value) {
   const [, y, mo, d, h, mi, s, z] = m.map((v, i) => (i && i < 7 ? Number(v) : v));
   // TZID times are treated as this PC's local time (fine when the calendar is in your own zone)
   return z ? new Date(Date.UTC(y, mo - 1, d, h, mi, s)) : new Date(y, mo - 1, d, h, mi, s);
+}
+
+const DAYS = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
+// First occurrence of a repeating event at or after `now`, or null. Walks day by day from
+// DTSTART (the first occurrence) so COUNT is counted from the real start.
+function nextOccurrence(start, rr, now) {
+  const rule = Object.fromEntries(rr.split(";").map(p => p.split("=")));
+  if (rule.FREQ !== "DAILY" && rule.FREQ !== "WEEKLY") return start >= now ? start : null; // unsupported: first date only
+  const interval = Math.max(1, Number(rule.INTERVAL) || 1);
+  const count = rule.COUNT ? Number(rule.COUNT) : Infinity;
+  const until = rule.UNTIL ? parseDate("", rule.UNTIL.length === 8 ? rule.UNTIL + "T235959" : rule.UNTIL) : null;
+  const byday = rule.BYDAY ? new Set(rule.BYDAY.split(",").map(d => DAYS.indexOf(d.slice(-2)))) : null;
+  const days = byday || (rule.FREQ === "WEEKLY" ? new Set([start.getDay()]) : null);
+  const weekStart = new Date(start); weekStart.setDate(start.getDate() - ((start.getDay() + 6) % 7)); // Monday
+  const horizon = now.getTime() + 2 * 864e5;
+  let seen = 0;
+  for (let d = 0; d < 20 * 366; d++) {
+    const day = new Date(start); day.setDate(start.getDate() + d); // keeps the local time of day
+    if (day.getTime() > horizon || (until && day > until)) return null;
+    const unit = rule.FREQ === "DAILY" ? d : Math.floor(Math.round((day - weekStart) / 864e5) / 7);
+    if (unit % interval || (days && !days.has(day.getDay()))) continue;
+    if (++seen > count) return null;
+    if (day >= now) return day;
+  }
+  return null;
 }
 
 function nextEvent(ics, now = new Date()) {
@@ -26,13 +52,9 @@ function nextEvent(ics, now = new Date()) {
     let start = parseDate(ds.prop, ds.value);
     if (!start) continue;
     const rr = get("RRULE")?.value || "";
-    const freq = rr.match(/FREQ=(DAILY|WEEKLY)/)?.[1];
-    const until = rr.match(/UNTIL=(\d{8}T?\d{0,6}Z?)/)?.[1];
-    const untilDate = until ? parseDate("", until.length === 8 ? until + "T235959" : until) : null;
-    if (freq && start < now) {
-      const step = (freq === "DAILY" ? 1 : 7) * 864e5 * Number(rr.match(/INTERVAL=(\d+)/)?.[1] || 1);
-      start = new Date(start.getTime() + Math.ceil((now - start) / step) * step);
-      if (untilDate && start > untilDate) continue;
+    if (rr) {
+      start = nextOccurrence(start, rr, now);
+      if (!start) continue;
     }
     if (start < now) continue;
     const summary = (get("SUMMARY")?.value || "Event").replace(/\\,/g, ",").replace(/\\n/g, " ");
