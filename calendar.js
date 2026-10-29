@@ -1,6 +1,6 @@
 // Next calendar event from a private iCal (.ics) link (Google / Outlook "secret address").
 // Handles single events and simple weekly/daily repeats; skips all-day events.
-let timer = null;
+let timer = null, generation = 0; // each poll() call starts a new generation
 
 function unfold(ics) { return ics.replace(/\r?\n[ \t]/g, ""); }
 
@@ -43,11 +43,13 @@ function nextEvent(ics, now = new Date()) {
 
 function poll(url, onEvent) {
   clearInterval(timer);
+  const gen = ++generation; // replies from an older poll() are dropped
   if (!url) return onEvent(null);
   const run = async () => {
     try {
       const r = await fetch(url);
-      if (r.ok) onEvent(nextEvent(await r.text()));
+      const text = r.ok ? await r.text() : null;
+      if (gen === generation && text !== null) onEvent(nextEvent(text));
     } catch (e) { console.warn("calendar", e.message); }
   };
   run();
