@@ -158,6 +158,16 @@ Everything runs locally. Network calls: lrclib.net (title and artist, when lyric
 2. Tray → **Quit** (puts Windows banners back).
 3. Delete the folder and `%APPDATA%\islet`.
 
+## Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| Notifications still show in the bottom-right corner | Start Islet from a normal terminal or Start with Windows, not from a sandboxed shell, which can't write the registry. The tray shows "Windows banners still on for N apps" when the write was blocked. Check with `reg query "HKCU\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings\<app id>" /v ShowBanner` (expect `0x0`). If it is `0x0` and banners still appear, sign out and back in once. |
+| Banners stay off after Islet crashed | They're restored on a normal quit. After a crash, start Islet and quit it from the tray, or turn off **Turn off Windows' own banners** in Settings. |
+| The Codex column stays empty | Codex runs new hooks only after you trust them. Approve Islet's hooks when Codex asks, or through `/hooks`. |
+| The installer is blocked | Smart App Control blocks unsigned builds. Run from source with `npm start`. |
+| Islet doesn't start the second time | Only one copy runs. The second launch opens the settings of the running copy instead. |
+
 ## Contributing
 
 Issues and pull requests are welcome. Keep changes small, use [Conventional Commits](https://www.conventionalcommits.org/), and say how you tested.
