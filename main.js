@@ -1,4 +1,4 @@
-const { app, BrowserWindow, globalShortcut, ipcMain, screen, Tray, Menu, nativeImage, shell } = require("electron");
+const { app, BrowserWindow, globalShortcut, ipcMain, screen, Tray, Menu, nativeImage, shell, clipboard, dialog } = require("electron");
 const { spawn } = require("child_process");
 const fs = require("fs");
 const path = require("path");
@@ -19,7 +19,7 @@ if (!app.requestSingleInstanceLock()) app.quit();
 
 // ---- settings (userData/config.json) ----
 const configPath = () => path.join(app.getPath("userData"), "config.json");
-const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true, lyrics: true, permissionWaitSeconds: 8, dnd: false, dndFrom: "", dndTo: "" };
+const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true, lyrics: true, permissionWaitSeconds: 8, dnd: false, dndFrom: "", dndTo: "", clipboardHistory: true };
 let config = { ...DEFAULTS };
 function loadConfig() {
   try { config = { ...DEFAULTS, ...JSON.parse(fs.readFileSync(configPath(), "utf8")) }; } catch { saveConfig(); }
@@ -277,6 +277,59 @@ function sendDnd(force) {
 }
 ipcMain.on("toggleDnd", () => { config.dnd = !config.dnd; saveConfig(); sendDnd(); });
 
+// ---- clipboard history: last 5 copied texts, kept in memory only ----
+let clips = [], lastClip = clipboard.readText();
+function pollClipboard() {
+  if (!config.clipboardHistory) { if (clips.length) { clips = []; send("clipboard", []); } return; }
+  const t = clipboard.readText();
+  if (!t || t === lastClip || t.length > 20000) { lastClip = t; return; }
+  lastClip = t;
+  clips = [t, ...clips.filter(c => c !== t)].slice(0, 5);
+  send("clipboard", clips.map(c => c.replace(/\s+/g, " ").slice(0, 160)));
+}
+ipcMain.on("copyClip", (_, i) => { if (clips[i] !== undefined) { clipboard.writeText(clips[i]); lastClip = clips[i]; } });
+ipcMain.on("clearClips", () => { clips = []; send("clipboard", []); });
+
+// ---- file shelf: hold files here, drag them out anywhere ----
+const shelfPath = () => path.join(app.getPath("userData"), "shelf.json");
+let shelf = []; // [{ path, name, icon: dataURL }]
+const dragIcons = new Map();
+async function shelfAdd(paths) {
+  for (const p of paths) {
+    if (!p || shelf.some(f => f.path === p) || !fs.existsSync(p)) continue;
+    let img = null;
+    try { img = await app.getFileIcon(p, { size: "normal" }); } catch {}
+    dragIcons.set(p, img);
+    shelf.push({ path: p, name: path.basename(p), icon: img?.toDataURL() || null });
+  }
+  saveShelf();
+}
+function saveShelf() {
+  shelf = shelf.filter(f => fs.existsSync(f.path)).slice(-12);
+  fs.writeFileSync(shelfPath(), JSON.stringify(shelf.map(f => f.path)));
+  send("shelf", shelf);
+}
+async function loadShelf() {
+  let paths = [];
+  try { paths = JSON.parse(fs.readFileSync(shelfPath(), "utf8")); } catch {}
+  shelf = [];
+  await shelfAdd(paths);
+}
+ipcMain.on("shelfAdd", (_, paths) => shelfAdd(Array.isArray(paths) ? paths : []));
+ipcMain.on("shelfPick", async () => {
+  const r = await dialog.showOpenDialog({ title: "Add files to the Islet shelf", properties: ["openFile", "multiSelections"] });
+  if (!r.canceled) shelfAdd(r.filePaths);
+});
+ipcMain.on("shelfRemove", (_, p) => { shelf = shelf.filter(f => f.path !== p); saveShelf(); });
+ipcMain.on("shelfOpen", (_, p) => { if (shelf.some(f => f.path === p)) shell.showItemInFolder(p); });
+ipcMain.on("shelfDrag", (e, p) => {
+  if (!shelf.some(f => f.path === p)) return;
+  const icon = dragIcons.get(p);
+  e.sender.startDrag({ file: p, icon: icon && !icon.isEmpty() ? icon : nativeImage.createFromDataURL(EMPTY_PNG) });
+});
+// 1x1 transparent fallback: startDrag needs some icon
+const EMPTY_PNG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
+
 // ---- timer ----
 let timerEnd = 0, timerDone;
 function setTimer(min) {
@@ -364,12 +417,15 @@ app.whenReady().then(() => {
   startAudio();
   startSystem();
   win.webContents.on("did-finish-load", () => {
-    lastClaude = ""; iconFor = null; readClaude(); refreshSpotifyExtras(); send("timer", timerEnd); sendDnd(true);
+    lastClaude = ""; iconFor = null; readClaude(); refreshSpotifyExtras(); send("timer", timerEnd); sendDnd(true); send("shelf", shelf);
+    send("clipboard", clips.map(c => c.replace(/\s+/g, " ").slice(0, 160)));
     calendar.poll(config.calendarIcsUrl, ev => send("calendar", ev));
   });
   setInterval(readClaude, 2000);
   setInterval(refreshSpotifyExtras, 30000);
   setInterval(sendDnd, 30000); // schedule edges
+  setInterval(pollClipboard, 1000);
+  loadShelf();
   notifications.watch(async ({ aumid, xml, ...n }) => {
     if (!config.notifications || dndActive()) return;
     // what a click opens: the toast's own link when it has one, else the app

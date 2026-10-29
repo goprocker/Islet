@@ -401,3 +401,64 @@ window.bridge.onDnd(on => {
   $("pillMoon").toggleAttribute("hidden", !on); // svg has no .hidden property
 });
 $("dndBtn").onclick = () => window.bridge.toggleDnd();
+
+// ---- tools panels: clipboard history and file shelf (one at a time) ----
+const PANELS = { clipBtn: "clipPanel", shelfBtn: "shelfPanel" };
+function showPanel(btnId) {
+  for (const [b, p] of Object.entries(PANELS)) {
+    const on = b === btnId && $(p).hidden;
+    $(p).hidden = !on;
+    $(b).setAttribute("aria-pressed", on);
+  }
+}
+for (const b of Object.keys(PANELS)) $(b).onclick = () => showPanel(b);
+// panels close with the notch
+new MutationObserver(() => { if (!notch.classList.contains("open")) showPanel(null); })
+  .observe(notch, { attributes: true, attributeFilter: ["class"] });
+
+window.bridge.onClipboard(list => {
+  $("clipEmpty").hidden = list.length > 0;
+  $("clipList").replaceChildren(...list.map((text, i) => {
+    const li = document.createElement("li"), b = document.createElement("button");
+    b.textContent = text;
+    b.title = "Copy again";
+    b.onclick = () => { window.bridge.copyClip(i); b.textContent = "Copied"; setTimeout(() => (b.textContent = text), 900); };
+    li.append(b);
+    return li;
+  }));
+});
+$("clipClear").onclick = () => window.bridge.clearClips();
+
+window.bridge.onShelf(files => {
+  $("shelfEmpty").hidden = files.length > 0;
+  $("shelfList").replaceChildren(...files.map(f => {
+    const li = document.createElement("li");
+    const b = document.createElement("button");
+    b.className = "file";
+    b.draggable = true;
+    b.title = `${f.name}\nDrag out to use it, double-click to show in folder`;
+    if (f.icon) b.append(Object.assign(document.createElement("img"), { src: f.icon, alt: "" }));
+    b.append(Object.assign(document.createElement("span"), { textContent: f.name }));
+    b.ondragstart = e => { e.preventDefault(); window.bridge.shelfDrag(f.path); };
+    b.ondblclick = () => window.bridge.shelfOpen(f.path);
+    const x = Object.assign(document.createElement("button"), { className: "x", textContent: "✕", title: `Remove ${f.name} from shelf` });
+    x.onclick = () => window.bridge.shelfRemove(f.path);
+    li.append(b, x);
+    return li;
+  }));
+});
+$("shelfAddBtn").onclick = () => window.bridge.shelfPick();
+// dropping files anywhere on the notch opens it on the shelf and adds them
+notch.addEventListener("dragover", e => {
+  if (![...e.dataTransfer.types].includes("Files")) return;
+  e.preventDefault();
+  if (!notch.classList.contains("open")) setOpen(true);
+  if ($("shelfPanel").hidden) showPanel("shelfBtn");
+  $("shelfPanel").classList.add("dropping");
+});
+notch.addEventListener("dragleave", () => $("shelfPanel").classList.remove("dropping"));
+notch.addEventListener("drop", e => {
+  e.preventDefault();
+  $("shelfPanel").classList.remove("dropping");
+  if (e.dataTransfer.files.length) window.bridge.shelfAddFiles(e.dataTransfer.files);
+});

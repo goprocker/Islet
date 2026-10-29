@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer } = require("electron");
+const { contextBridge, ipcRenderer, webUtils } = require("electron");
 
 const on = ch => fn => ipcRenderer.on(ch, (_, d) => fn(d));
 contextBridge.exposeInMainWorld("bridge", {
@@ -16,6 +16,16 @@ contextBridge.exposeInMainWorld("bridge", {
   onLyrics: on("lyrics"),
   onDnd: on("dnd"),
   toggleDnd: () => ipcRenderer.send("toggleDnd"),
+  onClipboard: on("clipboard"),
+  copyClip: i => ipcRenderer.send("copyClip", i),
+  clearClips: () => ipcRenderer.send("clearClips"),
+  onShelf: on("shelf"),
+  // dropped File objects -> real paths (File.path was removed from Electron)
+  shelfAddFiles: files => ipcRenderer.send("shelfAdd", [...files].map(f => webUtils.getPathForFile(f)).filter(Boolean)),
+  shelfPick: () => ipcRenderer.send("shelfPick"),
+  shelfRemove: p => ipcRenderer.send("shelfRemove", p),
+  shelfOpen: p => ipcRenderer.send("shelfOpen", p),
+  shelfDrag: p => ipcRenderer.send("shelfDrag", p),
   onPermission: on("permission"),
   onPermissionGone: on("permissionGone"),
   answerPermission: (id, decision) => ipcRenderer.send("permissionAnswer", id, decision),
