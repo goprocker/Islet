@@ -262,7 +262,9 @@ button.link:hover { color: var(--text); }
 /* ---- power plugged / unplugged: black hole (Gargantua). Canvas drawn by blackhole.js ---- */
 .notch.bh { width: 340px; height: 84px; border-radius: 0 0 30px 30px; }
 .notch.bh .pill, .notch.bh .toastv, .notch.bh .full { opacity: 0; pointer-events: none; }
-.notch.bh::after, .notch.bh::before { opacity: 0; } /* green charging edge waits until we're done */
+/* green charging edge waits until we're done. animation: none too: edgeglow's keyframe sets
+   opacity itself and would beat the plain opacity: 0 (same specificity, this rule is later) */
+.notch.bh::after, .notch.bh::before { opacity: 0; animation: none; }
 .bhv {
   position: absolute; inset: 0; z-index: 12; pointer-events: none; opacity: 0;
   display: flex; align-items: center; justify-content: space-between; padding: 0 22px 0 14px;
