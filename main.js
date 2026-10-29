@@ -437,10 +437,11 @@ function sendTheme() {
 
 // ---- Windows banners: off while Islet shows notifications itself ----
 const bannersPath = () => path.join(app.getPath("userData"), "banners.json");
-let bannersSaved = null, bannersMissed = 0;
+let bannersSaved = null, bannersMissed = 0, locked = false;
 function applyBanners(newIds) {
   if (!bannersSaved) { try { bannersSaved = JSON.parse(fs.readFileSync(bannersPath(), "utf8")); } catch { bannersSaved = {}; } }
-  const want = config.notifications && config.hideWindowsBanners;
+  // banners come back while locked: Islet can't draw over the lock screen, Windows can
+  const want = config.notifications && config.hideWindowsBanners && !locked;
   const before = Object.keys(bannersSaved).length;
   const missed = want ? notifications.hideBanners(bannersSaved, newIds) : (notifications.restoreBanners(bannersSaved), 0);
   // a full pass tells whether Windows accepted the change; the tray shows it
@@ -572,6 +573,8 @@ app.whenReady().then(() => {
   // resume re-sends in case the charger changed while asleep
   const sendPower = () => send("power", { ac: !powerMonitor.isOnBatteryPower() });
   for (const ev of ["on-ac", "on-battery", "resume"]) powerMonitor.on(ev, sendPower);
+  powerMonitor.on("lock-screen", () => { locked = true; applyBanners(); });
+  powerMonitor.on("unlock-screen", () => { locked = false; applyBanners(); });
   win.webContents.on("did-finish-load", () => {
     sendPower();
     lastClaude = ""; iconFor = null; readClaude(); refreshSpotifyExtras(); send("timer", timerEnd); sendDnd(true); send("shelf", shelf); sendTheme();

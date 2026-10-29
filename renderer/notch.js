@@ -73,6 +73,8 @@ function nextToast() {
   $("tApp").textContent = t.app || "";
   $("tTitle").textContent = t.title || "";
   $("tBody").textContent = t.body || "";
+  // grow to fit the whole message (window is 190 tall)
+  notch.style.setProperty("--toast-h", Math.min(180, Math.max(62, notch.querySelector(".tmeta").scrollHeight + 20)) + "px");
   notch.classList.add("toast");
   current = t;
   const end = () => {
@@ -80,7 +82,7 @@ function nextToast() {
     if (hovering && !notch.classList.contains("open")) { toastTimer = setTimeout(end, 500); return; }
     endToast();
   };
-  toastTimer = setTimeout(end, t.ms || 4500);
+  toastTimer = setTimeout(end, t.ms || Math.min(12000, 4500 + 40 * (t.body || "").length)); // longer text stays longer
 }
 let current = null, toastTimer;
 function endToast() {
