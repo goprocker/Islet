@@ -59,7 +59,7 @@ let toastBusy = false;
 function toast(t) { toasts.push(t); if (!toastBusy) nextToast(); }
 function nextToast() {
   const t = toasts.shift();
-  if (!t || notch.classList.contains("hidden")) { toastBusy = false; notch.classList.remove("toast"); return; }
+  if (!t || notch.classList.contains("hidden")) { toastBusy = false; notch.classList.remove("toast", "arc"); return; }
   toastBusy = true;
   // real app logo when we have one, else a coloured letter / emoji badge
   const badge = $("tBadge");
@@ -74,6 +74,19 @@ function nextToast() {
   $("tTitle").textContent = t.title || "";
   $("tBody").textContent = t.body || "";
   notch.classList.add("toast");
+  notch.classList.toggle("arc", !!t.arc);
+  if (t.arc) {
+    // count the % up while the bar fills, synced to the reactor boot
+    $("arcFill").style.width = "0";
+    requestAnimationFrame(() => requestAnimationFrame(() => { $("arcFill").style.width = `${t.arc * 100}%`; }));
+    const start = performance.now(), to = Math.round(t.arc * 100);
+    const tick = now => {
+      const k = Math.min(1, (now - start - 900) / 1200);
+      $("arcPct").textContent = Math.round(to * Math.max(0, 1 - (1 - k) ** 3));
+      if (k < 1 && notch.classList.contains("arc")) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
   current = t;
   const end = () => {
     // hovered pop-ups wait for the pointer to leave
@@ -86,7 +99,7 @@ let current = null, toastTimer;
 function endToast() {
   clearTimeout(toastTimer);
   current = null;
-  notch.classList.remove("toast");
+  notch.classList.remove("toast", "arc");
   setTimeout(nextToast, 450);
 }
 $("notch").querySelector(".toastv").addEventListener("click", () => {
@@ -129,7 +142,7 @@ navigator.getBattery?.().then(b => {
   let warned = false;
   const pct = () => `${Math.round(b.level * 100)}%`;
   b.addEventListener("chargingchange", () => toast(b.charging
-    ? { app: "Battery", badge: "⚡", color: "#30a14e", title: "Charging", body: pct() }
+    ? { app: "Battery", badge: "⚡", color: "#30a14e", title: "Charging", body: pct(), arc: b.level, ms: 4200 }
     : { app: "Battery", badge: "🔋", title: "On battery", body: pct() }));
   b.addEventListener("levelchange", () => {
     if (!b.charging && b.level <= 0.2 && !warned) { warned = true; toast({ app: "Battery", badge: "!", color: "#d1453b", title: "Battery low", body: `${pct()} left. Plug in soon.` }); }
