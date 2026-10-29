@@ -247,8 +247,8 @@ button.link:hover { color: var(--text); }
 #shelfList li:hover .x, #shelfList .x:focus-visible { opacity: 1; }
 
 /* idle (setting "idleHide"): shrink to a thin line; hover still opens it */
-.notch.idle:not(.open):not(.toast) { width: 90px; height: 7px; border-radius: 0 0 5px 5px; }
-.notch.idle:not(.open):not(.toast) .pill { opacity: 0; }
+.notch.idle:not(.open):not(.toast):not(.bh) { width: 90px; height: 7px; border-radius: 0 0 5px 5px; }
+.notch.idle:not(.open):not(.toast):not(.bh) .pill { opacity: 0; }
 /* quiet (nothing playing, not charging, Claude idle): black pill with only the dot, centred */
 .notch.quiet .pill > :not(.dot) { display: none; }
 .notch.quiet .pill { justify-content: center; }
