@@ -147,3 +147,14 @@ button.play svg { width: 19px; height: 19px; }
   .dot { animation: none !important; }
   .claude li.new { animation: none; }
 }
+
+/* permission card replaces the action list while Claude is asking */
+.has-perm .claude ol { display: none; }
+.perm { display: flex; flex-direction: column; gap: 6px; min-height: 0; flex: 1; }
+.perm p { font-size: 11.5px; color: #e5e5ea; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.perm b { color: var(--warn); }
+.permBtns { display: flex; gap: 6px; margin-top: auto; }
+.permBtns button { width: auto; flex: 1; height: 24px; border-radius: 12px; font: inherit; font-weight: 600; font-size: 11.5px; }
+.permBtns .allow { background: var(--warn); color: #000; }
+.permBtns .allow:hover { background: #ffc466; }
+.permBtns .deny { background: #2c2c2e; }
