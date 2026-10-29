@@ -254,3 +254,76 @@ button.link:hover { color: var(--text); }
 
 /* pill items keep their size so fitPill() can measure them */
 .pill > * { flex-shrink: 0; }
+
+/* ---- plug-in: arc reactor boot (Iron Man), plays once then hands off to the normal toast ---- */
+.arcv {
+  --arc: #7fe9ff; --arc-hot: #e8fdff;
+  position: absolute; inset: 0; opacity: 0; pointer-events: none; z-index: 12;
+  display: flex; align-items: center; gap: 18px; padding: 0 26px 0 20px;
+  background: radial-gradient(120px 90px at 62px 50%, #0b4d6b66, transparent 70%);
+  transition: opacity .25s;
+}
+.notch.arc { width: 400px; height: 104px; border-radius: 0 0 28px 28px; box-shadow: 0 0 34px -4px #3fd7ff99; }
+.notch.arc .pill, .notch.arc .toastv { opacity: 0; }
+.notch.arc .arcv { opacity: 1; transition-delay: .15s; }
+.notch.arc::after, .notch.arc::before { opacity: 0; } /* green charging glow waits until the boot is done */
+
+.reactor { position: relative; width: 78px; height: 78px; flex: none; }
+.reactor svg { width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 0 4px var(--arc)) drop-shadow(0 0 10px #29c6ff); }
+.reactor * { transform-box: view-box; transform-origin: 50% 50%; }
+.r-ticks { fill: var(--arc); opacity: .75; }
+.r-ring { fill: none; stroke: var(--arc); stroke-width: 1.4; stroke-dasharray: 251; }
+.coil { fill: #0e3b4d; stroke: var(--arc); stroke-width: 1.1; }
+.r-inner { fill: #072a38; stroke: var(--arc); stroke-width: 1.6; }
+.r-tri { fill: none; stroke: var(--arc-hot); stroke-width: 1.8; stroke-linejoin: round; }
+.r-core { fill: var(--arc-hot); }
+.wave { position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--arc); opacity: 0; }
+
+.notch.arc .r-ticks { animation: arcspin 6s linear infinite, arcfade .4s .2s both; }
+.notch.arc .r-ring { animation: arcdraw .7s .25s cubic-bezier(.6,0,.3,1) both; }
+.notch.arc .coil { animation: arccoil .35s both; }
+.notch.arc .r-coils { animation: arcspin 9s linear infinite reverse; }
+.notch.arc .r-inner { animation: arcpop .45s .95s cubic-bezier(.3,1.6,.5,1) both; }
+.notch.arc .r-tri { animation: tridraw .5s 1.15s ease-out both, arcspin 4s 1.6s linear infinite; stroke-dasharray: 90; }
+.notch.arc .r-core { animation: arcignite .6s 1.35s cubic-bezier(.3,1.8,.5,1) both, arcpulse 1.6s 2s ease-in-out infinite; }
+.notch.arc .wave { animation: arcwave 1s 1.4s ease-out both; }
+.notch.arc .wave.w2 { animation-delay: 1.7s; }
+.notch.arc .arcmeta > * { animation: arctype .35s both; }
+.notch.arc .arcmeta small { animation-delay: .5s; }
+.notch.arc .arcmeta b { animation-delay: .75s; }
+.notch.arc .arcmeta .arcbar { animation-delay: .9s; }
+.notch.arc .arcmeta em { animation-delay: 1.5s; }
+.notch.arc .arcscan { animation: arcscan 1.1s .1s ease-in-out both; }
+/* coils light up one after another round the ring */
+.coil:nth-child(1) { animation-delay: .55s !important; } .coil:nth-child(2) { animation-delay: .59s !important; }
+.coil:nth-child(3) { animation-delay: .63s !important; } .coil:nth-child(4) { animation-delay: .67s !important; }
+.coil:nth-child(5) { animation-delay: .71s !important; } .coil:nth-child(6) { animation-delay: .75s !important; }
+.coil:nth-child(7) { animation-delay: .79s !important; } .coil:nth-child(8) { animation-delay: .83s !important; }
+.coil:nth-child(9) { animation-delay: .87s !important; } .coil:nth-child(10) { animation-delay: .91s !important; }
+
+.arcmeta { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; font-family: "Cascadia Mono", Consolas, monospace; color: var(--arc); }
+.arcmeta small { font-size: 9.5px; letter-spacing: .18em; text-transform: uppercase; color: var(--arc-hot); }
+.arcmeta small span { color: #4fb6d4; }
+.arcmeta b { font: 600 26px/1 "Segoe UI Variable Display", "Segoe UI", sans-serif; color: var(--arc-hot); text-shadow: 0 0 10px var(--arc); letter-spacing: .02em; }
+.arcmeta em { font-style: normal; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; }
+.arcbar { height: 4px; border-radius: 2px; background: #0f3443; overflow: hidden; box-shadow: inset 0 0 0 1px #1d6680; }
+.arcbar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #1fa6d6, var(--arc-hot)); box-shadow: 0 0 8px var(--arc); transition: width 1.2s cubic-bezier(.3,0,.2,1); }
+.arcscan { position: absolute; top: 0; bottom: 0; width: 60px; left: -60px; opacity: 0;
+  background: linear-gradient(90deg, transparent, #7fe9ff55 50%, transparent); }
+
+@keyframes arcspin { to { transform: rotate(360deg); } }
+@keyframes tridraw { from { stroke-dashoffset: 90; } to { stroke-dashoffset: 0; } }
+@keyframes arcfade { from { opacity: 0; } }
+@keyframes arcdraw { from { stroke-dashoffset: 251; } to { stroke-dashoffset: 0; } }
+@keyframes arccoil { from { fill: #000; stroke-opacity: 0; } 60% { fill: var(--arc); } }
+@keyframes arcpop { from { transform: scale(0); opacity: 0; } }
+@keyframes arcignite { from { transform: scale(0); } 40% { fill: #fff; transform: scale(1.6); } }
+@keyframes arcpulse { 50% { opacity: .7; transform: scale(.88); } }
+@keyframes arcwave { from { transform: scale(.4); opacity: .9; } to { transform: scale(2.6); opacity: 0; border-width: .5px; } }
+@keyframes arctype { from { opacity: 0; transform: translateX(-6px); clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes arcscan { 0% { opacity: 1; left: -60px; } 100% { opacity: 1; left: 100%; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .notch.arc .arcv *, .notch.arc .arcmeta > * { animation: none !important; }
+  .arcbar i { transition: none; }
+}
