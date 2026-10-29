@@ -59,3 +59,16 @@ test("missing settings.json is created, other settings kept when present", () =>
 test("installed() is false, not an error, for an unreadable file", () => {
   withHome({ ".claude/settings.json": "{invalid" }, bridge => assert.strictEqual(bridge.installed(), false));
 });
+
+test("install and uninstall keep other handlers in a group shared with Islet", () => {
+  const shared = JSON.stringify({ hooks: { Stop: [{ matcher: "x", hooks: [{ type: "command", command: "node islet-hook.js Stop" }, { type: "command", command: "echo keep-me" }] }] } });
+  withHome({ ".claude/settings.json": shared }, (bridge, read) => {
+    bridge.install();
+    let stop = JSON.parse(read(".claude/settings.json")).hooks.Stop;
+    assert.deepStrictEqual(stop[0], { matcher: "x", hooks: [{ type: "command", command: "echo keep-me" }] });
+    assert.strictEqual(stop.filter(g => JSON.stringify(g).includes("islet-hook.js")).length, 1);
+    bridge.uninstall();
+    stop = JSON.parse(read(".claude/settings.json")).hooks.Stop;
+    assert.deepStrictEqual(stop, [{ matcher: "x", hooks: [{ type: "command", command: "echo keep-me" }] }]);
+  });
+});
