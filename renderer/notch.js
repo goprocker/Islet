@@ -33,6 +33,11 @@ notch.addEventListener("mouseleave", () => {
   // an open permission card keeps the notch open
   hoverTimer = setTimeout(() => { if (!perms.length) setOpen(false); }, 400);
 });
+// clicking anywhere outside takes focus from the window: shrink back to the pill
+window.addEventListener("blur", () => {
+  clearTimeout(hoverTimer);
+  if (!perms.length) setOpen(false);
+});
 window.bridge.onToggle(() => {
   // hotkey cycles: pill -> open -> hidden -> pill
   if (notch.classList.contains("hidden")) notch.classList.remove("hidden");
@@ -113,6 +118,14 @@ navigator.getBattery?.().then(b => {
   show();
   b.addEventListener("chargingchange", show);
   b.addEventListener("levelchange", show);
+  // one short pop on plug-in, no loop
+  let popTimer;
+  b.addEventListener("chargingchange", () => {
+    if (!b.charging) return;
+    for (const el of [$("batt"), $("pillBatt")]) el.classList.add("plugged");
+    clearTimeout(popTimer);
+    popTimer = setTimeout(() => { for (const el of [$("batt"), $("pillBatt")]) el.classList.remove("plugged"); }, 700);
+  });
   let warned = false;
   const pct = () => `${Math.round(b.level * 100)}%`;
   b.addEventListener("chargingchange", () => toast(b.charging
@@ -357,6 +370,7 @@ function render() {
   // idle: nothing playing, Claude quiet, nothing to show -> a thin line (if enabled)
   const busy = track?.playing || chip || (s && (now - s.time < 60000 || s.status === "waiting"))
     || notch.classList.contains("charging") || $("pillPriv").childElementCount || !$("pillMoon").hasAttribute("hidden");
+  notch.classList.toggle("quiet", !busy); // plain black pill, just the dot
   notch.classList.toggle("idle", theme.idleHide && !busy);
   fitPill();
 }
