@@ -1,16 +1,31 @@
-# Islet
+<h1 align="center">Islet</h1>
 
-A Dynamic-Island-style notch for **Windows 11**, built with Electron. It sits at the top centre of your screen and shows what's playing, what Claude Code is doing, and your Windows notifications. Hover it to open it.
+<p align="center">
+  A Dynamic-Island-style notch for <b>Windows 11</b>.<br>
+  Music, Claude Code and Codex activity, notifications, time and battery, at the top of your screen.
+</p>
 
-```
-╭────────────────────────────────────────────────────────────────────────────╮
-│ ● notch ● api  18s │ [art] Local Boys          ♡ ▮▮▮▯ │ 4:20 PM     │ ☾ │
-│ Codex · Working    │ 2:57 ━━━━━━━━━━━━━━━━━━━━── 4:34 │ Thu, Oct 29 │ ⎘ │
-│ Edited login.tsx   │            ♪ lyric line          │             │ 🗀 │
-│ Ran npm test       │       ⏮    ⏸    ⏭       🌤 30°C  │ ▭ 56%  On battery │
-╰────────────────────────────────────────────────────────────────────────────╯
-  agent column         music side                         time + battery  tools
-```
+<p align="center">
+  <img src="docs/open.png" alt="Islet open: Codex and Claude sessions on the left, Spotify in the middle, time and battery on the right" width="760">
+</p>
+
+<p align="center">
+  <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-blue"></a>
+  <img alt="Windows 11" src="https://img.shields.io/badge/platform-Windows%2011-0078d4">
+  <img alt="Electron 37" src="https://img.shields.io/badge/Electron-37-47848f">
+</p>
+
+Islet sits at the top centre of the screen as a small pill. Hover it to open it.
+
+| Pill | Notification | Album view |
+|:---:|:---:|:---:|
+| <img src="docs/pill.png" alt="Closed pill with album art, Claude dot and audio wave" width="220"> | <img src="docs/toast.png" alt="A WhatsApp message shown as a notch pop-up" width="300"> | <img src="docs/album.png" alt="Enlarged album art over a blurred backdrop" width="380"> |
+
+**Layout of the open notch, left to right:**
+- **Agent column:** Claude Code and Codex sessions.
+- **Music:** the player and its controls.
+- **Time and battery:** clock, date, battery level and charging state.
+- **Tools:** Do Not Disturb, clipboard history and the file shelf.
 
 ## Features
 
