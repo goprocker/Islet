@@ -29,10 +29,28 @@ app.on("second-instance", () => openSettings());
 const configPath = () => path.join(app.getPath("userData"), "config.json");
 const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true, lyrics: true, permissionWaitSeconds: 8, dnd: false, dndFrom: "", dndTo: "", dndSkipUntil: 0, clipboardHistory: true, weatherCity: "", weatherUnit: "C", downloadsFolder: "", size: "normal", accent: "album", idleHide: false, hideWindowsBanners: true, powerAnim: true, powerAnimStyle: "cinematic" };
 let config = { ...DEFAULTS };
+// only a missing file is created; one that can't be read or parsed (a hand edit in
+// progress, a half-written save) is left alone and the current settings stay in use.
+// The settings-file watcher reads it again when it changes.
 function loadConfig() {
-  try { config = { ...DEFAULTS, ...JSON.parse(fs.readFileSync(configPath(), "utf8")) }; } catch { saveConfig(); }
+  let text;
+  try { text = fs.readFileSync(configPath(), "utf8"); } catch (e) {
+    if (e.code === "ENOENT") saveConfig();
+    else console.warn("config: can't read, keeping current settings:", e.message);
+    return;
+  }
+  try {
+    const v = JSON.parse(text);
+    if (!v || typeof v !== "object" || Array.isArray(v)) throw new Error("not an object");
+    config = { ...DEFAULTS, ...v };
+  } catch (e) { console.warn("config: invalid JSON, keeping current settings and the file:", e.message); }
 }
-function saveConfig() { fs.writeFileSync(configPath(), JSON.stringify(config, null, 2)); }
+// written to a temp file first, so a crash mid-save never leaves half a file
+function saveConfig() {
+  const tmp = configPath() + ".tmp";
+  fs.writeFileSync(tmp, JSON.stringify(config, null, 2));
+  fs.renameSync(tmp, configPath());
+}
 const send = (ch, d) => win?.webContents.send(ch, d);
 
 // ---- window, on the chosen monitor ----
