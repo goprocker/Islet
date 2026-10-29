@@ -35,11 +35,21 @@ async function tokenRequest(params) {
   save();
 }
 
+// one login at a time: a second click while the browser login is open waits for the same one
+let pending = null;
 function connect(clientId) {
+  if (pending) return pending;
   const verifier = crypto.randomBytes(48).toString("base64url");
   const challenge = crypto.createHash("sha256").update(verifier).digest("base64url");
   const state = crypto.randomBytes(12).toString("hex");
-  return new Promise((resolve, reject) => {
+  pending = new Promise((resolve, reject) => {
+    let timer = null;
+    const finish = err => {
+      clearTimeout(timer);
+      server.close();
+      pending = null;
+      err ? reject(err) : resolve();
+    };
     const server = http.createServer(async (req, res) => {
       const u = new URL(req.url, REDIRECT);
       if (u.pathname !== "/callback") { res.writeHead(404).end(); return; }
@@ -48,19 +58,21 @@ function connect(clientId) {
       res.writeHead(200, { "Content-Type": "text/html" })
         .end(ok ? "<p style='font:16px system-ui'>Spotify connected. You can close this tab.</p>"
                 : "<p style='font:16px system-ui'>Spotify login was cancelled. Try again from the Islet tray menu.</p>");
-      server.close();
-      if (!ok) return reject(new Error(u.searchParams.get("error") || "bad state"));
+      if (!ok) return finish(new Error(u.searchParams.get("error") || "bad state"));
       try {
         await tokenRequest({ grant_type: "authorization_code", code, redirect_uri: REDIRECT, client_id: clientId, code_verifier: verifier });
-        resolve();
-      } catch (e) { reject(e); }
+        finish();
+      } catch (e) { finish(e); }
     });
+    // e.g. port 8888 already taken: reject instead of an uncaught error in the main process
+    server.on("error", e => finish(new Error(e.code === "EADDRINUSE" ? "Port 8888 is in use by another app. Close it and try again." : e.message)));
     server.listen(8888, "127.0.0.1", () => {
       const q = new URLSearchParams({ client_id: clientId, response_type: "code", redirect_uri: REDIRECT, scope: SCOPES, state, code_challenge_method: "S256", code_challenge: challenge });
       shell.openExternal(`https://accounts.spotify.com/authorize?${q}`);
     });
-    setTimeout(() => { server.close(); reject(new Error("login timed out")); }, 5 * 60 * 1000);
+    timer = setTimeout(() => finish(new Error("login timed out")), 5 * 60 * 1000);
   });
+  return pending;
 }
 
 async function api(method, p) {
