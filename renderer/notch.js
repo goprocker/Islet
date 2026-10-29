@@ -399,12 +399,12 @@ render();
 // ---- wave from Spotify's own audio: 24 frequency bands from spotify-audio.ps1 ----
 const bars = new Array(24).fill(0);
 let levels = null;
-window.bridge.onLevels(l => { levels = l; });
+window.bridge.onLevels(l => { levels = l; wakeWave(); });
 
-function drawWave(cv, n, gap) {
+function drawWave(cv, n, gap, accent) {
   const x = cv.getContext("2d"), w = cv.width, h = cv.height, bw = (w - gap * (n - 1)) / n;
   x.clearRect(0, 0, w, h);
-  x.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--accent");
+  x.fillStyle = accent;
   for (let k = 0; k < n; k++) {
     // average the bands that fall under this bar
     const a = Math.floor(k * bars.length / n), b = Math.floor((k + 1) * bars.length / n);
@@ -414,15 +414,36 @@ function drawWave(cv, n, gap) {
     x.beginPath(); x.roundRect(k * (bw + gap), (h - bh) / 2, bw, bh, bw / 2); x.fill();
   }
 }
-(function frame() {
-  const playing = !!track?.playing;
+// runs only while the bars move; once they settle it stops, and render() / new levels
+// start it again. Each canvas is redrawn only when shown and out of date.
+const waves = [[$("mini"), 6], [$("wave"), 7]];
+let waveRunning = false, waveVersion = 0;
+function wakeWave() {
+  if (!waveRunning) { waveRunning = true; requestAnimationFrame(frame); }
+}
+function frame() {
+  const live = !!track?.playing && !!levels;
+  let moved = false;
   for (let k = 0; k < bars.length; k++) {
-    const target = playing && levels ? Math.pow(levels[k] / 255, 1.4) : 0;
-    bars[k] += (target - bars[k]) * 0.35;
+    const target = live ? Math.pow(levels[k] / 255, 1.4) : 0;
+    const next = Math.abs(target - bars[k]) < 1e-3 ? target : bars[k] + (target - bars[k]) * 0.35;
+    if (next !== bars[k]) { bars[k] = next; moved = true; }
   }
-  drawWave($("mini"), 6, 3); drawWave($("wave"), 7, 3);
-  requestAnimationFrame(frame);
-})();
+  if (moved) waveVersion++;
+  if (!notch.classList.contains("hidden")) {
+    const accent = getComputedStyle(document.documentElement).getPropertyValue("--accent");
+    for (const [cv, n] of waves) {
+      if (!cv.offsetWidth || (cv.drawn === waveVersion && cv.accent === accent)) continue;
+      drawWave(cv, n, 3, accent);
+      cv.drawn = waveVersion; cv.accent = accent;
+    }
+  }
+  if (moved || live) requestAnimationFrame(frame);
+  else waveRunning = false;
+}
+wakeWave();
+setInterval(wakeWave, 500); // playback and accent changes
+new MutationObserver(wakeWave).observe(notch, { attributes: true, attributeFilter: ["class"] }); // open / closed / hidden
 
 // ---- mic / camera / screen capture in use ----
 window.bridge.onSystem(d => {
