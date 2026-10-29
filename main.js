@@ -611,4 +611,4 @@ app.whenReady().then(() => {
   globalShortcut.register("Control+Alt+M", nextScreen);
 });
 app.on("window-all-closed", e => e.preventDefault());
-app.on("will-quit", () => { globalShortcut.unregisterAll(); if (bannersSaved) { notifications.restoreBanners(bannersSaved); fs.writeFileSync(bannersPath(), "{}"); } media?.kill(); audio?.kill(); sys?.kill(); });
+app.on("will-quit", () => { globalShortcut.unregisterAll(); if (bannersSaved) { notifications.restoreBanners(bannersSaved); fs.writeFileSync(bannersPath(), JSON.stringify(bannersSaved, null, 2)); } // keeps what failed for the next start media?.kill(); audio?.kill(); sys?.kill(); });
