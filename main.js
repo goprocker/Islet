@@ -19,7 +19,10 @@ const PS = ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File"];
 const MEDIA = [...PS, path.join(__dirname, "media.ps1")];
 let win, tray, media, audio;
 
-if (!app.requestSingleInstanceLock()) app.quit();
+// a second copy exits at once (quit() is async and would start helpers first)
+if (!app.requestSingleInstanceLock()) app.exit(0);
+// starting Islet again while it runs opens its settings
+app.on("second-instance", () => openSettings());
 
 // ---- settings (userData/config.json) ----
 const configPath = () => path.join(app.getPath("userData"), "config.json");
@@ -337,6 +340,42 @@ ipcMain.on("shelfDrag", (e, p) => {
 // 1x1 transparent fallback: startDrag needs some icon
 const EMPTY_PNG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
 
+// ---- settings window ----
+let settingsWin = null;
+function openSettings() {
+  if (settingsWin && !settingsWin.isDestroyed()) return settingsWin.focus();
+  settingsWin = new BrowserWindow({
+    width: 600, height: 760, title: "Islet settings", backgroundColor: "#0b0b0c", autoHideMenuBar: true,
+    webPreferences: { preload: path.join(__dirname, "settings", "preload.js") },
+  });
+  settingsWin.loadFile(path.join(__dirname, "settings", "settings.html"));
+}
+const settingsView = () => ({ ...config, hooks: bridge.installed(), login: login() });
+ipcMain.handle("settings:load", () => settingsView());
+ipcMain.handle("settings:save", (_, v) => {
+  // only known keys, each checked; the form can't write anything else
+  const str = (x, max = 2000) => (typeof x === "string" ? x.trim().slice(0, max) : "");
+  const time = x => (/^\d{2}:\d{2}$/.test(x) ? x : "");
+  const next = {
+    ...config,
+    size: ["compact", "normal", "large"].includes(v.size) ? v.size : "normal",
+    accent: /^#[0-9a-f]{6}$/i.test(v.accent) ? v.accent : "album",
+    idleHide: !!v.idleHide, hideInFullscreen: !!v.hideInFullscreen,
+    notifications: !!v.notifications, dnd: !!v.dnd, dndFrom: time(v.dndFrom), dndTo: time(v.dndTo),
+    permissionWaitSeconds: Math.min(24, Math.max(0, Math.round(Number(v.permissionWaitSeconds) || 0))),
+    lyrics: !!v.lyrics, spotifyClientId: str(v.spotifyClientId, 100),
+    weatherCity: str(v.weatherCity, 100), weatherUnit: v.weatherUnit === "F" ? "F" : "C",
+    calendarIcsUrl: /^(https?|webcal):\/\//i.test(str(v.calendarIcsUrl)) ? str(v.calendarIcsUrl).replace(/^webcal:/i, "https:") : "",
+    downloadsFolder: str(v.downloadsFolder, 500), clipboardHistory: !!v.clipboardHistory,
+  };
+  config = next;
+  saveConfig(); // the settings-file watcher applies everything
+  if (!!v.hooks !== bridge.installed()) { try { v.hooks ? bridge.install() : bridge.uninstall(); } catch (e) { console.warn(e.message); } }
+  if (!!v.login !== login()) setLogin(!!v.login);
+  buildMenu();
+  return settingsView();
+});
+
 // ---- look: size, accent colour, hide when idle ----
 function sendTheme() {
   win?.webContents.setZoomFactor(scale());
@@ -412,6 +451,7 @@ function buildMenu() {
     },
     { label: "Do Not Disturb", type: "checkbox", checked: dndActive(), click: () => { config.dnd = !config.dnd; saveConfig(); sendDnd(); } },
     { label: "Show notifications", type: "checkbox", checked: config.notifications, click: () => { config.notifications = !config.notifications; saveConfig(); } },
+    { label: "Settings…", click: openSettings },
     { label: "Open settings file", click: () => shell.openPath(configPath()) },
     { label: "Start with Windows", type: "checkbox", checked: login(), click: () => { setLogin(!login()); buildMenu(); } },
     { type: "separator" },

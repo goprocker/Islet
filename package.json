@@ -21,6 +21,7 @@
     "lyrics.js",
     "weather.js",
     "downloads.js",
+    "settings/**",
     "claude-bridge.js",
     "hooks/**",
       "media.ps1",

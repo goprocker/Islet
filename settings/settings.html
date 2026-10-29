@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'">
+<title>Islet settings</title>
+<link rel="stylesheet" href="settings.css">
+</head>
+<body>
+<main>
+  <h1>Islet</h1>
+
+  <section>
+    <h2>Look</h2>
+    <label class="row"><span>Size</span>
+      <select name="size"><option value="compact">Compact</option><option value="normal">Normal</option><option value="large">Large</option></select>
+    </label>
+    <div class="row"><span>Accent colour</span>
+      <span class="inline">
+        <label><input type="radio" name="accentMode" value="album"> From album art</label>
+        <label><input type="radio" name="accentMode" value="fixed"> Fixed</label>
+        <input type="color" name="accentColor" aria-label="Fixed accent colour">
+      </span>
+    </div>
+    <label class="row"><span>Shrink to a thin line when nothing is happening</span><input type="checkbox" name="idleHide"></label>
+    <label class="row"><span>Hide while a fullscreen app is in front</span><input type="checkbox" name="hideInFullscreen"></label>
+  </section>
+
+  <section>
+    <h2>Notifications</h2>
+    <label class="row"><span>Show Windows notifications in the notch</span><input type="checkbox" name="notifications"></label>
+    <label class="row"><span>Do Not Disturb</span><input type="checkbox" name="dnd"></label>
+    <div class="row"><span>Do Not Disturb every day</span>
+      <span class="inline"><input type="time" name="dndFrom" aria-label="From"> to <input type="time" name="dndTo" aria-label="To"></span>
+    </div>
+    <p class="hint">Leave both times empty for no schedule.</p>
+  </section>
+
+  <section>
+    <h2>Claude Code</h2>
+    <label class="row"><span>Connect to Claude Code (exact status, Allow / Deny)</span><input type="checkbox" name="hooks"></label>
+    <label class="row"><span>Wait for Allow / Deny in the notch (seconds)</span><input type="number" name="permissionWaitSeconds" min="0" max="24" step="1"></label>
+    <p class="hint">Claude Code holds its own terminal prompt while Islet waits. 0 never holds it, and the card isn't shown.</p>
+  </section>
+
+  <section>
+    <h2>Music</h2>
+    <label class="row"><span>Show lyrics (sends title and artist to lrclib.net)</span><input type="checkbox" name="lyrics"></label>
+    <label class="row col"><span>Spotify Client ID (Premium developer account, optional)</span><input type="text" name="spotifyClientId" spellcheck="false" placeholder="Not needed for the like button"></label>
+  </section>
+
+  <section>
+    <h2>Info</h2>
+    <label class="row col"><span>Weather city</span><input type="text" name="weatherCity" placeholder="e.g. Chennai. Empty turns weather off"></label>
+    <label class="row"><span>Temperature unit</span><select name="weatherUnit"><option value="C">°C</option><option value="F">°F</option></select></label>
+    <label class="row col"><span>Calendar (private iCal / ICS link)</span><input type="text" name="calendarIcsUrl" spellcheck="false" placeholder="https://calendar.google.com/calendar/ical/…/basic.ics"></label>
+    <label class="row col"><span>Downloads folder</span><input type="text" name="downloadsFolder" spellcheck="false" placeholder="Your Downloads folder"></label>
+    <label class="row"><span>Keep clipboard history (last 5 texts, memory only)</span><input type="checkbox" name="clipboardHistory"></label>
+  </section>
+
+  <section>
+    <h2>System</h2>
+    <label class="row"><span>Start with Windows</span><input type="checkbox" name="login"></label>
+  </section>
+
+  <p class="status" id="status" role="status" aria-live="polite"></p>
+</main>
+<script src="settings.js"></script>
+</body>
+</html>
