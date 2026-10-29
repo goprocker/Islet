@@ -18,6 +18,8 @@
       "notifications.js",
       "calendar.js",
     "icons.js",
+    "claude-bridge.js",
+    "hooks/**",
       "media.ps1",
       "spotify-audio.ps1",
       "spotify-audio.cs",
