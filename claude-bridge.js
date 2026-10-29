@@ -1,5 +1,5 @@
-// Receives Claude Code hook events (hooks/islet-hook.js) on 127.0.0.1:47321
-// and installs/removes those hooks in ~/.claude/settings.json.
+// Receives Claude Code and Codex hook events (hooks/islet-hook.js) on 127.0.0.1:47321
+// and installs/removes those hooks in ~/.claude/settings.json and ~/.codex/hooks.json.
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
@@ -10,10 +10,27 @@ const SETTINGS = path.join(os.homedir(), ".claude", "settings.json");
 const HOOK = path.join(__dirname, "hooks", "islet-hook.js");
 const EVENTS = ["PermissionRequest", "Notification", "Stop", "UserPromptSubmit", "PostToolUse", "SessionEnd"];
 const MARK = "islet-hook.js";
+const CODEX_DIR = path.join(os.homedir(), ".codex");
+const CODEX_HOOKS = path.join(CODEX_DIR, "hooks.json");
+const CODEX_EVENTS = ["SessionStart", "UserPromptSubmit", "PermissionRequest", "PostToolUse", "Stop", "SessionEnd"];
 
 // session id -> { status, at }
 const status = new Map();
 const pending = new Map(); // request id -> { res, timer }
+// Codex has no transcript Islet reads, so its sessions are kept from the hooks:
+// session id -> { cwd, status, at, actions: [{ tool, toolInput, text, time }] } (newest first)
+const codex = new Map();
+function trackCodex(e, st) {
+  const s = codex.get(e.session) || { cwd: "", actions: [] };
+  s.cwd = e.cwd || s.cwd;
+  s.status = st;
+  s.at = Date.now();
+  const add = a => { s.actions.unshift({ ...a, time: Date.now() }); s.actions.length = Math.min(s.actions.length, 3); };
+  if (e.event === "UserPromptSubmit" && e.prompt) add({ text: `You: ${e.prompt}` });
+  if (e.event === "PostToolUse" && e.tool) add({ tool: e.tool, toolInput: e.toolInput });
+  if (e.event === "Stop" && e.lastMessage) add({ text: e.lastMessage });
+  if (st === "ended") codex.delete(e.session); else codex.set(e.session, s);
+}
 let nextId = 1;
 
 function statusFor(event, message) {
@@ -44,12 +61,14 @@ function start({ onStatus, onPermission, onPermissionGone, permissionWait }) {
       let e; try { e = JSON.parse(body); } catch { res.writeHead(400).end(); return; }
       const st = statusFor(e.event, e.message);
       status.set(e.session, { status: st, at: Date.now() });
+      if (e.agent === "codex") trackCodex(e, st);
       onStatus(e.session, st);
       // any new activity in a session answers its open permission card elsewhere
       if (e.event !== "PermissionRequest") {
         for (const [id, p] of pending) if (p.session === e.session) settle(id, null, gone);
       }
-      if (e.event !== "PermissionRequest") { res.writeHead(200).end("{}"); return; }
+      // Codex shows "needs you" but is answered in its own terminal
+      if (e.event !== "PermissionRequest" || e.agent === "codex") { res.writeHead(200).end("{}"); return; }
       const id = nextId++;
       // Claude Code holds its terminal prompt while we wait, so keep this short
       const ms = Math.min(Math.max(waitMs(), 0), 24000);
@@ -88,37 +107,46 @@ function summarize(tool, input) {
   return "";
 }
 
-// ---- settings.json install ----
-function readSettings() {
-  try { return JSON.parse(fs.readFileSync(SETTINGS, "utf8")); } catch { return {}; }
+// ---- hook install: ~/.claude/settings.json and, when Codex is set up, ~/.codex/hooks.json ----
+function readJson(file) {
+  try { return JSON.parse(fs.readFileSync(file, "utf8")); } catch { return {}; }
 }
-function installed() {
-  const s = readSettings();
-  return EVENTS.every(ev => JSON.stringify(s.hooks?.[ev] || []).includes(MARK));
+const targets = () => [
+  { file: SETTINGS, events: EVENTS, arg: "" },
+  ...(fs.existsSync(CODEX_DIR) ? [{ file: CODEX_HOOKS, events: CODEX_EVENTS, arg: " codex" }] : []),
+];
+function hasHooks(t) {
+  const s = readJson(t.file);
+  return t.events.every(ev => JSON.stringify(s.hooks?.[ev] || []).includes(MARK));
 }
+function installed() { return hasHooks(targets()[0]); }
 function install() {
-  const s = readSettings();
-  if (fs.existsSync(SETTINGS)) fs.copyFileSync(SETTINGS, SETTINGS + ".islet-backup");
-  s.hooks ||= {};
-  for (const ev of EVENTS) {
-    const list = (s.hooks[ev] || []).filter(g => !JSON.stringify(g).includes(MARK));
-    list.push({
-      ...(ev === "PostToolUse" ? { matcher: "*" } : {}),
-      hooks: [{ type: "command", command: `node "${HOOK}" ${ev}`, timeout: ev === "PermissionRequest" ? 30 : 5 }],
-    });
-    s.hooks[ev] = list;
+  for (const t of targets()) {
+    const s = readJson(t.file);
+    if (fs.existsSync(t.file)) fs.copyFileSync(t.file, t.file + ".islet-backup");
+    s.hooks ||= {};
+    for (const ev of t.events) {
+      const list = (s.hooks[ev] || []).filter(g => !JSON.stringify(g).includes(MARK));
+      list.push({
+        ...(ev === "PostToolUse" ? { matcher: "*" } : {}),
+        hooks: [{ type: "command", command: `node "${HOOK}" ${ev}${t.arg}`, timeout: ev === "PermissionRequest" && !t.arg ? 30 : 5 }],
+      });
+      s.hooks[ev] = list;
+    }
+    fs.writeFileSync(t.file, JSON.stringify(s, null, 2));
   }
-  fs.writeFileSync(SETTINGS, JSON.stringify(s, null, 2));
 }
 function uninstall() {
-  const s = readSettings();
-  if (!s.hooks) return;
-  for (const ev of Object.keys(s.hooks)) {
-    s.hooks[ev] = s.hooks[ev].filter(g => !JSON.stringify(g).includes(MARK));
-    if (!s.hooks[ev].length) delete s.hooks[ev];
+  for (const t of targets()) {
+    const s = readJson(t.file);
+    if (!s.hooks) continue;
+    for (const ev of Object.keys(s.hooks)) {
+      s.hooks[ev] = s.hooks[ev].filter(g => !JSON.stringify(g).includes(MARK));
+      if (!s.hooks[ev].length) delete s.hooks[ev];
+    }
+    if (!Object.keys(s.hooks).length) delete s.hooks;
+    fs.writeFileSync(t.file, JSON.stringify(s, null, 2));
   }
-  if (!Object.keys(s.hooks).length) delete s.hooks;
-  fs.writeFileSync(SETTINGS, JSON.stringify(s, null, 2));
 }
 
-module.exports = { start, answer, status, install, uninstall, installed };
+module.exports = { start, answer, status, codex, install, uninstall, installed };

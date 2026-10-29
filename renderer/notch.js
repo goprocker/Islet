@@ -171,18 +171,19 @@ window.bridge.onMedia(d => {
 
 // ---- Claude ----
 const STATUS = { working: "Working", waiting: "Needs you", done: "Done" };
-const shown = () => sessions.find(s => s.project === pinned)
+const keyOf = s => `${s.agent}:${s.project}`;
+const shown = () => sessions.find(s => keyOf(s) === pinned)
   // nothing picked: whoever needs you, else the most recent
   || sessions.find(s => s.status === "waiting") || sessions[0];
 let prevStatus = {}, prevAction = "";
 window.bridge.onClaude(list => {
   for (const s of list) {
-    const was = prevStatus[s.project];
+    const was = prevStatus[keyOf(s)];
     if (was && was !== s.status && (s.status === "waiting" || s.status === "done")) {
-      if (pinned && pinned !== s.project && s.status === "waiting") pinned = null; // jump to the one asking
+      if (pinned && pinned !== keyOf(s) && s.status === "waiting") pinned = null; // jump to the one asking
       peek(4000);
     }
-    prevStatus[s.project] = s.status;
+    prevStatus[keyOf(s)] = s.status;
   }
   sessions = list;
   renderClaude();
@@ -192,7 +193,9 @@ function renderClaude() {
   notch.dataset.claude = s?.status || "";
   $("cProject").textContent = s ? s.project : "Claude";
   $("cProject").disabled = !s?.cwd;
-  $("cStatus").textContent = s ? STATUS[s.status] : "";
+  // name the agent once both are around (or always for Codex)
+  const named = s && sessions.some(x => x.agent === "codex");
+  $("cStatus").textContent = s ? `${named ? (s.agent === "codex" ? "Codex · " : "Claude · ") : ""}${STATUS[s.status]}` : "";
   const ol = $("cActions");
   const first = s?.actions[0]?.action || "No activity yet";
   ol.replaceChildren(...(s ? s.actions : [{ action: first }]).map(a => Object.assign(document.createElement("li"), { textContent: a.action })));
@@ -202,10 +205,11 @@ function renderClaude() {
     const b = document.createElement("button");
     b.dataset.status = x.status;
     b.setAttribute("aria-pressed", x === s);
-    b.title = `${x.project}: ${STATUS[x.status]}`;
+    b.dataset.agent = x.agent;
+    b.title = `${x.agent === "codex" ? "Codex" : "Claude"} · ${x.project}: ${STATUS[x.status]}`;
     b.append(document.createElement("i"), x.project);
     // first click picks the project, clicking the picked one opens its folder
-    b.onclick = () => { if (x === shown() && x.cwd) window.bridge.openProject(x.cwd); else { pinned = x.project; renderClaude(); } };
+    b.onclick = () => { if (x === shown() && x.cwd) window.bridge.openProject(x.cwd); else { pinned = keyOf(x); renderClaude(); } };
     return b;
   }));
   $("cSessions").closest(".claude").classList.toggle("multi", sessions.length > 1);
