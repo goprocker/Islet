@@ -358,11 +358,16 @@ ipcMain.on("clearClips", () => { clips = []; send("clipboard", []); });
 const shelfPath = () => path.join(app.getPath("userData"), "shelf.json");
 let shelf = []; // [{ path, name, icon: dataURL }]
 const dragIcons = new Map();
+// paths whose icon is still loading: a second add of the same file waits its turn,
+// and removing it meanwhile cancels the add
+const shelfPending = new Set();
 async function shelfAdd(paths) {
   for (const p of paths) {
-    if (!p || shelf.some(f => f.path === p) || !fs.existsSync(p)) continue;
+    if (!p || shelf.some(f => f.path === p) || shelfPending.has(p) || !fs.existsSync(p)) continue;
+    shelfPending.add(p);
     let img = null;
     try { img = await app.getFileIcon(p, { size: "normal" }); } catch {}
+    if (!shelfPending.delete(p) || shelf.some(f => f.path === p)) continue;
     dragIcons.set(p, img);
     shelf.push({ path: p, name: path.basename(p), icon: img?.toDataURL() || null });
   }
@@ -384,7 +389,7 @@ ipcMain.on("shelfPick", async () => {
   const r = await dialog.showOpenDialog({ title: "Add files to the Islet shelf", properties: ["openFile", "multiSelections"] });
   if (!r.canceled) shelfAdd(r.filePaths);
 });
-ipcMain.on("shelfRemove", (_, p) => { shelf = shelf.filter(f => f.path !== p); saveShelf(); });
+ipcMain.on("shelfRemove", (_, p) => { shelfPending.delete(p); shelf = shelf.filter(f => f.path !== p); saveShelf(); });
 ipcMain.on("shelfOpen", (_, p) => { if (shelf.some(f => f.path === p)) shell.showItemInFolder(p); });
 ipcMain.on("shelfDrag", (e, p) => {
   if (!shelf.some(f => f.path === p)) return;
