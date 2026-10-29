@@ -25,6 +25,18 @@ $mgr = Await ($MgrType::RequestAsync()) $MgrType
 function Get-Spotify {
   $mgr.GetSessions() | Where-Object { $_.SourceAppUserModelId -like '*Spotify*' } | Select-Object -First 1
 }
+# which player to show: Spotify while it plays, else any other player that plays
+# (YouTube in a browser, VLC, Media Player...), else paused Spotify, else whatever Windows picks
+function Get-Player {
+  $all = @($mgr.GetSessions())
+  $playing = { param($x) $x.GetPlaybackInfo().PlaybackStatus -eq 4 }
+  $sp = $all | Where-Object { $_.SourceAppUserModelId -like '*Spotify*' } | Select-Object -First 1
+  if ($sp -and (& $playing $sp)) { return $sp }
+  $other = $all | Where-Object { (& $playing $_) } | Select-Object -First 1
+  if ($other) { return $other }
+  if ($sp) { return $sp }
+  $mgr.GetCurrentSession()
+}
 
 # "like": Spotify's own shortcut (Alt+Shift+B) sent to its window, then focus goes back
 if ($Mode -eq "like") {
@@ -58,7 +70,7 @@ public static class Win {
 }
 
 if ($Mode -ne "watch") {
-  $s = Get-Spotify
+  $s = Get-Player
   if ($s) {
     switch ($Mode) {
       "toggle" { Await ($s.TryTogglePlayPauseAsync()) ([bool]) | Out-Null }
@@ -73,7 +85,7 @@ if ($Mode -ne "watch") {
 $lastKey = ""
 $art = $null
 while ($true) {
-  $s = Get-Spotify
+  $s = Get-Player
   if (-not $s) {
     Write-Output '{"active":false}'
   } else {
@@ -101,6 +113,7 @@ while ($true) {
       duration = $tl.EndTime.TotalSeconds
       updated  = $tl.LastUpdatedTime.ToUnixTimeMilliseconds()
       art      = $art
+      source   = $s.SourceAppUserModelId
     }
     Write-Output ($out | ConvertTo-Json -Compress)
   }
