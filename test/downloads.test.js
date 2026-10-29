@@ -41,3 +41,22 @@ test("stale temp file that still exists is not a completion", () => {
   const done = run(d => write(d, "b.zip.crdownload"), [d => { const old = Date.now() / 1000 - 120; fs.utimesSync(path.join(d, "b.zip.crdownload"), old, old); write(d, "b.zip"); }]);
   assert.deepStrictEqual(done, []);
 });
+
+test("switching to an empty folder reports an empty list", () => {
+  const realSetInterval = global.setInterval;
+  global.setInterval = () => 0;
+  const old = fs.mkdtempSync(path.join(os.tmpdir(), "islet-dl-")), empty = fs.mkdtempSync(path.join(os.tmpdir(), "islet-dl-"));
+  const seen = [];
+  delete require.cache[require.resolve("../downloads")];
+  try {
+    write(old, "a.zip.crdownload", 42);
+    const { watch } = require("../downloads");
+    watch(old, l => seen.push(l), () => {});
+    watch(empty, l => seen.push(l), () => {});
+    watch(path.join(empty, "missing"), l => seen.push(l), () => {});
+  } finally {
+    global.setInterval = realSetInterval;
+    fs.rmSync(old, { recursive: true, force: true }); fs.rmSync(empty, { recursive: true, force: true });
+  }
+  assert.deepStrictEqual(seen, [[{ name: "a.zip", bytes: 42 }], [], []]);
+});

@@ -12,9 +12,14 @@ function watch(dir, onChange, onDone) {
   clearInterval(timer);
   let active = new Map(); // temp file -> bytes
   let prevReal = null; // real files at the last scan
+  let published = false; // a new watch always reports once, even an empty list
   const scan = () => {
     let names = [];
-    try { names = fs.readdirSync(dir); } catch { return; }
+    try { names = fs.readdirSync(dir); } catch {
+      // folder gone or unreadable: nothing in it is watched any more
+      if (active.size || !published) { active = new Map(); published = true; onChange([]); }
+      return;
+    }
     const now = new Map();
     for (const n of names) {
       if (!TEMP.test(n)) continue;
@@ -44,7 +49,10 @@ function watch(dir, onChange, onDone) {
     prevReal = new Set(real);
     const changed = now.size !== active.size || [...now].some(([n, b]) => active.get(n) !== b);
     active = now;
-    if (changed) onChange([...now].map(([n, bytes]) => ({ name: n.replace(TEMP, "").replace(/^Unconfirmed \d+$/, "Download"), bytes })));
+    if (changed || !published) {
+      published = true;
+      onChange([...now].map(([n, bytes]) => ({ name: n.replace(TEMP, "").replace(/^Unconfirmed \d+$/, "Download"), bytes })));
+    }
   };
   scan();
   timer = setInterval(scan, 1500);
