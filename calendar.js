@@ -27,8 +27,20 @@ function nextOccurrence(start, rr, now) {
   const days = byday || (rule.FREQ === "WEEKLY" ? new Set([start.getDay()]) : null);
   const weekStart = new Date(start); weekStart.setDate(start.getDate() - ((start.getDay() + 6) % 7)); // Monday
   const horizon = now.getTime() + 2 * 864e5;
-  let seen = 0;
-  for (let d = 0; d < 20 * 366; d++) {
+  // the pattern repeats every `period` days from DTSTART, with the same number of
+  // occurrences each time: skip whole periods up to about now instead of walking
+  // there, and count what was skipped so COUNT still holds. Works for any age.
+  const period = rule.FREQ === "DAILY" && !days ? interval : interval * 7;
+  let perPeriod = 0;
+  for (let d = 0; d < period; d++) {
+    const day = new Date(start); day.setDate(start.getDate() + d);
+    const unit = rule.FREQ === "DAILY" ? d : Math.floor(Math.round((day - weekStart) / 864e5) / 7);
+    if (!(unit % interval) && (!days || days.has(day.getDay()))) perPeriod++;
+  }
+  const skip = Math.max(0, Math.floor((now - start) / 864e5 / period) - 1); // one spare for DST
+  const from = skip * period;
+  let seen = skip * perPeriod;
+  for (let d = from; d < from + 3 * period + 4; d++) {
     const day = new Date(start); day.setDate(start.getDate() + d); // keeps the local time of day
     if (day.getTime() > horizon || (until && day > until)) return null;
     const unit = rule.FREQ === "DAILY" ? d : Math.floor(Math.round((day - weekStart) / 864e5) / 7);
