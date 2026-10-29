@@ -145,6 +145,14 @@ function hasHooks(t) {
   return t.events.every(ev => JSON.stringify(s.hooks?.[ev] || []).includes(MARK));
 }
 function installed() { return hasHooks(targets()[0]); }
+// drop only Islet's own handlers; a group shared with another tool keeps the rest
+// (and its matcher), and is removed only once nothing is left in it
+const withoutIslet = groups => groups.flatMap(g => {
+  if (!g || !Array.isArray(g.hooks)) return JSON.stringify(g).includes(MARK) ? [] : [g];
+  const hooks = g.hooks.filter(h => !JSON.stringify(h).includes(MARK));
+  if (hooks.length === g.hooks.length) return [g];
+  return hooks.length ? [{ ...g, hooks }] : [];
+});
 function install() {
   // read and check every file before writing any, so a bad one stops the whole install
   for (const { t, s } of targets().map(t => ({ t, s: readJson(t.file) }))) {
@@ -152,7 +160,7 @@ function install() {
     s.hooks ||= {};
     fs.mkdirSync(path.dirname(t.file), { recursive: true }); // ~/.claude may not exist yet
     for (const ev of t.events) {
-      const list = (s.hooks[ev] || []).filter(g => !JSON.stringify(g).includes(MARK));
+      const list = withoutIslet(s.hooks[ev] || []);
       list.push({
         ...(ev === "PostToolUse" ? { matcher: "*" } : {}),
         hooks: [{ type: "command", command: `node "${HOOK}" ${ev}${t.arg}`, timeout: ev === "PermissionRequest" && !t.arg ? 30 : 5 }],
@@ -166,7 +174,7 @@ function uninstall() {
   for (const { t, s } of targets().map(t => ({ t, s: readJson(t.file) }))) {
     if (!s.hooks) continue;
     for (const ev of Object.keys(s.hooks)) {
-      s.hooks[ev] = s.hooks[ev].filter(g => !JSON.stringify(g).includes(MARK));
+      s.hooks[ev] = withoutIslet(s.hooks[ev]);
       if (!s.hooks[ev].length) delete s.hooks[ev];
     }
     if (!Object.keys(s.hooks).length) delete s.hooks;
