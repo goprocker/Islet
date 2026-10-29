@@ -168,6 +168,14 @@
     cancelAnimationFrame(raf); raf = 0;
     timers.forEach(clearTimeout); timers = [];
   }
+  // end at once and put the notch back (hiding it mid-animation)
+  function cancel(notch) {
+    stop();
+    notch.classList.remove("bh");
+    notch.querySelector(".bhv").className = "bhv";
+    ctx?.clearRect(0, 0, canvas.width, canvas.height);
+    state = "IDLE";
+  }
 
   function play(notch, kind, level, opts = {}) {
     stop();
@@ -212,5 +220,5 @@
     raf = requestAnimationFrame(frame);
   }
 
-  window.BlackHole = { play, stop, get state() { return state; } };
+  window.BlackHole = { play, stop, cancel, get state() { return state; } };
 })();
