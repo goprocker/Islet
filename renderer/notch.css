@@ -169,3 +169,15 @@ button.play svg { width: 19px; height: 19px; }
 
 /* lyric line sits under the seek bar, brighter than "up next" */
 .upnext.lyric { color: #e5e5ea; font-size: 11.5px; padding-left: 0; text-align: center; }
+
+/* album view: big art over a blurred copy of itself, click to close */
+.music { position: relative; }
+#artBtn { cursor: zoom-in; }
+.albumv { position: absolute; inset: -12px -18px -10px -16px; display: flex; align-items: center; gap: 14px; padding: 12px 18px; overflow: hidden; cursor: zoom-out; z-index: 2; background: #000; border-radius: 0 0 26px 0; }
+.albumv .bg { position: absolute; inset: -30px; width: calc(100% + 60px); height: calc(100% + 60px); filter: blur(28px) saturate(1.4) brightness(.55); }
+.albumv .big { position: relative; width: 104px; height: 104px; border-radius: 14px; box-shadow: 0 8px 24px #0008; flex: none; }
+.ainfo { position: relative; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.ainfo b { font-size: 15px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ainfo span { color: #ffffffb0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ainfo em { font-style: normal; color: #fff; font-size: 12px; margin-top: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.albumv:not([hidden]) { animation: in .25s ease; }
