@@ -86,15 +86,19 @@ function readBanners() {
   } catch {}
   return out;
 }
-// one `reg import` for all changes (null deletes the value)
+// one `reg import` for all changes (null deletes the value); false when it failed
 function writeBanners(values) {
   const ids = Object.keys(values);
-  if (!ids.length) return;
+  if (!ids.length) return true;
   const body = ids.map(id => `[${KEY}${id}]\r\n"ShowBanner"=${values[id] === null ? "-" : "dword:" + values[id].toString(16).padStart(8, "0")}\r\n`).join("\r\n");
   const file = path.join(os.tmpdir(), `islet-banners-${process.pid}.reg`);
-  fs.writeFileSync(file, "﻿Windows Registry Editor Version 5.00\r\n\r\n" + body, "utf16le");
-  try { execFileSync("reg", ["import", file], { windowsHide: true, stdio: "ignore" }); } catch (e) { console.warn("banners", e.message); }
-  fs.rmSync(file, { force: true });
+  let ok = true;
+  try {
+    fs.writeFileSync(file, "﻿Windows Registry Editor Version 5.00\r\n\r\n" + body, "utf16le");
+    execFileSync("reg", ["import", file], { windowsHide: true, stdio: "ignore" });
+  } catch (e) { ok = false; console.warn("banners", e.message); }
+  try { fs.rmSync(file, { force: true }); } catch {}
+  return ok;
 }
 function hideBanners(saved, ids) {
   if (!ids) {
@@ -118,9 +122,19 @@ function hideBanners(saved, ids) {
   if (missed) console.warn(`banners: ${missed} of ${Object.keys(changes).length} apps still show Windows banners`);
   return missed; // apps whose banner is still on
 }
+// `saved` is the only record of the old values: an entry is dropped only once the
+// registry shows it back as it was, so a failed restore is retried on a later run.
+// Returns how many apps are still not restored.
 function restoreBanners(saved) {
-  writeBanners(saved);
-  for (const id in saved) delete saved[id];
+  if (!Object.keys(saved).length) return 0;
+  const ok = writeBanners(saved), after = readBanners();
+  for (const id of ok ? Object.keys(saved) : []) {
+    const back = saved[id] === null ? !(id in after) : after[id] === saved[id];
+    if (back) delete saved[id];
+  }
+  const left = Object.keys(saved).length;
+  if (left) console.warn(`banners: ${left} apps not restored yet; will retry`);
+  return left;
 }
 
 module.exports.hideBanners = hideBanners;
