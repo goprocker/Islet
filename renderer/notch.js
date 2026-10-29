@@ -358,6 +358,13 @@ function render() {
   const busy = track?.playing || chip || (s && (now - s.time < 60000 || s.status === "waiting"))
     || notch.classList.contains("charging") || $("pillPriv").childElementCount || !$("pillMoon").hasAttribute("hidden");
   notch.classList.toggle("idle", theme.idleHide && !busy);
+  fitPill();
+}
+// closed pill: as wide as what it shows, no empty black on either side
+function fitPill() {
+  const items = [...document.querySelector(".pill").children].filter(el => el.offsetWidth && getComputedStyle(el).visibility !== "hidden");
+  const w = items.reduce((n, el) => n + el.offsetWidth, 0) + 8 * (items.length - 1) + 22; // gaps + side padding
+  notch.style.setProperty("--pill-w", `${Math.max(90, Math.ceil(w))}px`);
 }
 setInterval(render, 500);
 render();

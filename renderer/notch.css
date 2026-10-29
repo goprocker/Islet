@@ -19,11 +19,10 @@ body {
 
 .notch {
   position: absolute; top: 0; left: 50%; transform: translateX(-50%);
-  width: 150px; height: 30px; border-radius: 0 0 14px 14px;
+  width: var(--pill-w, 150px); height: 30px; border-radius: 0 0 14px 14px;
   background: var(--ink); overflow: hidden; cursor: default; outline: none;
   transition: width .45s cubic-bezier(.3,1.3,.5,1), height .45s cubic-bezier(.3,1.3,.5,1), border-radius .45s, box-shadow .3s;
 }
-.notch.wide { width: 210px; }
 .notch.toast { width: 360px; height: 62px; border-radius: 0 0 22px 22px; }
 .notch.open { width: 640px; height: 150px; border-radius: 0 0 26px 26px; }
 .notch.hidden { width: 0; height: 0; }
@@ -46,6 +45,7 @@ body {
 /* compact */
 .pill { display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 12px 0 10px; }
 .pill .art { width: 18px; height: 18px; border-radius: 5px; }
+.pill .art:not([src]) { display: none; } /* nothing playing: no empty art slot */
 .chip { margin-left: auto; font-size: 11px; font-variant-numeric: tabular-nums; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px; }
 .chip:empty { display: none; }
 .chip:empty + .dot { margin-left: auto; }
@@ -133,8 +133,6 @@ body {
 .batt.charging { color: var(--ok); }
 .batt.low { color: #ff5f57; }
 .pill .batt { margin-left: 2px; }
-.notch.charging:not(.open):not(.toast) { width: 200px; }
-.notch.charging.wide:not(.open):not(.toast) { width: 260px; }
 .side.soon { color: var(--accent); }
 .buttons { display: flex; gap: 4px; }
 button { background: none; border: 0; color: var(--text); width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; cursor: pointer; transition: background .15s, transform .1s; }
@@ -218,3 +216,6 @@ button.link:hover { color: var(--text); }
 /* idle (setting "idleHide"): shrink to a thin line; hover still opens it */
 .notch.idle:not(.open):not(.toast) { width: 90px; height: 7px; border-radius: 0 0 5px 5px; }
 .notch.idle:not(.open):not(.toast) .pill { opacity: 0; }
+
+/* pill items keep their size so fitPill() can measure them */
+.pill > * { flex-shrink: 0; }
