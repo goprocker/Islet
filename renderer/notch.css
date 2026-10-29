@@ -206,3 +206,7 @@ button.link:hover { color: var(--text); }
 #shelfList .file span { font-size: 10px; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #d1d1d6; }
 #shelfList .x { position: absolute; top: -2px; right: -2px; width: 16px; height: 16px; font-size: 10px; background: #3a3a3c; opacity: 0; }
 #shelfList li:hover .x, #shelfList .x:focus-visible { opacity: 1; }
+
+/* idle (setting "idleHide"): shrink to a thin line; hover still opens it */
+.notch.idle:not(.open):not(.toast) { width: 90px; height: 7px; border-radius: 0 0 5px 5px; }
+.notch.idle:not(.open):not(.toast) .pill { opacity: 0; }
