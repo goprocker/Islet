@@ -15,7 +15,9 @@
   <img alt="Electron 37" src="https://img.shields.io/badge/Electron-37-47848f">
 </p>
 
-Islet sits at the top centre of the screen as a small pill. Hover it to open it.
+Islet sits at the top centre of the screen as a small pill. Hover it to open it; click anywhere else to close it. When nothing is happening it is a plain black pill with one dot.
+
+📘 **Full guide (PDF):** [Islet-Guide.pdf](Islet-Guide.pdf): every feature, every notch state, the architecture and the setup, in one document.
 
 | Pill | Notification | Album view |
 |:---:|:---:|:---:|
@@ -34,7 +36,7 @@ Islet sits at the top centre of the screen as a small pill. Hover it to open it.
 | Music | Spotify (or any player that uses Windows media controls): art, title, seek, prev/play/next, like (Alt+Shift+B), scroll to change Spotify's own volume, a live wave from Spotify's audio only, timed lyrics from lrclib.net, an enlarged album view |
 | Claude Code and Codex | Both in one column, newest first, switching on its own: status per session (working / needs you / done), the last 3 actions, Allow / Deny for Claude Code permission requests from the notch, click a project to open its folder |
 | Notifications | Every Windows toast becomes a notch pop-up with the real app logo. Windows' own bottom-right banners are turned off while Islet runs and restored when it quits. Clicking a pop-up opens the app. Do Not Disturb with an optional daily schedule |
-| Time and battery | Own column on the right: clock, date, battery level, charging state, mic / camera / screen-capture dots. Hides during fullscreen apps |
+| Time and battery | Own column on the right: clock, date, battery level, charging state, mic / camera / screen-capture dots. While charging, the notch edges pulse with a green glow and a light streak runs along the bottom edge; plugging in pops the battery bolt once. Hides during fullscreen apps |
 | Info | Weather (Open-Meteo, no key), the next calendar event (private ICS link), browser download progress, a timer |
 | Tools | Clipboard history (memory only), a file shelf (drop files in, drag them out) |
 
@@ -68,7 +70,7 @@ The build is unsigned. With **Smart App Control** on, Windows blocks unsigned in
 
 | Action | How |
 |---|---|
-| Open / close | Hover the notch, or `Ctrl+Alt+N` (pill → open → hidden) |
+| Open / close | Hover the notch; move away or click anywhere else to close. `Ctrl+Alt+N` cycles pill → open → hidden |
 | Move to another monitor | `Ctrl+Alt+M` (next screen), or tray → **Show on screen** |
 | Volume | Scroll over the music side |
 | Seek | Click the progress bar |
@@ -136,6 +138,7 @@ main.js ── window, tray, settings, IPC
 ```
 
 - The window is frameless, transparent and always on top. It ignores the mouse except while the pointer is over the notch.
+- Notch states are CSS classes on `#notch`: `open`, `toast`, `hidden`, `quiet` (nothing busy: only the dot), `idle` (thin line, with `idleHide`), `charging` (edge glow and streak). With reduced motion turned on in Windows, the glow stays still and the streak is hidden.
 - C# runs through `Add-Type` inside PowerShell, so no unsigned exe ships (works with Smart App Control on).
 - Windows has no notification-listener API for unpackaged apps, so Islet reads the notification database read-only.
 - Banners are hidden by setting `ShowBanner = 0` under `HKCU\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings\<app id>`. The previous values are saved in `%APPDATA%\islet\banners.json` and put back on quit, or when the setting or notifications are turned off. Notifications still reach the notification centre.
@@ -174,4 +177,4 @@ Issues and pull requests are welcome. Keep changes small, use [Conventional Comm
 
 ## License
 
-[MIT](LICENSE)
+Code: [MIT](LICENSE). Made by Gopinath. The guide PDF is © 2026 Gopinath, all rights reserved.
