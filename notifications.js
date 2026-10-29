@@ -104,14 +104,17 @@ function hideBanners(saved, ids) {
       db.close();
     } catch { ids = []; }
   }
-  ids = ids.filter(id => !(id in saved) && !/[\]\r\n]/.test(id));
-  if (!ids.length) return;
+  // check the registry itself, not just `saved`: an earlier write may not have landed
   const now = readBanners(), changes = {};
   for (const id of ids) {
-    saved[id] = id in now ? now[id] : null;
+    if (now[id] === 0 || /[\]\r\n]/.test(id)) continue;
+    if (!(id in saved)) saved[id] = id in now ? now[id] : null;
     changes[id] = 0;
   }
+  if (!Object.keys(changes).length) return;
   writeBanners(changes);
+  const after = readBanners(), missed = Object.keys(changes).filter(id => after[id] !== 0).length;
+  if (missed) console.warn(`banners: ${missed} of ${Object.keys(changes).length} apps still show Windows banners`);
 }
 function restoreBanners(saved) {
   writeBanners(saved);
