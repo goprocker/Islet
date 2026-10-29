@@ -9,6 +9,8 @@ const { shell } = require("electron");
 const REDIRECT = "http://127.0.0.1:8888/callback";
 const SCOPES = "user-library-read user-library-modify user-read-playback-state user-read-currently-playing";
 let file, auth = null, currentId = null, liked = false;
+// bumped by disconnect(): token replies for an older session are thrown away
+let session = 0;
 
 function init(dir) {
   file = path.join(dir, "spotify-token.json");
@@ -16,9 +18,10 @@ function init(dir) {
 }
 const save = () => fs.writeFileSync(file, JSON.stringify(auth));
 const connected = () => !!auth?.refresh;
-function disconnect() { auth = null; try { fs.unlinkSync(file); } catch {} }
+function disconnect() { session++; auth = null; try { fs.unlinkSync(file); } catch {} }
 
 async function tokenRequest(params) {
+  const mine = session;
   const r = await fetch("https://accounts.spotify.com/api/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -26,6 +29,7 @@ async function tokenRequest(params) {
   });
   const j = await r.json();
   if (!r.ok) throw new Error(j.error_description || j.error || r.status);
+  if (mine !== session) throw new Error("Spotify was disconnected");
   auth = {
     clientId: params.client_id,
     access: j.access_token,
