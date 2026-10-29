@@ -22,4 +22,5 @@ contextBridge.exposeInMainWorld("bridge", {
   volume: delta => ipcRenderer.send("volume", delta),
   like: () => ipcRenderer.send("like"),
   openProject: cwd => ipcRenderer.send("openProject", cwd),
+  openNotification: id => ipcRenderer.send("openNotification", id),
 });

@@ -20,6 +20,8 @@ notch.addEventListener("mouseenter", () => {
   hovering = true;
   window.bridge.hover(true);
   clearTimeout(hoverTimer);
+  // over a pop-up: keep it readable and clickable instead of expanding
+  if (notch.classList.contains("toast")) return;
   hoverTimer = setTimeout(() => setOpen(true), 120);
 });
 notch.addEventListener("mouseleave", () => {
@@ -65,8 +67,25 @@ function nextToast() {
   $("tTitle").textContent = t.title || "";
   $("tBody").textContent = t.body || "";
   notch.classList.add("toast");
-  setTimeout(() => { notch.classList.remove("toast"); setTimeout(nextToast, 450); }, t.ms || 4500);
+  current = t;
+  const end = () => {
+    // hovered pop-ups wait for the pointer to leave
+    if (hovering && !notch.classList.contains("open")) { toastTimer = setTimeout(end, 500); return; }
+    endToast();
+  };
+  toastTimer = setTimeout(end, t.ms || 4500);
 }
+let current = null, toastTimer;
+function endToast() {
+  clearTimeout(toastTimer);
+  current = null;
+  notch.classList.remove("toast");
+  setTimeout(nextToast, 450);
+}
+$("notch").querySelector(".toastv").addEventListener("click", () => {
+  if (current?.id) window.bridge.openNotification(current.id);
+  endToast();
+});
 const APP_COLORS = { WhatsApp: "#25d366", Discord: "#5865f2", Telegram: "#2aabee", Teams: "#5b5fc7", Outlook: "#0f6cbd", Slack: "#611f69", Chrome: "#4285f4", Edge: "#0c88d8", "Phone Link": "#0067c0" };
 window.bridge.onNotification(n => toast({ ...n, color: APP_COLORS[n.app] }));
 
