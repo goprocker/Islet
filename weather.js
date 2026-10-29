@@ -1,6 +1,6 @@
 // Current weather from Open-Meteo (free, no key) for the city in settings.
 // Only the city name (to find it) and its coordinates are sent.
-let timer = null, place = null;
+let timer = null, place = null, generation = 0; // each poll() call starts a new generation
 
 // WMO weather codes -> short label + emoji
 function describe(code, day) {
@@ -26,15 +26,18 @@ async function locate(city) {
 
 function poll(city, unit, onWeather) {
   clearInterval(timer);
+  const gen = ++generation;
   if (!city) return onWeather(null);
+  // replies from an older poll() (old city, or weather turned off) are dropped
+  const publish = w => { if (gen === generation) onWeather(w); };
   const run = async () => {
     try {
       const p = await locate(city);
-      if (!p) return onWeather({ error: `Couldn't find "${city}". Check weatherCity in settings.` });
+      if (!p) return publish({ error: `Couldn't find "${city}". Check weatherCity in settings.` });
       const q = new URLSearchParams({ latitude: p.lat, longitude: p.lon, current: "temperature_2m,weather_code,is_day", temperature_unit: unit === "F" ? "fahrenheit" : "celsius" });
       const c = (await (await fetch(`https://api.open-meteo.com/v1/forecast?${q}`)).json()).current;
       const [icon, label] = describe(c.weather_code, c.is_day === 1);
-      onWeather({ place: p.name, temp: Math.round(c.temperature_2m), unit: unit === "F" ? "F" : "C", icon, label });
+      publish({ place: p.name, temp: Math.round(c.temperature_2m), unit: unit === "F" ? "F" : "C", icon, label });
     } catch (e) { console.warn("weather", e.message); }
   };
   run();
