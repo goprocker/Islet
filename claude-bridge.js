@@ -44,6 +44,16 @@ function statusFor(event, message) {
   }
 }
 
+// what the hook sends; anything else gets a 400 and changes nothing
+const TEXT = ["cwd", "transcript", "message", "tool", "prompt", "lastMessage"];
+function validEvent(e) {
+  if (!e || typeof e !== "object" || Array.isArray(e)) return false;
+  if (typeof e.event !== "string" || !e.event || typeof e.session !== "string" || !e.session) return false;
+  if (e.agent !== undefined && e.agent !== "claude" && e.agent !== "codex") return false;
+  if (TEXT.some(k => e[k] !== undefined && typeof e[k] !== "string")) return false;
+  return e.toolInput === undefined || e.toolInput === null || (typeof e.toolInput === "object" && !Array.isArray(e.toolInput));
+}
+
 let waitMs = () => 8000;
 function start({ onStatus, onPermission, onPermissionGone, permissionWait }) {
   if (permissionWait) waitMs = permissionWait;
@@ -59,6 +69,7 @@ function start({ onStatus, onPermission, onPermissionGone, permissionWait }) {
     req.on("data", d => { body += d; if (body.length > 1e6) req.destroy(); });
     req.on("end", () => {
       let e; try { e = JSON.parse(body); } catch { res.writeHead(400).end(); return; }
+      if (!validEvent(e)) { res.writeHead(400).end(); return; }
       const st = statusFor(e.event, e.message);
       status.set(e.session, { status: st, at: Date.now() });
       if (e.agent === "codex") trackCodex(e, st);
