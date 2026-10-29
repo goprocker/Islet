@@ -70,6 +70,17 @@ function lines(stream, fn) {
   });
 }
 let lastTitle = "", iconFor = null; // player whose logo the page has
+// lyrics follow both the song and the "lyrics" setting: `lyricsFor` is the song they were
+// asked for ("" = none), so turning the setting on or off applies to the current song
+let lastMedia = null, lyricsFor = "";
+function updateLyrics() {
+  const d = lastMedia;
+  const want = d?.active && config.lyrics && d.title && d.duration > 30 ? `${d.title}|${d.artist}` : "";
+  if (want === lyricsFor) return;
+  lyricsFor = want;
+  send("lyrics", null);
+  if (want) lyrics.get(d.title, d.artist || "", d.duration).then(l => { if (lyricsFor === want && config.lyrics) send("lyrics", l); });
+}
 function startMedia() {
   media = spawn("powershell.exe", [...MEDIA, "watch"], { windowsHide: true });
   lines(media.stdout, l => {
@@ -81,15 +92,10 @@ function startMedia() {
         .then(icon => send("spotifyIcon", icon || null));
     }
     send("media", d);
+    lastMedia = d;
     const key = d.active ? `${d.title}|${d.artist}` : "";
-    if (key !== lastTitle) {
-      lastTitle = key;
-      refreshSpotifyExtras();
-      send("lyrics", null);
-      if (d.active && config.lyrics && d.title && d.duration > 30) {
-        lyrics.get(d.title, d.artist || "", d.duration).then(l => { if (lastTitle === key) send("lyrics", l); });
-      }
-    }
+    if (key !== lastTitle) { lastTitle = key; refreshSpotifyExtras(); }
+    updateLyrics();
   });
   media.on("exit", () => { if (!app.isQuitting) setTimeout(startMedia, 2000); });
 }
@@ -397,6 +403,7 @@ ipcMain.handle("settings:save", (_, v) => {
     downloadsFolder: str(v.downloadsFolder, 500), clipboardHistory: !!v.clipboardHistory,
   };
   config = next;
+  updateLyrics();
   saveConfig(); // the settings-file watcher applies everything
   if (!!v.hooks !== bridge.installed()) { try { v.hooks ? bridge.install() : bridge.uninstall(); } catch (e) { console.warn(e.message); } }
   if (!!v.login !== login()) setLogin(!!v.login);
@@ -556,7 +563,7 @@ app.whenReady().then(() => {
   // reload settings when the file is edited by hand
   fs.watchFile(configPath(), { interval: 2000 }, () => {
     const oldUrl = config.calendarIcsUrl, old = JSON.stringify([config.weatherCity, config.weatherUnit, config.downloadsFolder]);
-    loadConfig(); buildMenu(); placeWindow(); applyVisibility(); sendDnd(); sendTheme(); applyBanners();
+    loadConfig(); buildMenu(); placeWindow(); applyVisibility(); sendDnd(); sendTheme(); applyBanners(); updateLyrics();
     if (config.calendarIcsUrl !== oldUrl) calendar.poll(config.calendarIcsUrl, ev => send("calendar", ev));
     if (old !== JSON.stringify([config.weatherCity, config.weatherUnit, config.downloadsFolder])) { startWeather(); startDownloads(); }
   });
