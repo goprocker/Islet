@@ -1,6 +1,7 @@
 // Next calendar event from a private iCal (.ics) link (Google / Outlook "secret address").
-// Handles single events and DAILY / WEEKLY repeats (INTERVAL, COUNT, UNTIL, BYDAY);
-// skips all-day events and doesn't guess other repeat rules. Times follow their TZID; an
+// Handles single events and DAILY / WEEKLY repeats (INTERVAL, COUNT, UNTIL, BYDAY, WKST);
+// skips all-day events and doesn't guess other repeat rules: anything else in a rule, like
+// BYMONTH, leaves just the first date rather than inventing more. Times follow their TZID; an
 // event in a zone that can't be identified is skipped with a warning rather than shown at
 // a wrong time.
 let timer = null, generation = 0; // each poll() call starts a new generation
@@ -101,20 +102,27 @@ function parseTime(prop, value) {
 }
 
 const DAYS = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
+const RULE_PARTS = new Set(["FREQ", "INTERVAL", "COUNT", "UNTIL", "BYDAY", "WKST"]);
+// a rule this file follows exactly; "1MO" (first Monday) only means something to rules it doesn't
+const supported = rule => (rule.FREQ === "DAILY" || rule.FREQ === "WEEKLY")
+  && Object.keys(rule).every(k => RULE_PARTS.has(k))
+  && (!rule.BYDAY || rule.BYDAY.split(",").every(d => DAYS.includes(d)));
 // First occurrence of a repeating event at or after `now`, or null. Walks day by day from
 // DTSTART (the first occurrence) so COUNT is counted from the real start.
 function nextOccurrence(first, rr, now) {
   const start = first.at;
   const rule = Object.fromEntries(rr.split(";").map(p => p.split("=")));
-  if (rule.FREQ !== "DAILY" && rule.FREQ !== "WEEKLY") return start >= now ? start : null; // unsupported: first date only
+  if (!supported(rule)) return start >= now ? start : null; // unsupported: first date only
   const interval = Math.max(1, Number(rule.INTERVAL) || 1);
   const count = rule.COUNT ? Number(rule.COUNT) : Infinity;
   const until = rule.UNTIL ? readTime(rule.UNTIL.length === 8 ? rule.UNTIL + "T235959" : rule.UNTIL, first.basis)?.at : null;
-  const byday = rule.BYDAY ? new Set(rule.BYDAY.split(",").map(d => DAYS.indexOf(d.slice(-2)))) : null;
+  const byday = rule.BYDAY ? new Set(rule.BYDAY.split(",").map(d => DAYS.indexOf(d))) : null;
   const weekday = d => new Date(first.wall + d * DAY).getUTCDay(); // of the day `d` days after DTSTART
   const days = byday || (rule.FREQ === "WEEKLY" ? new Set([weekday(0)]) : null);
-  const sinceMonday = (weekday(0) + 6) % 7;
-  const unitOf = d => (rule.FREQ === "DAILY" ? d : Math.floor((d + sinceMonday) / 7));
+  // with INTERVAL, which weeks count depends on where a week starts: Monday unless WKST says
+  const weekStart = DAYS.includes(rule.WKST) ? DAYS.indexOf(rule.WKST) : 1;
+  const sinceWeekStart = (weekday(0) - weekStart + 7) % 7;
+  const unitOf = d => (rule.FREQ === "DAILY" ? d : Math.floor((d + sinceWeekStart) / 7));
   const horizon = now.getTime() + 2 * 864e5;
   // the pattern repeats every `period` days from DTSTART, with the same number of
   // occurrences each time: skip whole periods up to about now instead of walking
