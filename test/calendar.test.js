@@ -44,3 +44,37 @@ test("100 daily series from 2007 are fast", () => {
   nextEvent(one.repeat(100), new Date("2026-10-29T09:00:00Z"));
   assert.ok(performance.now() - t < 50, `took ${performance.now() - t} ms`);
 });
+
+const rule = (start, rr) => `BEGIN:VEVENT\nDTSTART:${start}\nRRULE:${rr}\nSUMMARY:X\nEND:VEVENT`;
+test("a February-only daily rule doesn't appear in October", () => {
+  assert.strictEqual(nextEvent(rule("20260201T100000Z", "FREQ=DAILY;BYMONTH=2"), new Date("2026-10-30T09:00:00Z")), null);
+});
+for (const part of ["BYMONTH=2", "BYMONTHDAY=15", "BYSETPOS=1", "BYHOUR=9", "BYMINUTE=30", "BYSECOND=5", "BYWEEKNO=5", "BYYEARDAY=40", "X-OTHER=1"]) {
+  test(`weekly rule with ${part} isn't repeated`, () => {
+    assert.strictEqual(nextEvent(rule("20260105T100000Z", `FREQ=WEEKLY;${part}`), new Date("2026-10-26T09:00:00Z")), null);
+  });
+}
+test("a BYDAY with a position isn't guessed at", () => {
+  assert.strictEqual(nextEvent(rule("20260105T100000Z", "FREQ=DAILY;BYDAY=1MO"), new Date("2026-10-26T09:00:00Z")), null);
+  assert.strictEqual(nextEvent(rule("20260105T100000Z", "FREQ=WEEKLY;BYDAY=XX"), new Date("2026-10-26T09:00:00Z")), null);
+});
+test("an unsupported rule still shows its first date", () => {
+  assert.strictEqual(nextEvent(rule("20261030T100000Z", "FREQ=DAILY;BYMONTH=10"), new Date("2026-10-30T09:00:00Z")).start, Date.parse("2026-10-30T10:00:00Z"));
+});
+// the RFC 5545 example: the same rule gives different dates with a different week start
+const rfc = wkst => rule("19970805T090000Z", `FREQ=WEEKLY;INTERVAL=2;COUNT=4;BYDAY=TU,SU;WKST=${wkst}`);
+const series = (ics, from) => {
+  const out = [];
+  for (let now = new Date(from), next; (next = nextEvent(ics, now)) || now < new Date("1997-09-10T00:00:00Z");) {
+    if (next) { out.push(new Date(next.start).toISOString().slice(5, 10)); now = new Date(next.start + 1000); }
+    else now = new Date(now.getTime() + 864e5);
+  }
+  return out;
+};
+test("WKST decides which weeks an INTERVAL counts", () => {
+  assert.deepStrictEqual(series(rfc("MO"), "1997-08-05T00:00:00Z"), ["08-05", "08-10", "08-19", "08-24"]);
+  assert.deepStrictEqual(series(rfc("SU"), "1997-08-05T00:00:00Z"), ["08-05", "08-17", "08-19", "08-31"]);
+});
+test("WKST alone leaves a rule supported", () => {
+  assert.strictEqual(nextEvent(rule("20261026T100000Z", "FREQ=WEEKLY;WKST=SU"), new Date("2026-11-02T09:00:00Z")).start, Date.parse("2026-11-02T10:00:00Z"));
+});
