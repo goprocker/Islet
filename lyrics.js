@@ -43,4 +43,22 @@ function get(title, artist, duration) {
   return cache.get(key);
 }
 
-module.exports = { get, parse };
+// What the page should show follows the song: update() asks once per song (null = no song
+// or lyrics turned off), resend() fills a page that reloaded and lost them. An answer for
+// a song that's no longer current is dropped; one still on its way reaches the new page.
+function follower(send, fetchLines = get) {
+  let asked = "", lines = null;
+  return {
+    update(song) {
+      const key = song ? `${song.title}|${song.artist}` : "";
+      if (key === asked) return;
+      asked = key;
+      lines = null;
+      send(null);
+      if (song) fetchLines(song.title, song.artist || "", song.duration).then(l => { if (asked === key) { lines = l; send(l); } });
+    },
+    resend() { send(lines); },
+  };
+}
+
+module.exports = { get, parse, follower };
