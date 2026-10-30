@@ -12,6 +12,7 @@ const agent = process.argv[3] === "codex" ? "codex" : "claude";
 const WAIT = event === "PermissionRequest" && agent === "claude" ? 25000 : 1500;
 
 let raw = "";
+process.stdin.setEncoding("utf8"); // a character split across chunks stays whole
 process.stdin.on("data", d => (raw += d));
 process.stdin.on("end", () => {
   let input = {};
