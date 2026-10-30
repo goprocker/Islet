@@ -76,6 +76,8 @@ function createWindow() {
   win.setIgnoreMouseEvents(true, { forward: true });
   win.loadFile(path.join(__dirname, "renderer", "index.html"));
   win.once("ready-to-show", () => win.showInactive());
+  // Alt+F4 would destroy the notch while the app keeps running; only the tray's Quit closes it
+  win.on("close", e => { if (!app.isQuitting) e.preventDefault(); });
 }
 
 // ---- Spotify via Windows media session ----
@@ -639,6 +641,7 @@ app.whenReady().then(() => {
   globalShortcut.register("Control+Alt+M", nextScreen);
 });
 app.on("window-all-closed", e => e.preventDefault());
+app.on("before-quit", () => { app.isQuitting = true; });
 app.on("will-quit", () => {
   globalShortcut.unregisterAll();
   // keeps what failed for the next start
