@@ -23,6 +23,7 @@
     "lyrics.js",
     "weather.js",
     "downloads.js",
+    "shelf-file.js",
     "settings/**",
     "claude-bridge.js",
     "hooks/**",
