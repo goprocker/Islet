@@ -468,15 +468,17 @@ function sendTheme() {
 // ---- Windows banners: off while Islet shows notifications itself ----
 const bannersPath = () => path.join(app.getPath("userData"), "banners.json");
 let bannersSaved = null, bannersMissed = 0, locked = false;
+const saveBannersJournal = v => notifications.saveJournal(bannersPath(), v);
 function applyBanners(newIds) {
   if (!bannersSaved) { try { bannersSaved = JSON.parse(fs.readFileSync(bannersPath(), "utf8")); } catch { bannersSaved = {}; } }
   // banners come back while locked: Islet can't draw over the lock screen, Windows can
   const want = config.notifications && config.hideWindowsBanners && !locked;
   const before = Object.keys(bannersSaved).length;
-  const missed = want ? notifications.hideBanners(bannersSaved, newIds) : (notifications.restoreBanners(bannersSaved), 0);
+  const missed = want ? notifications.hideBanners(bannersSaved, newIds, saveBannersJournal) : (notifications.restoreBanners(bannersSaved), 0);
   // a full pass tells whether Windows accepted the change; the tray shows it
   if (!newIds && missed !== bannersMissed) { bannersMissed = missed; buildMenu(); }
-  if (Object.keys(bannersSaved).length !== before) fs.writeFileSync(bannersPath(), JSON.stringify(bannersSaved, null, 2));
+  // what restoring dropped; hiding has already saved what it added
+  if (!want && Object.keys(bannersSaved).length !== before) { try { saveBannersJournal(bannersSaved); } catch (e) { console.warn("banners", e.message); } }
 }
 
 // ---- move to the next screen (tray menu or Ctrl+Alt+M) ----
@@ -645,6 +647,6 @@ app.on("before-quit", () => { app.isQuitting = true; });
 app.on("will-quit", () => {
   globalShortcut.unregisterAll();
   // keeps what failed for the next start
-  if (bannersSaved) { notifications.restoreBanners(bannersSaved); fs.writeFileSync(bannersPath(), JSON.stringify(bannersSaved, null, 2)); }
+  if (bannersSaved) { notifications.restoreBanners(bannersSaved); try { saveBannersJournal(bannersSaved); } catch (e) { console.warn("banners", e.message); } }
   media?.kill(); audio?.kill(); sys?.kill();
 });
