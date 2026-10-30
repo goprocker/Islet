@@ -3,14 +3,18 @@
 const UA = { "User-Agent": "Islet (https://github.com/goprocker/Islet)" };
 const cache = new Map();
 
-// "[01:02.50] words" -> { t: 62.5, line: "words" }
+// "[01:02.50] words" -> { t: 62.5, line: "words" }; a repeated line can carry several
+// stamps ("[00:10.00][00:20.00] words"), one entry each. Sorted: the page stops scanning
+// at the first line still to come.
 function parse(lrc) {
   const out = [];
   for (const row of lrc.split("\n")) {
-    const m = row.match(/^\[(\d+):(\d+(?:\.\d+)?)\]\s*(.*)$/);
-    if (m) out.push({ t: Number(m[1]) * 60 + Number(m[2]), line: m[3].trim() });
+    const stamps = row.match(/^(?:\[\d+:\d+(?:\.\d+)?\]\s*)+/);
+    if (!stamps) continue;
+    const line = row.slice(stamps[0].length).trim();
+    for (const m of stamps[0].matchAll(/\[(\d+):(\d+(?:\.\d+)?)\]/g)) out.push({ t: Number(m[1]) * 60 + Number(m[2]), line });
   }
-  return out.length ? out : null;
+  return out.length ? out.sort((a, b) => a.t - b.t) : null;
 }
 
 // Spotify titles often carry '(From "Movie")' or '- Remastered 2011'
