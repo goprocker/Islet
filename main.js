@@ -168,7 +168,10 @@ ipcMain.on("volume",(_, delta) => {
 // ---- Spotify Web API: like + up next ----
 async function refreshSpotifyExtras() {
   if (!spotify.connected()) return send("spotifyExtras", { connected: false });
-  try { send("spotifyExtras", { connected: true, ...(await spotify.extras()) }); }
+  try {
+    const extras = await spotify.extras();
+    if (extras) send("spotifyExtras", { connected: true, ...extras });
+  }
   catch (e) { console.warn("spotify web", e.message); }
 }
 ipcMain.on("like", async () => {
