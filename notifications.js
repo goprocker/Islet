@@ -100,7 +100,13 @@ function writeBanners(values) {
   try { fs.rmSync(file, { force: true }); } catch {}
   return ok;
 }
-function hideBanners(saved, ids) {
+// written to a temp file first, so a crash mid-save never leaves half a journal
+function saveJournal(file, saved) {
+  const tmp = file + ".tmp";
+  fs.writeFileSync(tmp, JSON.stringify(saved, null, 2));
+  fs.renameSync(tmp, file);
+}
+function hideBanners(saved, ids, persist) {
   if (!ids) {
     try {
       const { DatabaseSync } = require("node:sqlite");
@@ -110,13 +116,22 @@ function hideBanners(saved, ids) {
     } catch { ids = []; }
   }
   // check the registry itself, not just `saved`: an earlier write may not have landed
-  const now = readBanners(), changes = {};
+  const now = readBanners(), changes = {}, fresh = {};
   for (const id of ids) {
     if (now[id] === 0 || /[\]\r\n]/.test(id)) continue;
-    if (!(id in saved)) saved[id] = id in now ? now[id] : null;
+    if (!(id in saved)) fresh[id] = id in now ? now[id] : null;
     changes[id] = 0;
   }
   if (!Object.keys(changes).length) return 0;
+  // the old values reach the disk before the registry changes, so a crash right after can
+  // still be undone by the next run. Without that record, banners are left as they are.
+  if (Object.keys(fresh).length) {
+    try { persist({ ...saved, ...fresh }); } catch (e) {
+      console.warn("banners: can't save the journal, leaving banners on:", e.message);
+      return Object.keys(changes).length;
+    }
+    Object.assign(saved, fresh);
+  }
   writeBanners(changes);
   const after = readBanners(), missed = Object.keys(changes).filter(id => after[id] !== 0).length;
   if (missed) console.warn(`banners: ${missed} of ${Object.keys(changes).length} apps still show Windows banners`);
@@ -139,3 +154,4 @@ function restoreBanners(saved) {
 
 module.exports.hideBanners = hideBanners;
 module.exports.restoreBanners = restoreBanners;
+module.exports.saveJournal = saveJournal;
