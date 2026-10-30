@@ -40,7 +40,7 @@ window.addEventListener("blur", () => {
 });
 window.bridge.onToggle(() => {
   // hotkey cycles: pill -> open -> hidden -> pill
-  if (notch.classList.contains("hidden")) notch.classList.remove("hidden");
+  if (notch.classList.contains("hidden")) { notch.classList.remove("hidden"); if (!toastBusy) nextToast(); } // pop-ups held back while hidden
   else if (notch.classList.contains("open")) { setOpen(false); window.BlackHole.cancel(notch); notch.classList.add("hidden"); }
   else setOpen(true);
 });
@@ -54,12 +54,18 @@ function peek(ms) {
 }
 
 // ---- toasts: notifications, battery, timer; one at a time ----
+// while hidden they wait for the notch to come back; only the latest few are kept for then
+const HIDDEN_BACKLOG = 5;
 const toasts = [];
 let toastBusy = false;
-function toast(t) { toasts.push(t); if (!toastBusy) nextToast(); }
+function toast(t) {
+  toasts.push(t);
+  if (notch.classList.contains("hidden") && toasts.length > HIDDEN_BACKLOG) toasts.shift();
+  if (!toastBusy) nextToast();
+}
 function nextToast() {
+  if (!toasts.length || notch.classList.contains("hidden")) { toastBusy = false; notch.classList.remove("toast"); return; }
   const t = toasts.shift();
-  if (!t || notch.classList.contains("hidden")) { toastBusy = false; notch.classList.remove("toast"); return; }
   toastBusy = true;
   // real app logo when we have one, else a coloured letter / emoji badge
   const badge = $("tBadge");
