@@ -20,11 +20,28 @@ function appName(id) {
   const base = id.split("!")[0].split("_")[0].split(".").pop();
   return base.replace(/([a-z])([A-Z])/g, "$1 $2");
 }
-const decode = s => s.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, "&");
+const ENTITIES = { lt: "<", gt: ">", quot: '"', apos: "'", amp: "&" };
+// one pass, so "&amp;lt;" stays "&lt;"; anything unknown or out of range is left as written
+const decode = s => s.replace(/&(?:#(\d+)|#x([0-9a-fA-F]+)|(lt|gt|quot|apos|amp));/g, (all, dec, hex, name) => {
+  if (name) return ENTITIES[name];
+  const code = dec ? Number(dec) : parseInt(hex, 16);
+  return code > 0x10ffff || (code >= 0xd800 && code <= 0xdfff) ? all : String.fromCodePoint(code);
+});
+// what an element's content means as text: CDATA is taken literally, the rest is decoded
+function textValue(raw) {
+  let out = "", at = 0;
+  for (const m of raw.matchAll(/<!\[CDATA\[([\s\S]*?)\]\]>/g)) {
+    out += decode(raw.slice(at, m.index)) + m[1];
+    at = m.index + m[0].length;
+  }
+  return out + decode(raw.slice(at));
+}
 function texts(xml) {
   const out = [];
-  for (const m of xml.matchAll(/<text(?![^>]*placement="attribution")[^>]*>([\s\S]*?)<\/text>/g)) {
-    const t = decode(m[1]).trim();
+  // a CDATA section may itself contain "</text>"
+  for (const m of xml.matchAll(/<text\b([^>]*?)(?:\/>|>((?:<!\[CDATA\[[\s\S]*?\]\]>|(?!<\/text>)[\s\S])*)<\/text>)/g)) {
+    if (/\bplacement\s*=\s*["']attribution["']/.test(m[1])) continue;
+    const t = textValue(m[2] || "").trim();
     if (t) out.push(t);
   }
   return out;
@@ -63,7 +80,7 @@ function watch(onNew) {
   setInterval(poll, 2000);
 }
 
-module.exports = { watch };
+module.exports = { watch, texts };
 
 // Windows' own banners (bottom right). Islet shows the pop-up instead, so it can
 // turn each app's banner off; notifications still reach the notification centre.
