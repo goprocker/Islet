@@ -94,16 +94,13 @@ function lines(stream, fn) {
   });
 }
 let lastTitle = "", iconFor = null; // player whose logo the page has
-// lyrics follow both the song and the "lyrics" setting: `lyricsFor` is the song they were
-// asked for ("" = none), so turning the setting on or off applies to the current song
-let lastMedia = null, lyricsFor = "";
+// lyrics follow both the song and the "lyrics" setting, so turning the setting on or off
+// applies to the current song
+let lastMedia = null;
+const lyricsNow = lyrics.follower(l => send("lyrics", l));
 function updateLyrics() {
   const d = lastMedia;
-  const want = d?.active && config.lyrics && d.title && d.duration > 30 ? `${d.title}|${d.artist}` : "";
-  if (want === lyricsFor) return;
-  lyricsFor = want;
-  send("lyrics", null);
-  if (want) lyrics.get(d.title, d.artist || "", d.duration).then(l => { if (lyricsFor === want && config.lyrics) send("lyrics", l); });
+  lyricsNow.update(d?.active && config.lyrics && d.title && d.duration > 30 ? d : null);
 }
 function startMedia() {
   media = spawn("powershell.exe", [...MEDIA, "watch"], { windowsHide: true });
@@ -613,7 +610,7 @@ app.whenReady().then(() => {
   powerMonitor.on("unlock-screen", () => { locked = false; applyBanners(); });
   win.webContents.on("did-finish-load", () => {
     sendPower();
-    lastClaude = ""; iconFor = null; readClaude(); refreshSpotifyExtras(); send("timer", timerEnd); sendDnd(true); send("shelf", shelf); sendTheme();
+    lastClaude = ""; iconFor = null; readClaude(); refreshSpotifyExtras(); send("timer", timerEnd); sendDnd(true); send("shelf", shelf); sendTheme(); lyricsNow.resend();
     send("clipboard", clips.map(c => c.replace(/\s+/g, " ").slice(0, 160)));
     calendar.poll(config.calendarIcsUrl, ev => send("calendar", ev));
     startWeather();
