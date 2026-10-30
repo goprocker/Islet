@@ -12,6 +12,7 @@ const bridge = require("./claude-bridge");
 const lyrics = require("./lyrics");
 const weather = require("./weather");
 const downloads = require("./downloads");
+const { readShelf } = require("./shelf-file");
 
 const BASE_W = 672, BASE_H = 190;
 const SCALES = { compact: 0.85, normal: 1, large: 1.2 };
@@ -399,10 +400,10 @@ function saveShelf() {
   send("shelf", shelf);
 }
 async function loadShelf() {
-  let paths = [];
-  try { paths = JSON.parse(fs.readFileSync(shelfPath(), "utf8")); } catch {}
   shelf = [];
-  await shelfAdd(paths);
+  const paths = readShelf(shelfPath());
+  // nothing usable: shelf.json stays as it is until the shelf next changes
+  if (paths.length) await shelfAdd(paths);
 }
 ipcMain.on("shelfAdd", (_, paths) => shelfAdd(Array.isArray(paths) ? paths : []));
 ipcMain.on("shelfPick", async () => {
@@ -618,7 +619,7 @@ app.whenReady().then(() => {
   setInterval(refreshSpotifyExtras, 30000);
   setInterval(sendDnd, 30000); // schedule edges
   setInterval(pollClipboard, 1000);
-  loadShelf();
+  loadShelf().catch(e => console.warn("shelf", e.message));
   applyBanners();
   notifications.watch(async ({ aumid, xml, ...n }) => {
     if (aumid && bannersSaved && !(aumid in bannersSaved)) applyBanners([aumid]); // an app seen for the first time
