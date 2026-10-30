@@ -31,20 +31,36 @@ function watch(dir, onChange, onDone) {
     }
     // a temp file that vanished: finished only if its real file shows up. Its own name
     // without the temp extension, or (Chrome's "Unconfirmed 123") a file that is new since
-    // the last scan and at least as big. Cancelled or stale ones announce nothing.
+    // the last scan and at least as big. Cancelled or stale ones announce nothing, and no
+    // file is announced twice.
     const real = names.filter(n => !TEMP.test(n));
+    const claimed = new Set();
+    // when a file could be the finished download: its mtime, else null
+    const fits = (n, bytes) => {
+      if (claimed.has(n)) return null;
+      try {
+        const st = fs.statSync(path.join(dir, n));
+        return Date.now() - st.mtimeMs < 15000 && st.size >= bytes ? st.mtimeMs : null;
+      } catch { return null; }
+    };
+    const claim = n => { claimed.add(n); onDone({ name: n, path: path.join(dir, n) }); };
+    // its own name is certain, so those go first
+    const unnamed = [];
     for (const [gone, bytes] of active) {
       if (now.has(gone) || names.includes(gone)) continue; // still there, just not growing
       const guess = gone.replace(TEMP, "");
+      if (real.includes(guess) && fits(guess, bytes) !== null) claim(guess);
+      else if (/^Unconfirmed \d+$/.test(guess)) unnamed.push(bytes);
+    }
+    // biggest first: it has the fewest files to choose from, so each one gets its own
+    for (const bytes of unnamed.sort((a, b) => b - a)) {
       let best = null;
       for (const n of real) {
-        if (n !== guess && (prevReal.has(n) || !/^Unconfirmed \d+$/.test(guess))) continue;
-        try {
-          const st = fs.statSync(path.join(dir, n));
-          if (Date.now() - st.mtimeMs < 15000 && st.size >= bytes && (!best || n === guess || (best.n !== guess && st.mtimeMs > best.m))) best = { n, m: st.mtimeMs };
-        } catch {}
+        if (prevReal.has(n)) continue;
+        const m = fits(n, bytes);
+        if (m !== null && (!best || m > best.m)) best = { n, m };
       }
-      if (best) onDone({ name: best.n, path: path.join(dir, best.n) });
+      if (best) claim(best.n);
     }
     prevReal = new Set(real);
     const changed = now.size !== active.size || [...now].some(([n, b]) => active.get(n) !== b);
