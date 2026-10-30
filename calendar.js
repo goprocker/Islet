@@ -1,6 +1,8 @@
 // Next calendar event from a private iCal (.ics) link (Google / Outlook "secret address").
 // Handles single events and DAILY / WEEKLY repeats (INTERVAL, COUNT, UNTIL, BYDAY);
-// skips all-day events and doesn't guess other repeat rules.
+// skips all-day events and doesn't guess other repeat rules. Times follow their TZID; an
+// event in a zone that can't be identified is skipped with a warning rather than shown at
+// a wrong time.
 let timer = null, generation = 0; // each poll() call starts a new generation
 
 function unfold(ics) { return ics.replace(/\r?\n[ \t]/g, ""); }
@@ -16,6 +18,71 @@ const LOCAL = {
     return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), d.getUTCHours(), d.getUTCMinutes(), d.getUTCSeconds());
   },
 };
+// Outlook writes Windows zone names ("India Standard Time"), listed here without that suffix
+const WINDOWS_ZONES = {
+  "Dateline": "Etc/GMT+12", "UTC-11": "Etc/GMT+11", "Aleutian": "America/Adak", "Hawaiian": "Pacific/Honolulu", "Marquesas": "Pacific/Marquesas",
+  "Alaskan": "America/Anchorage", "UTC-09": "Etc/GMT+9", "Pacific (Mexico)": "America/Tijuana", "UTC-08": "Etc/GMT+8", "Pacific": "America/Los_Angeles",
+  "US Mountain": "America/Phoenix", "Mountain (Mexico)": "America/Mazatlan", "Mountain": "America/Denver", "Yukon": "America/Whitehorse", "Central America": "America/Guatemala",
+  "Central": "America/Chicago", "Easter Island": "Pacific/Easter", "Central (Mexico)": "America/Mexico_City", "Canada Central": "America/Regina", "SA Pacific": "America/Bogota",
+  "Eastern (Mexico)": "America/Cancun", "Eastern": "America/New_York", "Haiti": "America/Port-au-Prince", "Cuba": "America/Havana", "US Eastern": "America/Indianapolis",
+  "Turks And Caicos": "America/Grand_Turk", "Paraguay": "America/Asuncion", "Atlantic": "America/Halifax", "Venezuela": "America/Caracas", "Central Brazilian": "America/Cuiaba",
+  "SA Western": "America/La_Paz", "Pacific SA": "America/Santiago", "Newfoundland": "America/St_Johns", "Tocantins": "America/Araguaina", "E. South America": "America/Sao_Paulo",
+  "SA Eastern": "America/Cayenne", "Argentina": "America/Buenos_Aires", "Greenland": "America/Godthab", "Montevideo": "America/Montevideo", "Magallanes": "America/Punta_Arenas",
+  "Saint Pierre": "America/Miquelon", "Bahia": "America/Bahia", "UTC-02": "Etc/GMT+2", "Azores": "Atlantic/Azores", "Cape Verde": "Atlantic/Cape_Verde",
+  "GMT": "Europe/London", "Greenwich": "Atlantic/Reykjavik", "Sao Tome": "Africa/Sao_Tome", "Morocco": "Africa/Casablanca", "W. Europe": "Europe/Berlin",
+  "Central Europe": "Europe/Budapest", "Romance": "Europe/Paris", "Central European": "Europe/Warsaw", "W. Central Africa": "Africa/Lagos", "Jordan": "Asia/Amman",
+  "GTB": "Europe/Bucharest", "Middle East": "Asia/Beirut", "Egypt": "Africa/Cairo", "E. Europe": "Europe/Chisinau", "Syria": "Asia/Damascus",
+  "West Bank": "Asia/Hebron", "South Africa": "Africa/Johannesburg", "FLE": "Europe/Kiev", "Israel": "Asia/Jerusalem", "South Sudan": "Africa/Juba",
+  "Kaliningrad": "Europe/Kaliningrad", "Sudan": "Africa/Khartoum", "Libya": "Africa/Tripoli", "Namibia": "Africa/Windhoek", "Arabic": "Asia/Baghdad",
+  "Turkey": "Europe/Istanbul", "Arab": "Asia/Riyadh", "Belarus": "Europe/Minsk", "Russian": "Europe/Moscow", "E. Africa": "Africa/Nairobi",
+  "Volgograd": "Europe/Volgograd", "Iran": "Asia/Tehran", "Arabian": "Asia/Dubai", "Astrakhan": "Europe/Astrakhan", "Azerbaijan": "Asia/Baku",
+  "Russia Time Zone 3": "Europe/Samara", "Mauritius": "Indian/Mauritius", "Saratov": "Europe/Saratov", "Georgian": "Asia/Tbilisi", "Caucasus": "Asia/Yerevan",
+  "Afghanistan": "Asia/Kabul", "West Asia": "Asia/Tashkent", "Ekaterinburg": "Asia/Yekaterinburg", "Pakistan": "Asia/Karachi", "Qyzylorda": "Asia/Qyzylorda",
+  "India": "Asia/Kolkata", "Sri Lanka": "Asia/Colombo", "Nepal": "Asia/Kathmandu", "Central Asia": "Asia/Almaty", "Bangladesh": "Asia/Dhaka",
+  "Omsk": "Asia/Omsk", "Myanmar": "Asia/Yangon", "SE Asia": "Asia/Bangkok", "Altai": "Asia/Barnaul", "W. Mongolia": "Asia/Hovd",
+  "North Asia": "Asia/Krasnoyarsk", "N. Central Asia": "Asia/Novosibirsk", "Tomsk": "Asia/Tomsk", "China": "Asia/Shanghai", "North Asia East": "Asia/Irkutsk",
+  "Singapore": "Asia/Singapore", "W. Australia": "Australia/Perth", "Taipei": "Asia/Taipei", "Ulaanbaatar": "Asia/Ulaanbaatar", "Aus Central W.": "Australia/Eucla",
+  "Transbaikal": "Asia/Chita", "Tokyo": "Asia/Tokyo", "North Korea": "Asia/Pyongyang", "Korea": "Asia/Seoul", "Yakutsk": "Asia/Yakutsk",
+  "Cen. Australia": "Australia/Adelaide", "AUS Central": "Australia/Darwin", "E. Australia": "Australia/Brisbane", "AUS Eastern": "Australia/Sydney", "West Pacific": "Pacific/Port_Moresby",
+  "Tasmania": "Australia/Hobart", "Vladivostok": "Asia/Vladivostok", "Lord Howe": "Australia/Lord_Howe", "Bougainville": "Pacific/Bougainville", "Russia Time Zone 10": "Asia/Srednekolymsk",
+  "Magadan": "Asia/Magadan", "Norfolk": "Pacific/Norfolk", "Sakhalin": "Asia/Sakhalin", "Central Pacific": "Pacific/Guadalcanal", "Russia Time Zone 11": "Asia/Kamchatka",
+  "New Zealand": "Pacific/Auckland", "UTC+12": "Etc/GMT-12", "Fiji": "Pacific/Fiji", "Chatham Islands": "Pacific/Chatham", "UTC+13": "Etc/GMT-13",
+  "Tonga": "Pacific/Tongatapu", "Samoa": "Pacific/Apia", "Line Islands": "Pacific/Kiritimati",
+};
+// the zone's real name: a Windows name, an IANA name, or an IANA name after a vendor prefix
+// ("/mozilla.org/20050126_1/America/New_York")
+function zoneId(tzid) {
+  const windows = WINDOWS_ZONES[tzid.replace(/ Standard Time$/, "")];
+  if (windows) return windows;
+  return tzid.match(/\/((?:Africa|America|Antarctica|Asia|Atlantic|Australia|Etc|Europe|Indian|Pacific)\/.+)$/)?.[1] || tzid;
+}
+const zones = new Map(), warned = new Set();
+// the basis for a TZID, or null when the zone isn't known
+function zoneBasis(tzid) {
+  if (zones.has(tzid)) return zones.get(tzid);
+  let basis = null;
+  try {
+    const format = new Intl.DateTimeFormat("en-US", { timeZone: zoneId(tzid), hourCycle: "h23", year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric", second: "numeric" });
+    const wallAt = ms => {
+      const p = Object.fromEntries(format.formatToParts(ms).map(x => [x.type, Number(x.value)]));
+      return Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second);
+    };
+    const offset = ms => wallAt(ms) - ms;
+    basis = {
+      // a clock reading can happen twice when clocks go back: the first one counts. One
+      // skipped when they go forward is read with the earlier offset, as RFC 5545 says.
+      instant(wall) {
+        const before = wall - offset(wall - DAY), after = wall - offset(wall + DAY);
+        const real = [before, after].filter(t => wallAt(t) === wall);
+        return new Date(real.length ? Math.min(...real) : before);
+      },
+    };
+  } catch {
+    if (!warned.has(tzid)) { warned.add(tzid); console.warn(`calendar: unknown time zone "${tzid}", skipping its events`); }
+  }
+  zones.set(tzid, basis);
+  return basis;
+}
 // { wall, basis, at } or null; a trailing Z always means UTC, otherwise `basis` applies
 function readTime(value, basis) {
   const m = value.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(Z?)$/);
@@ -26,8 +93,11 @@ function readTime(value, basis) {
 }
 function parseTime(prop, value) {
   if (/VALUE=DATE(?!-)/.test(prop) || /^\d{8}$/.test(value)) return null; // all-day
-  // TZID times are treated as this PC's local time (fine when the calendar is in your own zone)
-  return readTime(value, LOCAL);
+  const quoted = prop.match(/;TZID=(?:"([^"]+)"|([^;:]+))/i);
+  const tzid = quoted?.[1] || quoted?.[2];
+  if (!tzid || /Z$/.test(value)) return readTime(value, LOCAL);
+  const basis = zoneBasis(tzid);
+  return basis ? readTime(value, basis) : null;
 }
 
 const DAYS = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
@@ -69,7 +139,8 @@ function nextOccurrence(first, rr, now) {
 
 // every "NAME;params:value" line of one VEVENT, as { prop, value }
 function props(body, name) {
-  return [...body.matchAll(new RegExp(`^${name}([;:][^:\\n]*)?:(.*)$`, "gm"))].map(m => ({ prop: m[1] || "", value: m[2].trim() }));
+  // a quoted parameter value may contain ":"
+  return [...body.matchAll(new RegExp(`^${name}((?:;(?:"[^"\\n]*"|[^:"\\n])*)?):(.*)$`, "gm"))].map(m => ({ prop: m[1], value: m[2].trim() }));
 }
 // all times listed on EXDATE / RECURRENCE-ID lines (comma-separated values allowed)
 function times(list) {
