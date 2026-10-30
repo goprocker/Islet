@@ -23,7 +23,7 @@ function send(handler, body) {
     end() { this.writableEnded = true; return this; },
   });
   handler(req, res);
-  req.emit("data", body);
+  for (const chunk of [].concat(body)) req.emit("data", chunk);
   req.emit("end");
   return res.code;
 }
@@ -42,4 +42,32 @@ test("accepts a normal hook event", () => {
   assert.strictEqual(post('{"event":"Stop","session":"s1","cwd":"C:/x","toolInput":null}'), 200);
   assert.deepStrictEqual(seen, [["s1", "done"]]);
   assert.strictEqual(bridge.status.get("s1").status, "done");
+});
+
+test("a character split across two chunks stays whole", () => {
+  const { seen, post } = startBridge();
+  const bytes = Buffer.from(JSON.stringify({ event: "Stop", session: "session-😀", cwd: "C:/projekt-ü" }));
+  const at = bytes.indexOf(Buffer.from("😀")) + 2;
+  assert.strictEqual(post([bytes.subarray(0, at), bytes.subarray(at)]), 200);
+  assert.deepStrictEqual(seen, [["session-😀", "done"]]);
+});
+test("every byte in its own chunk still decodes", () => {
+  const { seen, post } = startBridge();
+  const bytes = Buffer.from(JSON.stringify({ event: "Stop", session: "日本語-😀" }));
+  assert.strictEqual(post([...bytes].map(b => Buffer.from([b]))), 200);
+  assert.deepStrictEqual(seen, [["日本語-😀", "done"]]);
+});
+test("the 1 MB limit counts bytes, not characters", () => {
+  const realCreate = http.createServer;
+  let handler;
+  http.createServer = h => { handler = h; return Object.assign(new EventEmitter(), { listen() {} }); };
+  delete require.cache[require.resolve("../claude-bridge")];
+  try { require("../claude-bridge").start({ onStatus() {}, onPermission() {}, onPermissionGone() {} }); }
+  finally { http.createServer = realCreate; }
+  const body = Buffer.from("😀".repeat(300000)); // 1.2 MB, but only 600,000 UTF-16 units
+  let destroyed = false;
+  const req = Object.assign(new EventEmitter(), { method: "POST", url: "/claude", destroy() { destroyed = true; } });
+  handler(req, new EventEmitter());
+  req.emit("data", body);
+  assert.strictEqual(destroyed, true);
 });

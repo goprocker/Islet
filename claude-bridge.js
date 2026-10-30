@@ -1,6 +1,7 @@
 // Receives Claude Code and Codex hook events (hooks/islet-hook.js) on 127.0.0.1:47321
 // and installs/removes those hooks in ~/.claude/settings.json and ~/.codex/hooks.json.
 const http = require("http");
+const { StringDecoder } = require("string_decoder");
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
@@ -65,10 +66,16 @@ function start({ onStatus, onPermission, onPermissionGone, permissionWait }) {
   };
   const server = http.createServer((req, res) => {
     if (req.method !== "POST" || req.url !== "/claude") { res.writeHead(404).end(); return; }
-    let body = "";
-    req.on("data", d => { body += d; if (body.length > 1e6) req.destroy(); });
+    // one decoder for the whole body: a character split across chunks stays whole
+    const decoder = new StringDecoder("utf8");
+    let body = "", bytes = 0;
+    req.on("data", d => {
+      bytes += d.length;
+      if (bytes > 1e6) return req.destroy();
+      body += decoder.write(d);
+    });
     req.on("end", () => {
-      let e; try { e = JSON.parse(body); } catch { res.writeHead(400).end(); return; }
+      let e; try { e = JSON.parse(body + decoder.end()); } catch { res.writeHead(400).end(); return; }
       if (!validEvent(e)) { res.writeHead(400).end(); return; }
       const st = statusFor(e.event, e.message);
       status.set(e.session, { status: st, at: Date.now() });
