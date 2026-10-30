@@ -193,7 +193,10 @@ window.bridge.onMedia(d => {
     lastArt = art;
     document.querySelectorAll(".art").forEach(a => art ? (a.src = art) : a.removeAttribute("src"));
     if (art) accentFrom(art);
-    else if (theme.accent === "album") document.documentElement.style.removeProperty("--accent");
+    else {
+      accentRequest++; // the cover still loading no longer applies
+      if (theme.accent === "album") document.documentElement.style.removeProperty("--accent");
+    }
   }
   render();
 });
@@ -273,10 +276,13 @@ window.bridge.onPermissionGone(id => {
 $("cProject").onclick =() => { const s = shown(); if (s?.cwd) window.bridge.openProject(s.cwd); };
 
 // tint the notch with the album art's dominant colour
+let accentRequest = 0; // only the newest cover may set it
 function accentFrom(src) {
+  const mine = ++accentRequest;
   if (theme.accent !== "album") return; // a fixed accent from settings wins
   const img = new Image();
   img.onload = () => {
+    if (mine !== accentRequest || theme.accent !== "album") return; // changed while it loaded
     const c = document.createElement("canvas"); c.width = c.height = 16;
     const x = c.getContext("2d"); x.drawImage(img, 0, 0, 16, 16);
     const d = x.getImageData(0, 0, 16, 16).data;
