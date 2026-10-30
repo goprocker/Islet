@@ -2,7 +2,7 @@ const $ = id => document.getElementById(id);
 const notch = $("notch");
 const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 const ago = ms => { const s = Math.round(ms / 1000); return s < 5 ? "now" : s < 60 ? `${s}s` : s < 3600 ? `${Math.round(s / 60)}m` : `${Math.round(s / 3600)}h`; };
-const PLAY = '<path d="M7 4v16l13-8z"/>', PAUSE = '<path d="M6 4h4v16H6zM14 4h4v16h-4z"/>';
+const PLAY = '<path d="M8 5v14l11-7z"/>', PAUSE = '<path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/>';
 
 let track = null, lastArt = null, extras = { connected: false };
 let sessions = [], pinned = null;       // Claude projects; pinned = project the user picked

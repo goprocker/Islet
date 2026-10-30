@@ -170,7 +170,9 @@ button:hover { background: #ffffff14; }
 button:active { transform: scale(.9); }
 button:focus-visible { outline: 1.5px solid var(--accent); }
 button svg { width: 15px; height: 15px; fill: currentColor; }
-button.play svg { width: 19px; height: 19px; }
+.buttons svg { width: 18px; height: 18px; }
+button.play svg { width: 22px; height: 22px; }
+.like { flex: none; }
 .like svg { fill: none; stroke: currentColor; stroke-width: 2; }
 .like[aria-pressed="true"] { color: var(--accent); }
 .like[aria-pressed="true"] svg { fill: currentColor; }
