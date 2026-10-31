@@ -64,7 +64,7 @@ The open notch, left to right: **agent sessions** → **music** → **time and b
 ### 🤖 Claude Code and Codex
 - Both agents in one column, newest first
 - Each session shows **working**, **needs you** or **done**
-- The last 3 actions: your prompt, tools used, edited files
+- The last 3 actions: tools used, edited files, replies, plus your prompts for Codex
 - **Allow / Deny** Claude Code permission requests right in the notch
 - Click a project to open its folder
 
@@ -74,7 +74,7 @@ The open notch, left to right: **agent sessions** → **music** → **time and b
 <td valign="top">
 
 ### 🔔 Notifications
-- Every Windows toast becomes a notch pop-up with the **real app logo**
+- Every Windows toast except Spotify's becomes a notch pop-up with the **real app logo**
 - Full message text, sized to fit
 - Windows' bottom-right banners are off while Islet runs and restored on quit
 - Do Not Disturb, with an optional daily schedule
@@ -142,7 +142,7 @@ Code changes apply on restart. To build your own installer, run `npm run dist`, 
 
 Only one copy of Islet runs at a time, so quit the `npm start` copy before installing.
 
-On first run, Islet adds itself to **Start with Windows**. Right-click the tray icon for the menu.
+On first run, Islet adds itself to **Start with Windows** and installs the agent hooks. Right-click the tray icon for the menu.
 
 ## 🖱️ Usage
 
@@ -153,14 +153,14 @@ On first run, Islet adds itself to **Start with Windows**. Right-click the tray 
 | Next monitor | `Ctrl+Alt+M`, or tray → **Show on screen** |
 | Volume / seek | Scroll over the music side / click the progress bar |
 | Album view | Click the album art |
-| Like | Heart button, or `Alt+Shift+B` |
+| Like | Heart button, shown for Spotify (sends Spotify's `Alt+Shift+B`) |
 | Clipboard / shelf / DND | Buttons in the tools column |
 | Timer / settings | Tray → **Timer** / **Settings…** |
 | Quit | Tray → **Quit** (Alt+F4 is ignored on purpose) |
 
 ## 🤖 Claude Code and Codex
 
-Tray → **Connect to Claude Code and Codex** installs the hooks. Untick it to remove them. A backup is saved next to each file, and only Islet's own handlers are ever removed.
+Islet installs the hooks on first run. Tray → **Connect to Claude Code and Codex** removes or adds them. Adding saves a backup next to each file, and only Islet's own handlers are ever removed.
 
 > [!IMPORTANT]
 > The hooks run with `node`, so Node.js must be on your PATH, even with the installed app. They also point at the copy of Islet that installed them. If you move that folder or switch between source and the installed app, untick and tick the option again in the copy you're using.
@@ -168,9 +168,10 @@ Tray → **Connect to Claude Code and Codex** installs the hooks. Untick it to r
 | Hook event | Notch shows |
 |---|---|
 | `UserPromptSubmit`, `PostToolUse` | 🟣 Working, plus the latest actions |
-| `Notification`, `PermissionRequest` | 🟠 Needs you; Claude Code requests get **Allow / Deny** |
-| `Stop`, `SessionEnd` | ✅ Done |
-| `SessionStart` (Codex) | A new session chip |
+| `PermissionRequest`, permission `Notification` | 🟠 Needs you; Claude Code requests get **Allow / Deny** |
+| `Stop`, any other `Notification` | ✅ Done |
+| `SessionStart` (Codex) | A new session |
+| `SessionEnd` | The session leaves the list |
 
 <details>
 <summary><b>More details</b></summary>
@@ -189,7 +190,7 @@ Tray → **Connect to Claude Code and Codex** installs the hooks. Untick it to r
 Stored in `%APPDATA%\islet\config.json` and edited from the settings window. Hand edits are picked up within 2 s. A file that can't be read is left alone, not overwritten.
 
 <details>
-<summary><b>All 18 settings</b></summary>
+<summary><b>All 20 settings</b></summary>
 
 | Key | Default | Meaning |
 |---|---|---|
