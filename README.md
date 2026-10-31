@@ -38,7 +38,7 @@ The open notch, left to right: **agent sessions** → **music** → **time and b
 
 ## ✨ What's new
 
-- 📦 **Version 2.0:** the first published release, with a ready-made [installer](https://github.com/goprocker/Islet/releases/latest) and redrawn player controls.
+- 📦 **Version 2.0:** 14 reliability fixes, a ready-made [installer](https://github.com/goprocker/Islet/releases/latest) and redrawn player controls.
 - 🌌 **Black hole charger animation:** an Interstellar-style black hole plays when the charger goes in (*CHARGING INITIATED*) or out (*RUNNING ON BATTERY*). You can pick Cinematic or Subtle, or turn it off.
 - 💬 **Full notification text:** pop-ups are wider, grow up to about 7 lines and stay on screen longer for long messages.
 - 🔒 **Lock screen:** Windows' own banners come back while the PC is locked, so you still see messages there.
