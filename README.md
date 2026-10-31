@@ -6,10 +6,11 @@
 
 Music · Claude Code and Codex · notifications · battery · weather, all in one small black pill at the top of your screen.
 
+<a href="https://github.com/goprocker/Islet/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/goprocker/Islet?style=for-the-badge"></a>
 <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-blue?style=for-the-badge"></a>
 <img alt="Windows 10 / 11" src="https://img.shields.io/badge/Windows-10%20%7C%2011-0078d4?style=for-the-badge&logo=windows11&logoColor=white">
 <img alt="Electron 37" src="https://img.shields.io/badge/Electron-37-47848f?style=for-the-badge&logo=electron&logoColor=white">
-<img alt="43 tests passing" src="https://img.shields.io/badge/tests-43%20passing-34c759?style=for-the-badge">
+<img alt="148 tests passing" src="https://img.shields.io/badge/tests-148%20passing-34c759?style=for-the-badge">
 
 <br><br>
 
@@ -37,6 +38,7 @@ The open notch, left to right: **agent sessions** → **music** → **time and b
 
 ## ✨ What's new
 
+- 📦 **Version 2.0:** the first published release, with a ready-made [installer](https://github.com/goprocker/Islet/releases/latest) and redrawn player controls.
 - 🌌 **Black hole charger animation:** an Interstellar-style black hole plays when the charger goes in (*CHARGING INITIATED*) or out (*RUNNING ON BATTERY*). You can pick Cinematic or Subtle, or turn it off.
 - 💬 **Full notification text:** pop-ups are wider, grow up to about 7 lines and stay on screen longer for long messages.
 - 🔒 **Lock screen:** Windows' own banners come back while the PC is locked, so you still see messages there.
@@ -113,25 +115,32 @@ The open notch, left to right: **agent sessions** → **music** → **time and b
 
 ## 📦 Install
 
-**You need:** Windows 10 1903+ or 11 · Node.js 20+ · Git · Windows PowerShell 5.1 (built into Windows)
+**You need:** Windows 10 1903+ or 11 · Windows PowerShell 5.1 (built into Windows)
+
+### Download the installer
+
+Get `Islet-Setup-<version>.exe` from the [**latest release**](https://github.com/goprocker/Islet/releases/latest) and run it. It adds a Start menu entry and installs to `%LOCALAPPDATA%\Programs\islet`. Islet doesn't update itself, so to update, install the new version.
+
+> [!NOTE]
+> The installer is unsigned. SmartScreen may warn about it, and **Smart App Control** may block it. If it's blocked, run from source instead.
+
+### Run from source
+
+**You also need:** Node.js 20+ · Git
 
 ```powershell
 git clone https://github.com/goprocker/Islet.git
 cd Islet
 npm install
+npm start
 ```
 
-| | Run from the folder | Install as an app |
-|---|---|---|
-| **Command** | `npm start` | `npm run dist`, then run `dist\Islet Setup <version>.exe` |
-| **Best for** | Development: code changes apply on restart | Daily use: Start menu entry, installs to `%LOCALAPPDATA%\Programs\islet` |
-| **Updating** | Restart it | Rebuild and run the new setup |
+Code changes apply on restart. To build your own installer, run `npm run dist`, then run `dist\Islet Setup <version>.exe`.
 
 > [!TIP]
 > Run `npm run dist` from **PowerShell**. It fails under Git Bash.
 
-> [!NOTE]
-> The installer is unsigned. If **Smart App Control** blocks it, use `npm start` instead. Only one copy of Islet runs at a time, so quit the `npm start` copy before installing.
+Only one copy of Islet runs at a time, so quit the `npm start` copy before installing.
 
 On first run, Islet adds itself to **Start with Windows**. Right-click the tray icon for the menu.
 
@@ -152,6 +161,9 @@ On first run, Islet adds itself to **Start with Windows**. Right-click the tray 
 ## 🤖 Claude Code and Codex
 
 Tray → **Connect to Claude Code and Codex** installs the hooks. Untick it to remove them. A backup is saved next to each file, and only Islet's own handlers are ever removed.
+
+> [!IMPORTANT]
+> The hooks run with `node`, so Node.js must be on your PATH, even with the installed app. They also point at the copy of Islet that installed them. If you move that folder or switch between source and the installed app, untick and tick the option again in the copy you're using.
 
 | Hook event | Notch shows |
 |---|---|
@@ -212,7 +224,7 @@ main.js ── window, tray, hotkeys, powerMonitor, config, IPC
  ├─ notifications.js      reads wpndatabase.db (node:sqlite, read-only); toggles banners
  ├─ icons.js              real app logos (Store manifests, shortcuts, exe icons)
  ├─ claude-bridge.js      HTTP server for Claude Code + Codex hooks; installs/removes them
- ├─ calendar.js  weather.js  lyrics.js  downloads.js  spotify-web.js
+ ├─ calendar.js  weather.js  lyrics.js  downloads.js  shelf-file.js  spotify-web.js
  └─ preload.js ── renderer/  (index.html, notch.css, notch.js, blackhole.js)
                   settings/  (settings window)
 ```
@@ -232,7 +244,7 @@ main.js ── window, tray, hotkeys, powerMonitor, config, IPC
 ### 🛠️ Develop
 
 ```powershell
-npm test     # 8 test files, node --test
+npm test     # 18 test files, node --test
 node_modules\electron\dist\electron.exe . --remote-debugging-port=9333   # then chrome://inspect
 ```
 
@@ -249,8 +261,9 @@ Everything runs on your PC. Network calls go only to lrclib.net (title and artis
 | Banners still bottom-right | Start Islet normally, not from a sandboxed shell, which can't write the registry. Sign out and in once if needed. |
 | Banners stay off after a crash | Start Islet and quit it from the tray, or turn off the setting. |
 | Codex column is empty | Approve Islet's hooks in Codex (`/hooks`). |
+| Agent status stops updating | Check that `node` is on your PATH. If Islet moved, untick and tick **Connect to Claude Code and Codex**. |
 | `npm run dist` fails | Run it from PowerShell, not Git Bash. |
-| Installer blocked | Smart App Control; use `npm start`. |
+| Installer blocked | Smart App Control; [run from source](#run-from-source). |
 | Installed app ignores code changes | Rebuild with `npm run dist` and reinstall. |
 | Second launch does nothing | Only one copy runs; the second launch opens the running copy's settings. |
 
