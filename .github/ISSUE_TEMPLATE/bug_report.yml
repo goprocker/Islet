@@ -1,0 +1,49 @@
+name: Bug report
+description: Something in Islet isn't working
+labels: [bug]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Include what you expected to happen. Add a screenshot if it helps.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open the notch
+        2. Click ...
+    validations:
+      required: true
+  - type: input
+    id: islet-version
+    attributes:
+      label: Islet version
+      placeholder: 2.0.0
+    validations:
+      required: true
+  - type: dropdown
+    id: install-type
+    attributes:
+      label: How do you run Islet?
+      options:
+        - Installer
+        - From source
+    validations:
+      required: true
+  - type: input
+    id: windows-version
+    attributes:
+      label: Windows version
+      placeholder: Windows 11 24H2
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or other details
+      description: Remove tokens, calendar links and personal messages first.
+      render: text
