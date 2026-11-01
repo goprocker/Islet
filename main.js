@@ -362,16 +362,17 @@ function sendDnd(force) {
 ipcMain.on("toggleDnd", toggleDnd);
 
 // ---- clipboard history: last 5 copied texts, kept in memory only ----
-let clips = [], lastClip = clipboard.readText();
-function pollClipboard() {
+// lastClip starts unset: what was already on the clipboard at launch isn't a new copy
+let clips = [], lastClip = null;
+async function pollClipboard() {
   if (!config.clipboardHistory) { if (clips.length) { clips = []; send("clipboard", []); } return; }
-  const t = clipboard.readText();
-  if (!t || t === lastClip || t.length > 20000) { lastClip = t; return; }
+  const t = await clipboard.readText();
+  if (lastClip === null || !t || t === lastClip || t.length > 20000) { lastClip = t; return; }
   lastClip = t;
   clips = [t, ...clips.filter(c => c !== t)].slice(0, 5);
   send("clipboard", clips.map(c => c.replace(/\s+/g, " ").slice(0, 160)));
 }
-ipcMain.on("copyClip", (_, i) => { if (clips[i] !== undefined) { clipboard.writeText(clips[i]); lastClip = clips[i]; } });
+ipcMain.on("copyClip", (_, i) => { if (clips[i] !== undefined) { lastClip = clips[i]; clipboard.writeText(clips[i]).catch(e => console.warn("clipboard", e.message)); } });
 ipcMain.on("clearClips", () => { clips = []; send("clipboard", []); });
 
 // ---- file shelf: hold files here, drag them out anywhere ----
@@ -619,7 +620,7 @@ app.whenReady().then(() => {
   setInterval(readClaude, 2000);
   setInterval(refreshSpotifyExtras, 30000);
   setInterval(sendDnd, 30000); // schedule edges
-  setInterval(pollClipboard, 1000);
+  setInterval(() => pollClipboard().catch(e => console.warn("clipboard", e.message)), 1000);
   loadShelf().catch(e => console.warn("shelf", e.message));
   applyBanners();
   notifications.watch(async ({ aumid, xml, ...n }) => {
