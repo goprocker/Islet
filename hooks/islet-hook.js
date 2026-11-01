@@ -54,7 +54,7 @@ function post(input, token, nonce) {
     lastMessage: typeof input.last_assistant_message === "string" ? input.last_assistant_message.slice(0, 300) : "",
   });
   const req = http.request(
-    { host: "127.0.0.1", port: PORT, path: "/claude", method: "POST", timeout: WAIT, headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) } },
+    { host: "127.0.0.1", port: PORT, path: "/claude", method: "POST", timeout: WAIT, headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body), "X-Islet-Proof": auth.sign(token, "event", body) } },
     res => {
       let out = "";
       res.on("data", d => (out += d));

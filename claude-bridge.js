@@ -93,7 +93,10 @@ function start({ onStatus, onPermission, onPermissionGone, permissionWait }) {
       body += decoder.write(d);
     });
     req.on("end", () => {
-      let e; try { e = JSON.parse(body + decoder.end()); } catch { res.writeHead(400).end(); return; }
+      const text = body + decoder.end();
+      // only Islet's own hook knows the secret, so other programs and web pages can't fake an event or a card
+      if (!hookAuth.verify(hookAuth.ensureToken(), "event", text, req.headers["x-islet-proof"])) { res.writeHead(401).end(); return; }
+      let e; try { e = JSON.parse(text); } catch { res.writeHead(400).end(); return; }
       if (!validEvent(e)) { res.writeHead(400).end(); return; }
       const st = statusFor(e.event, e.message);
       status.set(e.session, { status: st, at: Date.now() });
