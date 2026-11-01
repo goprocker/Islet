@@ -122,6 +122,12 @@ footer{background:var(--sea);padding:30px 0;font-size:15px}
   .v-open{grid-template-columns:1fr 1.3fr;padding:12px;gap:10px}
   .v-open>div:nth-child(3){display:none}
   #notch[data-view=open],#notch[data-view=needs]{height:160px}
+  /* the longest headline phrase has to fit the screen */
+  h1{font-size:12vw}
+}
+@media (max-width:380px){
+  .v-open{grid-template-columns:76px minmax(0,1fr);padding:10px;gap:8px}
+  #notch .track .wave{display:none}
 }
 /* headline: phrases share one grid cell, so the line never changes width */
 .rotor{display:inline-grid;overflow:clip;padding-bottom:.14em;margin-bottom:-.14em;vertical-align:baseline;text-align:left}
@@ -177,7 +183,7 @@ footer{background:var(--sea);padding:30px 0;font-size:15px}
     <button type="button" data-view="needs" aria-pressed="false">Agent needs you</button>
     <button type="button" data-view="message" aria-pressed="false">Message</button>
     <button type="button" data-view="charge" aria-pressed="false">Plug in charger</button>
-    <p class="hint">Music starts on its own, or on your first click. Open the notch to pause, seek or change volume.</p>
+    <p class="hint">Music starts on its own, or on your first tap. Tap the notch, then pause to stop it.</p>
   </div>
   <h1 aria-label="Islet is launching soon.">
     <span aria-hidden="true">Islet is <span class="rotor" id="rotor"><span class="on">launching soon.</span><span>your music.</span><span>launching soon.</span><span>your AI agents.</span><span>launching soon.</span><span>every message.</span><span>launching soon.</span><span>one black pill.</span></span></span>
@@ -361,12 +367,12 @@ footer{background:var(--sea);padding:30px 0;font-size:15px}
   });
 
   // browsers block sound until the visitor interacts, so try now and retry on the first gesture
-  const gestures = ["pointerdown", "keydown", "touchend"];
+  const gestures = ["pointerdown", "pointerup", "click", "keydown", "touchend"];
   const stopWaiting = () => gestures.forEach(g => removeEventListener(g, firstGesture, true));
   const firstGesture = e => {
-    stopWaiting();
-    if (e.target.closest?.("#toggle")) return; // that click is about to toggle play itself
-    setPlaying(true);
+    if (e.target.closest?.("#toggle")) return stopWaiting(); // that click is about to toggle play itself
+    // a phone's touch or scroll may not count as permission, so keep waiting until one does
+    audio.play().then(() => { stopWaiting(); setPlaying(true); }).catch(() => {});
   };
   audio.play().then(() => setPlaying(true)).catch(() => gestures.forEach(g => addEventListener(g, firstGesture, true)));
   $("toggle").addEventListener("click", stopWaiting);
