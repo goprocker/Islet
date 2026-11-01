@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Islet: launching soon</title>
+<meta name="description" content="Islet is a Dynamic-Island-style notch for Windows 10 and 11. Music, Claude Code and Codex, notifications and battery in one black pill. Launching soon.">
+<meta property="og:title" content="Islet: launching soon">
+<meta property="og:description" content="The notch Windows never had. Music, AI agents, notifications and battery in one black pill.">
+<meta property="og:image" content="open.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--sea:#cfdcf5;--mist:#e9eefb;--ink:#000;--deep:#1d2747;--soft:#4a5578;--gold:#e2b13c;--violet:#b9a7ff;--green:#34c759;--amber:#ff9f0a}
+*{box-sizing:border-box;margin:0}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--mist);color:var(--deep);font:400 17px/1.55 Figtree,system-ui,sans-serif}
+a{color:inherit}
+:focus-visible{outline:3px solid #3d55c7;outline-offset:3px}
+h1,h2,h3{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:700;color:var(--ink)}
+.wrap{width:min(1080px,100% - 32px);margin-inline:auto}
+
+.hero{background:linear-gradient(#a9c0ee,var(--sea) 45%,var(--mist));min-height:100svh;display:flex;flex-direction:column;align-items:center;text-align:center;padding:0 16px 56px}
+.stage{height:176px;width:100%;display:flex;justify-content:center;align-items:flex-start;flex:none}
+
+/* the notch */
+#notch{position:relative;width:176px;height:34px;background:#000;color:#fff;border-radius:0 0 18px 18px;overflow:hidden;transition:width .42s cubic-bezier(.3,1.3,.5,1),height .42s cubic-bezier(.3,1.3,.5,1),border-radius .42s;text-align:left;font-size:13px;line-height:1.35;max-width:100%}
+#notch[data-view=quiet]{width:64px}
+#notch[data-view=open],#notch[data-view=needs]{width:640px;height:150px;border-radius:0 0 28px 28px}
+#notch[data-view=message]{width:400px;height:92px;border-radius:0 0 26px 26px}
+#notch.bh{width:340px;height:84px;border-radius:0 0 26px 26px}
+.view{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .2s}
+#notch[data-view=quiet]:not(.bh) .v-quiet,#notch[data-view=playing]:not(.bh) .v-playing,#notch[data-view=open]:not(.bh) .v-open,#notch[data-view=needs]:not(.bh) .v-open,#notch[data-view=message]:not(.bh) .v-message{opacity:1;pointer-events:auto;transition-delay:.14s}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--violet);flex:none}
+.v-quiet{display:grid;place-items:center}
+.v-playing{display:flex;align-items:center;gap:10px;padding:0 14px 0 8px}
+.art{background:linear-gradient(135deg,#f4d67a,var(--gold) 55%,#8f6414);border-radius:6px;flex:none}
+.v-playing .art{width:22px;height:22px}
+.wave{display:flex;align-items:center;gap:3px;height:16px;margin-left:auto}
+.wave i{width:3px;height:100%;background:var(--gold);border-radius:2px;animation:wv 1s ease-in-out infinite alternate}
+.wave i:nth-child(2){animation-delay:-.7s}.wave i:nth-child(3){animation-delay:-.35s}.wave i:nth-child(4){animation-delay:-.9s}.wave i:nth-child(5){animation-delay:-.5s}
+@keyframes wv{from{transform:scaleY(.3)}to{transform:scaleY(1)}}
+
+.v-open{display:grid;grid-template-columns:150px 1fr 96px;padding:12px 16px 14px;gap:14px}
+.v-open>div+div{border-left:1px solid #2b2b2b;padding-left:14px}
+.dim{color:#9a9a9a}
+.chips{display:flex;gap:5px;margin-bottom:5px;align-items:center}
+.chip{background:none;border:0;color:#9a9a9a;font:11px Figtree,sans-serif;cursor:pointer;border-radius:10px;padding:1px 8px}
+.chip.on{background:#262626;color:#fff}
+.agent b{font-weight:600;display:block}
+#notch[data-view=open] .ask{display:none}
+#notch[data-view=needs] .worklog{display:none}
+#notch[data-view=needs] .status{color:var(--amber)}
+.ask .row{display:flex;gap:6px;margin-top:6px}
+.ask button{font:600 12px Figtree,sans-serif;border:0;border-radius:9px;padding:3px 11px;background:#fff;color:#000;cursor:pointer}
+.ask button+button{background:#333;color:#fff}
+.track{display:flex;gap:10px;align-items:center}
+.track .art{width:40px;height:40px}
+.track .wave{height:14px}
+.times{display:flex;align-items:center;gap:8px;font-size:11px;margin:8px 0 4px}
+.bar{flex:1;padding:7px 0;cursor:pointer;background:linear-gradient(#333,#333) center/100% 3px no-repeat}
+.bar i{display:block;height:3px;width:0;background:var(--gold)}
+.ctl{display:flex;justify-content:center;gap:12px}
+.icon{background:none;border:0;color:#fff;font:15px/1 system-ui,sans-serif;cursor:pointer;min-width:28px;height:28px;border-radius:8px}
+.icon:hover{background:#262626}
+#like{margin-left:auto;flex:none}
+#like[aria-pressed=true]{color:var(--gold)}
+.meta{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#notch .track .wave{margin-left:0}
+#notch.paused .wave i{animation-play-state:paused}
+#notch :focus-visible{outline-color:#fff;outline-offset:1px}
+#notch[data-view=quiet],#notch[data-view=playing],#notch[data-view=message]{cursor:pointer}
+.hint{flex-basis:100%;font-size:15px;color:var(--soft);margin-top:4px}
+.clock{font-weight:600;font-size:18px;line-height:1.1}
+.v-message{display:flex;gap:12px;padding:14px 18px;align-items:flex-start}
+.logo{width:30px;height:30px;border-radius:8px;background:#25d366;display:grid;place-items:center;font-weight:600;flex:none}
+
+.bhv{position:absolute;inset:0;display:flex;align-items:center;padding-right:18px;gap:12px;opacity:0;transition:opacity .2s}
+#notch.bh .bhv{opacity:1}
+#bhCanvas{width:112px;height:84px;flex:none}
+#bhPct{font:700 26px "Bricolage Grotesque",sans-serif;display:block;opacity:0;transition:opacity .3s}
+#bhLabel{font-size:10.5px;letter-spacing:.14em;color:#ffcc78;display:block;opacity:0;transition:opacity .3s}
+.bhv.off #bhLabel{color:#ff8c5a}
+.show-pct #bhPct,.show-label #bhLabel{opacity:1}
+
+.tryit{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:clamp(24px,5vh,64px)}
+.tryit button{font:600 15px Figtree,sans-serif;background:transparent;color:var(--ink);border:1.5px solid var(--ink);border-radius:999px;padding:7px 15px;min-height:40px;cursor:pointer}
+.tryit button[aria-pressed=true]{background:var(--ink);color:#fff}
+
+h1{font-size:clamp(3.2rem,min(10vw,15vh),9.5rem);line-height:.92;letter-spacing:-.04em}
+.lede{font-size:clamp(1.15rem,2.2vw,1.5rem);line-height:1.35;max-width:32ch;margin:22px auto 26px;color:var(--deep)}
+.cta{display:inline-block;background:#000;color:#fff;font:600 17px Figtree,sans-serif;border:0;cursor:pointer;padding:13px 24px;border-radius:0 0 20px 20px}
+.cta:hover{background:#1d2747}
+.cta:disabled{cursor:default;background:#1d2747}
+a.note{display:block}
+.note{font-size:15px;color:var(--soft);margin-top:14px}
+
+section{padding:clamp(56px,9vw,104px) 0}
+h2{font-size:clamp(2rem,5vw,3.6rem);line-height:1;letter-spacing:-.025em;max-width:18ch}
+.intro{max-width:58ch;margin-top:18px;color:var(--soft)}
+.shot{display:block;width:100%;height:auto;margin-top:clamp(32px,5vw,56px)}
+.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:44px 56px;margin-top:clamp(36px,5vw,60px)}
+h3{font-size:1.45rem;letter-spacing:-.01em;margin-bottom:10px}
+ul{padding-left:1.1em;color:var(--soft)}li{margin-bottom:5px}li::marker{color:var(--ink)}
+
+.dark{background:#000;color:#c9c9c9}
+.dark h2{color:#fff}.dark .intro{color:#a9a9a9}
+.dark .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:32px 56px;margin-top:44px}
+.dark h3{color:#fff}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:26px;margin-top:40px}
+.facts dt{color:var(--soft);font-size:15px}.facts dd{margin:0;font:700 1.4rem "Bricolage Grotesque",sans-serif;color:var(--ink)}
+footer{background:var(--sea);padding:30px 0;font-size:15px}
+@media (max-width:680px){
+  .v-open{grid-template-columns:1fr 1.3fr;padding:12px;gap:10px}
+  .v-open>div:nth-child(3){display:none}
+  #notch[data-view=open],#notch[data-view=needs]{height:160px}
+}
+/* headline: phrases share one grid cell, so the line never changes width */
+.rotor{display:inline-grid;overflow:clip;padding-bottom:.14em;margin-bottom:-.14em;vertical-align:baseline;text-align:left}
+.rotor>span{grid-area:1/1;white-space:nowrap;opacity:0;transform:translateY(100%);transition:transform .55s cubic-bezier(.2,.8,.2,1),opacity .3s}
+.rotor>span.on{opacity:1;transform:none}
+.rotor>span.out{opacity:0;transform:translateY(-100%)}
+/* the notch stays on screen and reacts to the section being read */
+#notch{position:fixed;top:0;left:50%;translate:-50% 0;z-index:10;max-width:calc(100vw - 16px)}
+.features{display:block}
+.features>div{min-height:72vh;display:grid;grid-template-columns:1fr 1fr;gap:24px 56px;align-items:center}
+.features h3{font-size:clamp(2.4rem,6vw,5rem);line-height:1;letter-spacing:-.03em;margin:0}
+.features ul{font-size:1.1rem}
+.shot{transform-origin:top center}
+.anim .features h3{opacity:0;transform:translateX(-48px) scale(.94);transition:opacity .6s,transform .7s cubic-bezier(.2,.8,.2,1)}
+.anim .features li,.anim .rise{opacity:0;transform:translateY(28px);transition:opacity .5s,transform .6s cubic-bezier(.2,.8,.2,1)}
+.anim .features li:nth-child(2),.anim .rise:nth-child(2){transition-delay:.08s}
+.anim .features li:nth-child(3),.anim .rise:nth-child(3){transition-delay:.16s}
+.anim .features li:nth-child(4),.anim .rise:nth-child(4){transition-delay:.24s}
+.anim .features li:nth-child(5){transition-delay:.32s}
+.anim .features .in h3,.anim .features .in li,.anim .rise.in{opacity:1;transform:none}
+@media (max-width:680px){.features>div{grid-template-columns:1fr;align-content:center;min-height:64vh}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="stage">
+    <div id="notch" data-view="quiet">
+      <div class="view v-quiet"><span class="dot"></span></div>
+      <div class="view v-playing"><span class="art"></span><span class="dot"></span><span class="wave"><i></i><i></i><i></i><i></i><i></i></span></div>
+      <div class="view v-open">
+        <div class="agent">
+          <div class="chips"><button type="button" class="chip on" data-project="islet">islet</button><button type="button" class="chip" data-project="api">api</button></div>
+          <span class="dim status" id="agentStatus">Claude, working</span>
+          <div class="worklog"><b id="logA">Edited notch.css</b><span class="dim" id="logB">Ran npm test</span></div>
+          <div class="ask"><b>Run npm test?</b><div class="row"><button type="button" data-answer="Allowed">Allow</button><button type="button" data-answer="Denied">Deny</button></div></div>
+        </div>
+        <div>
+          <div class="track"><span class="art"></span><div class="meta"><b id="title"></b><br><span class="dim" id="artist"></span></div><button type="button" class="icon" id="like" aria-label="Like this song" aria-pressed="false">♡</button><span class="wave"><i></i><i></i><i></i><i></i><i></i></span></div>
+          <div class="times"><span class="dim" id="pos"></span><div class="bar" id="bar" role="slider" tabindex="0" aria-label="Seek"><i></i></div><span class="dim" id="len"></span></div>
+          <div class="ctl"><button type="button" class="icon" id="prev" aria-label="Previous song">⏮</button><button type="button" class="icon" id="toggle" aria-label="Pause">⏸</button><button type="button" class="icon" id="next" aria-label="Next song">⏭</button></div>
+        </div>
+        <div><div class="clock" id="clock"></div><span class="dim" id="date"></span><br><br><span class="dim">27%, on battery</span></div>
+      </div>
+      <div class="view v-message"><span class="logo">W</span><div><span class="dim">WhatsApp</span><br><b>Arun</b><br>Lunch at 1? I can book the table if you're in.</div></div>
+      <div class="bhv"><canvas id="bhCanvas"></canvas><div><span id="bhPct"></span><span id="bhLabel"></span></div></div>
+    </div>
+  </div>
+  <div class="tryit" role="group" aria-label="Try the notch">
+    <button type="button" data-view="quiet" aria-pressed="true">Idle</button>
+    <button type="button" data-view="playing" aria-pressed="false">Music</button>
+    <button type="button" data-view="open" aria-pressed="false">Open</button>
+    <button type="button" data-view="needs" aria-pressed="false">Agent needs you</button>
+    <button type="button" data-view="message" aria-pressed="false">Message</button>
+    <button type="button" data-view="charge" aria-pressed="false">Plug in charger</button>
+    <p class="hint">Open the notch and press play. Headphones on. Seek, scroll for volume, like, switch projects.</p>
+  </div>
+  <h1 aria-label="Islet is launching soon.">
+    <span aria-hidden="true">Islet is <span class="rotor" id="rotor"><span class="on">launching soon.</span><span>your music.</span><span>launching soon.</span><span>your AI agents.</span><span>launching soon.</span><span>every message.</span><span>launching soon.</span><span>one black pill.</span></span></span>
+  </h1>
+  <p class="lede">A Dynamic-Island-style notch for Windows 11. Your music, AI agents, messages and battery, in one small black pill.</p>
+  <button class="cta" id="interest" type="button">I'm interested</button>
+  <p class="note" id="interestNote" aria-live="polite">One click, no sign-up. Free and open source, for Windows 10 and 11.</p>
+  <a class="note" href="https://github.com/goprocker/Islet">Follow Islet on GitHub</a>
+</header>
+
+<main>
+  <section><div class="wrap">
+    <h2>Everything in one glance.</h2>
+    <p class="intro">Phones and Macs keep live status in one place at the top of the screen. Windows spreads it across the taskbar, the tray, a corner of banners and hidden terminal windows. Islet pulls it into one pill, and lets you act on it there.</p>
+    <img class="shot" src="open.png" width="2016" height="498" alt="Islet open: Codex sessions on the left, Spotify in the middle, time and battery on the right, tools at the edge" loading="lazy">
+    <div class="features">
+      <div><h3>Music</h3><ul><li>Spotify, or any player using Windows media controls</li><li>Album art, with the accent colour taken from it</li><li>Play, skip, seek, scroll for volume, like the song</li><li>A live wave drawn from Spotify's audio only</li><li>Timed lyrics and an enlarged album view</li></ul></div>
+      <div><h3>Claude Code and Codex</h3><ul><li>Sessions from both agents in one column</li><li>Each shows working, needs you or done</li><li>The last 3 actions: tools, edited files, replies</li><li>Allow or Deny Claude Code requests from the notch</li></ul></div>
+      <div><h3>Notifications</h3><ul><li>Windows toasts become notch pop-ups with real app logos</li><li>The full message, up to about 7 lines</li><li>Windows' own banners come back on the lock screen</li><li>Do Not Disturb, with an optional daily schedule</li></ul></div>
+      <div><h3>Battery and system</h3><ul><li>A black hole plays when the charger goes in or out</li><li>A green edge glow while charging</li><li>A one-time low-battery warning</li><li>Mic, camera and screen-capture dots</li><li>Hides behind fullscreen apps</li></ul></div>
+      <div><h3>Info</h3><ul><li>Weather by city, with no API key</li><li>Your next event from a private calendar link</li><li>Browser download progress</li><li>A timer, started from the tray</li></ul></div>
+      <div><h3>Tools</h3><ul><li>Clipboard history: last 5 texts, in memory only</li><li>File shelf: drop files in, drag them out</li><li>Ctrl+Alt+N cycles pill, open and hidden</li><li>Ctrl+Alt+M moves Islet to the next monitor</li></ul></div>
+    </div>
+  </div></section>
+
+  <section class="dark"><div class="wrap">
+    <h2>Stays on your PC.</h2>
+    <p class="intro">No account, no cloud and no tracking. Islet only goes online for the extras you use: lyrics from lrclib.net, weather from Open-Meteo, your calendar link, and Spotify if you connect it.</p>
+    <div class="grid">
+      <div><h3>Out of the way</h3><p>Clicks pass through everywhere except the notch. When nothing is happening, it shrinks to one dot.</p></div>
+      <div><h3>Private by design</h3><p>Clipboard history never touches disk, the shelf stores file paths only, and the agent hook server listens on 127.0.0.1 only.</p></div>
+      <div><h3>Your settings</h3><p>Twenty settings cover size, accent colour, animations, notifications and more.</p></div>
+    </div>
+  </div></section>
+
+  <section><div class="wrap">
+    <h2>What to expect at launch.</h2>
+    <dl class="facts">
+      <div><dt>Version</dt><dd>2.0</dd></div>
+      <div><dt>Runs on</dt><dd>Windows 10 1903+ and 11</dd></div>
+      <div><dt>Licence</dt><dd>MIT</dd></div>
+      <div><dt>Made by</dt><dd>Gopinath</dd></div>
+    </dl>
+  </div></section>
+</main>
+
+<footer><div class="wrap">© 2026 Gopinath. <a href="https://github.com/goprocker/Islet">github.com/goprocker/Islet</a></div></footer>
+
+<script src="blackhole.js"></script>
+<script>
+(() => {
+  const notch = document.getElementById("notch");
+  const buttons = [...document.querySelectorAll(".tryit button")];
+  const status = document.getElementById("agentStatus");
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let charged = false, chargeTimer = 0, touched = false;
+
+  const now = new Date();
+  document.getElementById("clock").textContent = now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  document.getElementById("date").textContent = now.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
+
+  function show(view) {
+    clearTimeout(chargeTimer);
+    buttons.forEach(b => b.setAttribute("aria-pressed", b.dataset.view === view));
+    if (view === "charge") {
+      charged = !charged;
+      const btn = buttons.find(b => b.dataset.view === "charge");
+      btn.textContent = charged ? "Unplug charger" : "Plug in charger";
+      BlackHole.play(notch, charged ? "on" : "off", 0.27);
+      chargeTimer = setTimeout(() => show("playing"), charged ? 2900 : 1900);
+      return;
+    }
+    BlackHole.cancel(notch);
+    notch.dataset.view = view;
+    status.textContent = view === "needs" ? "Claude, needs you" : "Claude, working";
+  }
+
+  buttons.forEach(b => b.addEventListener("click", () => { touched = true; show(b.dataset.view); }));
+  notch.querySelectorAll(".ask button").forEach(b => b.addEventListener("click", () => {
+    touched = true;
+    show("open");
+    status.textContent = `${b.dataset.answer}. Claude, ${b.dataset.answer === "Allowed" ? "working" : "done"}`;
+  }));
+
+  const interest = document.getElementById("interest");
+  const interestNote = document.getElementById("interestNote");
+  const thanks = n => {
+    interest.disabled = true;
+    interest.textContent = "You're interested";
+    interestNote.textContent = `Thanks. ${n} ${n === 1 ? "person is" : "people are"} interested so far.`;
+  };
+  const voted = () => { try { return localStorage.getItem("islet-interested") === "1"; } catch { return false; } };
+  if (voted()) fetch("/api/interest").then(r => r.json()).then(d => thanks(d.count)).catch(() => {});
+  interest.addEventListener("click", async () => {
+    interest.disabled = true;
+    try {
+      const r = await fetch("/api/interest", { method: "POST" });
+      if (!r.ok) throw new Error(r.status);
+      thanks((await r.json()).count);
+      try { localStorage.setItem("islet-interested", "1"); } catch {}
+    } catch {
+      interest.disabled = false;
+      interestNote.textContent = "Your click wasn't saved. Check your connection and try again.";
+    }
+  });
+
+  // the notch itself: same gestures as the app, with sample data
+  const $ = id => document.getElementById(id);
+  const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+  const tracks = [
+    { title: "Veezha Veera", artist: "Multifandom edit", len: 57, accent: "#e2b13c", art: "135deg,#f4d67a,#e2b13c 55%,#8f6414" }
+  ];
+  const audio = new Audio("veezha-veera.mp3");
+  audio.preload = "metadata";
+  audio.volume = .6;
+  const projects = {
+    islet: ["Edited notch.css", "Ran npm test"],
+    api: ["Edited routes.js", "Read schema.sql"]
+  };
+  const bar = $("bar"), fill = bar.firstElementChild, artist = $("artist");
+  let track = 0, pos = 0, playing = true, volume = 60, volumeTimer = 0;
+
+  const paint = () => {
+    const t = tracks[track];
+    fill.style.width = `${pos / t.len * 100}%`;
+    $("pos").textContent = fmt(pos);
+    bar.setAttribute("aria-valuenow", Math.round(pos));
+    bar.setAttribute("aria-valuemax", t.len);
+    bar.setAttribute("aria-valuetext", fmt(pos));
+  };
+  const load = i => {
+    track = (i + tracks.length) % tracks.length;
+    pos = 0;
+    audio.currentTime = 0;
+    const t = tracks[track];
+    $("title").textContent = t.title;
+    artist.textContent = t.artist;
+    $("len").textContent = fmt(t.len);
+    notch.style.setProperty("--gold", t.accent);
+    notch.querySelectorAll(".art").forEach(a => a.style.background = `linear-gradient(${t.art})`);
+    $("like").setAttribute("aria-pressed", "false");
+    $("like").textContent = "♡";
+    paint();
+  };
+  const setPlaying = on => {
+    playing = on;
+    if (on) audio.play().catch(() => setPlaying(false)); else audio.pause();
+    notch.classList.toggle("paused", !on);
+    $("toggle").textContent = on ? "⏸" : "▶";
+    $("toggle").setAttribute("aria-label", on ? "Pause" : "Play");
+  };
+  load(0);
+  paint();
+  setPlaying(false);
+  audio.addEventListener("timeupdate", () => { pos = audio.currentTime; paint(); });
+  audio.addEventListener("ended", () => { load(0); setPlaying(false); });
+
+  $("prev").addEventListener("click", () => load(track - 1));
+  $("next").addEventListener("click", () => load(track + 1));
+  $("toggle").addEventListener("click", () => setPlaying(!playing));
+  $("like").addEventListener("click", e => {
+    const on = e.currentTarget.getAttribute("aria-pressed") !== "true";
+    e.currentTarget.setAttribute("aria-pressed", on);
+    e.currentTarget.textContent = on ? "♥" : "♡";
+  });
+  bar.addEventListener("click", e => {
+    const r = bar.getBoundingClientRect();
+    pos = Math.floor((e.clientX - r.left) / r.width * tracks[track].len);
+    audio.currentTime = pos;
+    paint();
+  });
+  bar.addEventListener("keydown", e => {
+    const step = { ArrowLeft: -5, ArrowRight: 5 }[e.key];
+    if (!step) return;
+    e.preventDefault();
+    pos = Math.min(tracks[track].len - 1, Math.max(0, pos + step));
+    audio.currentTime = pos;
+    paint();
+  });
+  bar.parentElement.parentElement.addEventListener("wheel", e => {
+    if (!notch.dataset.view.match(/open|needs/)) return;
+    e.preventDefault();
+    volume = Math.min(100, Math.max(0, volume + (e.deltaY < 0 ? 5 : -5)));
+    audio.volume = volume / 100;
+    artist.textContent = `Volume ${volume}%`;
+    clearTimeout(volumeTimer);
+    volumeTimer = setTimeout(() => artist.textContent = tracks[track].artist, 1000);
+  }, { passive: false });
+  notch.querySelectorAll(".chip").forEach(c => c.addEventListener("click", () => {
+    notch.querySelectorAll(".chip").forEach(x => x.classList.toggle("on", x === c));
+    [$("logA").textContent, $("logB").textContent] = projects[c.dataset.project];
+  }));
+
+  // hover or tap opens; leaving, clicking elsewhere or Esc goes back
+  let backTo = null;
+  const openNotch = () => {
+    const v = notch.dataset.view;
+    if (notch.classList.contains("bh") || (v !== "quiet" && v !== "playing")) return;
+    touched = true;
+    backTo = v;
+    show("open");
+  };
+  const closeNotch = () => { if (backTo) { show(backTo); backTo = null; } };
+  notch.addEventListener("pointerenter", e => { if (e.pointerType === "mouse") openNotch(); });
+  notch.addEventListener("pointerleave", e => { if (e.pointerType === "mouse") closeNotch(); });
+  notch.addEventListener("click", () => {
+    if (notch.dataset.view === "message") { touched = true; show("playing"); } else openNotch();
+  });
+  document.addEventListener("click", e => { if (!notch.contains(e.target)) closeNotch(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeNotch(); });
+  buttons.forEach(b => b.addEventListener("click", () => { backTo = null; }, true));
+
+  // scroll: each feature wakes the notch, the hero shrinks away, the screenshot grows into place
+  if (!reduced) {
+    document.documentElement.classList.add("anim");
+    const blocks = [...document.querySelectorAll(".features>div")];
+    const scenes = ["playing", "needs", "message", "charge", "open", "playing"];
+    let active = -1;
+    const enter = i => {
+      if (i === active) return;
+      active = i;
+      if (backTo) return;
+      touched = true;
+      if (scenes[i] !== "charge") return show(scenes[i]);
+      charged = false;
+      show("charge");
+    };
+    const reveal = new IntersectionObserver(es => es.forEach(e => {
+      if (!e.isIntersecting) return;
+      e.target.classList.add("in");
+      reveal.unobserve(e.target);
+    }), { rootMargin: "0px 0px -12% 0px" });
+    blocks.forEach(b => reveal.observe(b));
+    document.querySelectorAll("h2,.intro,.dark .grid>div,.facts>div").forEach(el => {
+      el.classList.add("rise");
+      reveal.observe(el);
+    });
+    const h1 = document.querySelector("h1"), lede = document.querySelector(".lede"), shot = document.querySelector(".shot");
+    let queued = false;
+    const onScroll = () => {
+      queued = false;
+      const p = Math.min(1, scrollY / innerHeight);
+      h1.style.transform = `scale(${1 - p * .35})`;
+      h1.style.opacity = 1 - p * .9;
+      lede.style.opacity = 1 - p * 1.4;
+      const r = shot.getBoundingClientRect();
+      const q = Math.min(1, Math.max(0, (innerHeight - r.top) / (innerHeight * .8)));
+      shot.style.transform = `scale(${.78 + q * .22})`;
+      const mid = innerHeight / 2;
+      const i = blocks.findIndex(b => { const c = b.getBoundingClientRect(); return c.top <= mid && c.bottom > mid; });
+      if (i >= 0) enter(i);
+      else if (active !== -1) { active = -1; if (!backTo) show("playing"); }
+    };
+    addEventListener("scroll", () => { if (!queued) { queued = true; requestAnimationFrame(onScroll); } }, { passive: true });
+    onScroll();
+  }
+
+  // headline phrases roll, coming back to the launch line every other step
+  if (!reduced) {
+    const phrases = [...$("rotor").children];
+    let phrase = 0;
+    setInterval(() => {
+      const prev = phrases[phrase];
+      phrase = (phrase + 1) % phrases.length;
+      phrases.forEach(x => x.classList.remove("out"));
+      prev.classList.replace("on", "out");
+      phrases[phrase].classList.add("on");
+    }, 2400);
+  }
+
+  // one opening beat: the dot wakes up into music, then waits for the visitor
+  if (!reduced) setTimeout(() => { if (!touched) show("playing"); }, 900);
+})();
+</script>
+</body>
+</html>
