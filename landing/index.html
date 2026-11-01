@@ -97,6 +97,7 @@ a.note{display:block}
 .note{font-size:15px;color:var(--soft);margin-top:14px}
 
 section{padding:clamp(56px,9vw,104px) 0}
+.film video{display:block;width:100%;aspect-ratio:16/9;background:#000;border-radius:clamp(12px,2vw,24px)}
 h2{font-size:clamp(2rem,5vw,3.6rem);line-height:1;letter-spacing:-.025em;max-width:18ch}
 .intro{max-width:58ch;margin-top:18px;color:var(--soft)}
 .shot{display:block;width:100%;height:auto;margin-top:clamp(32px,5vw,56px)}
@@ -182,6 +183,13 @@ footer{background:var(--sea);padding:30px 0;font-size:15px}
 </header>
 
 <main>
+  <section class="film"><div class="wrap">
+    <h2>See it in 34 seconds.</h2>
+    <video id="film" controls playsinline preload="metadata" poster="islet-film-poster.jpg" aria-label="Islet launch film">
+      <source src="islet-film.mp4" type="video/mp4">
+      <a href="islet-film.mp4">Download the launch film</a>
+    </video>
+  </div></section>
   <section><div class="wrap">
     <h2>Everything in one glance.</h2>
     <p class="intro">Phones and Macs keep live status in one place at the top of the screen. Windows spreads it across the taskbar, the tray, a corner of banners and hidden terminal windows. Islet pulls it into one pill, and lets you act on it there.</p>
@@ -356,6 +364,8 @@ footer{background:var(--sea);padding:30px 0;font-size:15px}
   };
   audio.play().then(() => setPlaying(true)).catch(() => gestures.forEach(g => addEventListener(g, firstGesture, true)));
   $("toggle").addEventListener("click", stopWaiting);
+  // the film has its own sound, so the demo song steps aside for it
+  $("film").addEventListener("play", () => { stopWaiting(); setPlaying(false); });
 
   $("prev").addEventListener("click", () => load(track - 1));
   $("next").addEventListener("click", () => load(track + 1));
