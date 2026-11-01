@@ -170,7 +170,7 @@ footer{background:var(--sea);padding:30px 0;font-size:15px}
     <button type="button" data-view="needs" aria-pressed="false">Agent needs you</button>
     <button type="button" data-view="message" aria-pressed="false">Message</button>
     <button type="button" data-view="charge" aria-pressed="false">Plug in charger</button>
-    <p class="hint">Open the notch and press play. Headphones on. Seek, scroll for volume, like, switch projects.</p>
+    <p class="hint">Music starts on its own, or on your first click. Open the notch to pause, seek or change volume.</p>
   </div>
   <h1 aria-label="Islet is launching soon.">
     <span aria-hidden="true">Islet is <span class="rotor" id="rotor"><span class="on">launching soon.</span><span>your music.</span><span>launching soon.</span><span>your AI agents.</span><span>launching soon.</span><span>every message.</span><span>launching soon.</span><span>one black pill.</span></span></span>
@@ -284,7 +284,8 @@ footer{background:var(--sea);padding:30px 0;font-size:15px}
     { title: "Veezha Veera", artist: "Multifandom edit", len: 57, accent: "#e2b13c", art: "135deg,#f4d67a,#e2b13c 55%,#8f6414" }
   ];
   const audio = new Audio("veezha-veera.mp3");
-  audio.preload = "metadata";
+  audio.preload = "auto";
+  audio.loop = true;
   audio.volume = .6;
   const projects = {
     islet: ["Edited notch.css", "Ran npm test"],
@@ -326,7 +327,17 @@ footer{background:var(--sea);padding:30px 0;font-size:15px}
   paint();
   setPlaying(false);
   audio.addEventListener("timeupdate", () => { pos = audio.currentTime; paint(); });
-  audio.addEventListener("ended", () => { load(0); setPlaying(false); });
+
+  // browsers block sound until the visitor interacts, so try now and retry on the first gesture
+  const gestures = ["pointerdown", "keydown", "touchend"];
+  const stopWaiting = () => gestures.forEach(g => removeEventListener(g, firstGesture, true));
+  const firstGesture = e => {
+    stopWaiting();
+    if (e.target.closest?.("#toggle")) return; // that click is about to toggle play itself
+    setPlaying(true);
+  };
+  audio.play().then(() => setPlaying(true)).catch(() => gestures.forEach(g => addEventListener(g, firstGesture, true)));
+  $("toggle").addEventListener("click", stopWaiting);
 
   $("prev").addEventListener("click", () => load(track - 1));
   $("next").addEventListener("click", () => load(track + 1));
