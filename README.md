@@ -9,8 +9,8 @@ Music · Claude Code and Codex · notifications · battery · weather, all in on
 <a href="https://github.com/goprocker/Islet/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/goprocker/Islet?style=for-the-badge"></a>
 <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-blue?style=for-the-badge"></a>
 <img alt="Windows 10 / 11" src="https://img.shields.io/badge/Windows-10%20%7C%2011-0078d4?style=for-the-badge&logo=windows11&logoColor=white">
-<img alt="Electron 37" src="https://img.shields.io/badge/Electron-37-47848f?style=for-the-badge&logo=electron&logoColor=white">
-<img alt="148 tests passing" src="https://img.shields.io/badge/tests-148%20passing-34c759?style=for-the-badge">
+<img alt="Electron 45" src="https://img.shields.io/badge/Electron-45-47848f?style=for-the-badge&logo=electron&logoColor=white">
+<img alt="169 tests passing" src="https://img.shields.io/badge/tests-169%20passing-34c759?style=for-the-badge">
 
 <br><br>
 
@@ -245,7 +245,7 @@ main.js ── window, tray, hotkeys, powerMonitor, config, IPC
 ### 🛠️ Develop
 
 ```powershell
-npm test     # 18 test files, node --test
+npm test     # 19 test files, node --test
 node_modules\electron\dist\electron.exe . --remote-debugging-port=9333   # then chrome://inspect
 ```
 
@@ -277,7 +277,7 @@ Everything runs on your PC. Network calls go only to lrclib.net (title and artis
 
 ## 🤝 Contributing
 
-Issues and pull requests are welcome. Keep changes small, use [Conventional Commits](https://www.conventionalcommits.org/), and say how you tested.
+Issues and pull requests are welcome. See the [contributing guide](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md). Report security problems through the [security policy](SECURITY.md), not a public issue.
 
 <div align="center">
 
