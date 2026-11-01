@@ -37,7 +37,7 @@ h1,h2,h3{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:700;
 .v-playing{display:flex;align-items:center;gap:10px;padding:0 14px 0 8px}
 .art{background:linear-gradient(135deg,#f4d67a,var(--gold) 55%,#8f6414);border-radius:6px;flex:none}
 .v-playing .art{width:22px;height:22px}
-.wave{display:flex;align-items:center;gap:3px;height:16px;margin-left:auto}
+.wave:not(.bhv){display:flex;align-items:center;gap:3px;height:16px;margin-left:auto}
 .wave i{width:3px;height:100%;background:var(--gold);border-radius:2px;animation:wv 1s ease-in-out infinite alternate}
 .wave i:nth-child(2){animation-delay:-.7s}.wave i:nth-child(3){animation-delay:-.35s}.wave i:nth-child(4){animation-delay:-.9s}.wave i:nth-child(5){animation-delay:-.5s}
 @keyframes wv{from{transform:scaleY(.3)}to{transform:scaleY(1)}}
