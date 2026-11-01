@@ -3,3 +3,4 @@ dist/
 *.log
 err.txt
 out.txt
+SESSION_HANDOFF.md
