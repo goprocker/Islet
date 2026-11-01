@@ -24,3 +24,14 @@ test("an empty stamped row stays as a pause", () => {
 test("Windows line endings", () => {
   assert.deepStrictEqual(parse("[00:01.00]One\r\n[00:02.00]Two\r\n"), [{ t: 1, line: "One" }, { t: 2, line: "Two" }]);
 });
+test("get keeps separate lyrics for different lengths of one song", async () => {
+  const realFetch = global.fetch, urls = [];
+  global.fetch = async url => { urls.push(url); return { ok: true, status: 200, json: async () => ({ syncedLyrics: "[00:10.00]x" }) }; };
+  try {
+    const { get } = require("../lyrics");
+    await get("Versions", "Same", 180);
+    await get("Versions", "Same", 360);
+    await get("Versions", "Same", 181);
+    assert.strictEqual(urls.length, 2);
+  } finally { global.fetch = realFetch; }
+});

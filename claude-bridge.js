@@ -5,6 +5,7 @@ const { StringDecoder } = require("string_decoder");
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
+const hookAuth = require("./hooks/hook-auth");
 
 const PORT = 47321;
 const SETTINGS = path.join(os.homedir(), ".claude", "settings.json");
@@ -34,6 +35,20 @@ function trackCodex(e, st) {
 }
 let nextId = 1;
 
+// One entry per agent + project folder: its most recent session, unless an older one there
+// is waiting for input. Claude and Codex mixed, newest first. Keyed by the full folder, so
+// two "app" folders stay apart.
+function pickSessions(all) {
+  const byProject = new Map();
+  for (const s of [...all].sort((a, b) => b.time - a.time)) {
+    s.key = `${s.agent}:${s.cwd ? path.resolve(s.cwd).toLowerCase() : s.project}`; // Windows paths ignore case
+    const kept = byProject.get(s.key);
+    if (!kept || (s.status === "waiting" && kept.status !== "waiting")) byProject.set(s.key, s);
+  }
+  // at most 5, but a session waiting for input always gets in (then newest first)
+  return [...byProject.values()].sort((a, b) => (b.status === "waiting") - (a.status === "waiting")).slice(0, 5).sort((a, b) => b.time - a.time);
+}
+
 function statusFor(event, message) {
   switch (event) {
     case "PermissionRequest": return "waiting";
@@ -46,7 +61,7 @@ function statusFor(event, message) {
 }
 
 // what the hook sends; anything else gets a 400 and changes nothing
-const TEXT = ["cwd", "transcript", "message", "tool", "prompt", "lastMessage"];
+const TEXT = ["cwd", "transcript", "message", "tool", "prompt", "lastMessage", "nonce"];
 function validEvent(e) {
   if (!e || typeof e !== "object" || Array.isArray(e)) return false;
   if (typeof e.event !== "string" || !e.event || typeof e.session !== "string" || !e.session) return false;
@@ -65,6 +80,9 @@ function start({ onStatus, onPermission, onPermissionGone, permissionWait }) {
     onPermissionGone(id);
   };
   const server = http.createServer((req, res) => {
+    // the hook checks who is listening before it sends anything
+    const hello = req.method === "GET" && req.url.match(/^\/hello\?nonce=([0-9a-f]{32})$/);
+    if (hello) { res.writeHead(200, { "Content-Type": "application/json" }).end(JSON.stringify({ proof: hookAuth.sign(hookAuth.ensureToken(), "hello", hello[1]) })); return; }
     if (req.method !== "POST" || req.url !== "/claude") { res.writeHead(404).end(); return; }
     // one decoder for the whole body: a character split across chunks stays whole
     const decoder = new StringDecoder("utf8");
@@ -92,7 +110,7 @@ function start({ onStatus, onPermission, onPermissionGone, permissionWait }) {
       const ms = Math.min(Math.max(waitMs(), 0), 24000);
       if (!ms) { res.writeHead(200).end("{}"); return; }
       const timer = setTimeout(() => settle(id, null, gone), ms);
-      pending.set(id, { res, timer, session: e.session });
+      pending.set(id, { res, timer, session: e.session, nonce: e.nonce });
       // hook gave up (Claude Code timed it out or the user answered in the terminal)
       res.on("close", () => { if (pending.has(id) && !res.writableEnded) settle(id, null, gone); });
       onPermission({ id, session: e.session, project: path.basename(e.cwd || ""), tool: e.tool, detail: summarize(e.tool, e.toolInput) });
@@ -108,7 +126,9 @@ function settle(id, decision, onGone) {
   onGone?.(id); // before delete, so it can still see the session
   pending.delete(id);
   clearTimeout(p.timer);
-  try { p.res.writeHead(200, { "Content-Type": "application/json" }).end(JSON.stringify({ decision })); } catch {}
+  // signed, so the hook can tell this answer really came from Islet
+  const proof = decision && p.nonce ? hookAuth.sign(hookAuth.ensureToken(), decision, p.nonce) : undefined;
+  try { p.res.writeHead(200, { "Content-Type": "application/json" }).end(JSON.stringify({ decision, proof })); } catch {}
 }
 function answer(id, decision, onGone) {
   const p = pending.get(id);
@@ -189,4 +209,4 @@ function uninstall() {
   }
 }
 
-module.exports = { start, answer, status, codex, install, uninstall, installed };
+module.exports = { start, answer, status, codex, install, uninstall, installed, pickSessions, ensureToken: hookAuth.ensureToken };

@@ -27,6 +27,7 @@ if (!app.requestSingleInstanceLock()) app.exit(0);
 app.on("second-instance", () => openSettings());
 
 // ---- settings (userData/config.json) ----
+const { checkConfig } = require("./config-check");
 const configPath = () => path.join(app.getPath("userData"), "config.json");
 const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true, lyrics: true, permissionWaitSeconds: 8, dnd: false, dndFrom: "", dndTo: "", dndSkipUntil: 0, clipboardHistory: true, weatherCity: "", weatherUnit: "C", downloadsFolder: "", size: "normal", accent: "album", idleHide: false, hideWindowsBanners: true, powerAnim: true, powerAnimStyle: "cinematic" };
 let config = { ...DEFAULTS };
@@ -43,7 +44,13 @@ function loadConfig() {
   try {
     const v = JSON.parse(text);
     if (!v || typeof v !== "object" || Array.isArray(v)) throw new Error("not an object");
-    config = { ...DEFAULTS, ...v };
+    const checked = checkConfig(v, DEFAULTS);
+    config = checked.config;
+    if (checked.invalid.length) {
+      console.warn("config: using defaults for invalid settings:", checked.invalid.join(", "));
+      // the next save rewrites these, so keep what the user typed
+      fs.writeFileSync(configPath() + ".invalid", text);
+    }
   } catch (e) { console.warn("config: invalid JSON, keeping current settings and the file:", e.message); }
 }
 // written to a temp file first, so a crash mid-save never leaves half a file
@@ -284,21 +291,13 @@ function codexSessions() {
 }
 let lastClaude = "";
 function readClaude() {
-  // one entry per agent + project folder: its most recent session; Claude and Codex mixed,
-  // newest first. Keyed by the full folder, so two "app" folders stay apart.
-  const byProject = new Map();
-  const all = [...recentTranscripts().slice(0, 12).map(readSession), ...codexSessions()].filter(Boolean);
-  for (const s of all.sort((a, b) => b.time - a.time)) {
-    s.key = `${s.agent}:${s.cwd ? path.resolve(s.cwd).toLowerCase() : s.project}`; // Windows paths ignore case
-    if (!byProject.has(s.key)) byProject.set(s.key, s);
-  }
-  // at most 5, but a session waiting for input always gets in (then newest first)
-  const sessions = [...byProject.values()].sort((a, b) => (b.status === "waiting") - (a.status === "waiting")).slice(0, 5).sort((a, b) => b.time - a.time);
+  const sessions = bridge.pickSessions([...recentTranscripts().slice(0, 12).map(readSession), ...codexSessions()].filter(Boolean));
   const key = JSON.stringify(sessions);
   if (key !== lastClaude) { lastClaude = key; send("claude", sessions); }
 }
 ipcMain.on("permissionAnswer", (_, id, decision) => bridge.answer(id, decision, gone => send("permissionGone", gone)));
 function startBridge() {
+  bridge.ensureToken(); // the hook needs it from its first run
   bridge.start({
     onStatus: () => { lastClaude = ""; readClaude(); },
     onPermission: p => send("permission", p),
