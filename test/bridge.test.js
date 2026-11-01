@@ -2,6 +2,15 @@ const test = require("node:test");
 const assert = require("node:assert");
 const http = require("http");
 const { EventEmitter } = require("events");
+const fs = require("fs");
+const os = require("os");
+const path = require("path");
+const auth = require("../hooks/hook-auth");
+
+// a throwaway profile, so the tests never touch the real hook secret
+const profile = fs.mkdtempSync(path.join(os.tmpdir(), "islet-bridge-"));
+process.env.USERPROFILE = process.env.HOME = profile;
+test.after(() => fs.rmSync(profile, { recursive: true, force: true }));
 
 // capture the bridge's request handler instead of opening a real port
 function startBridge() {
@@ -13,10 +22,12 @@ function startBridge() {
   const seen = [];
   try { bridge.start({ onStatus: (s, st) => seen.push([s, st]), onPermission() {}, onPermissionGone() {} }); }
   finally { http.createServer = realCreate; }
-  return { bridge, seen, post: body => send(handler, body) };
+  return { bridge, seen, post: (body, proof) => send(handler, body, proof) };
 }
-function send(handler, body) {
-  const req = Object.assign(new EventEmitter(), { method: "POST", url: "/claude", destroy() {} });
+function send(handler, body, proof) {
+  const text = Buffer.concat([].concat(body).map(b => Buffer.from(b))).toString("utf8");
+  const headers = { "x-islet-proof": proof === undefined ? auth.sign(auth.ensureToken(), "event", text) : proof };
+  const req = Object.assign(new EventEmitter(), { method: "POST", url: "/claude", headers, destroy() {} });
   const res = Object.assign(new EventEmitter(), {
     code: 0, writableEnded: false,
     writeHead(c) { this.code = c; return this; },
@@ -32,6 +43,16 @@ for (const body of ["null", "[]", "42", '"x"', "{}", '{"event":"Stop"}', '{"even
   test(`rejects ${body} with 400 and changes nothing`, () => {
     const { bridge, seen, post } = startBridge();
     assert.strictEqual(post(body), 400);
+    assert.deepStrictEqual(seen, []);
+    assert.strictEqual(bridge.status.size, 0);
+  });
+}
+
+const STOP = '{"event":"Stop","session":"s1"}';
+for (const [name, proof] of [["no", null], ["a wrong", "0".repeat(64)], ["another body's", auth.sign("wrong secret", "event", STOP)]]) {
+  test(`an event with ${name} proof gets 401 and changes nothing`, () => {
+    const { bridge, seen, post } = startBridge();
+    assert.strictEqual(post(STOP, proof), 401);
     assert.deepStrictEqual(seen, []);
     assert.strictEqual(bridge.status.size, 0);
   });
