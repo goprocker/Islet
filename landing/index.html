@@ -29,7 +29,7 @@ h1,h2,h3{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:700;
 #notch[data-view=quiet]{width:64px}
 #notch[data-view=open],#notch[data-view=needs]{width:640px;height:150px;border-radius:0 0 28px 28px}
 #notch[data-view=message]{width:400px;height:92px;border-radius:0 0 26px 26px}
-#notch.bh{width:340px;height:84px;border-radius:0 0 26px 26px}
+#notch.bh{width:340px;height:84px;border-radius:0 0 30px 30px}
 .view{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .2s}
 #notch[data-view=quiet]:not(.bh) .v-quiet,#notch[data-view=playing]:not(.bh) .v-playing,#notch[data-view=open]:not(.bh) .v-open,#notch[data-view=needs]:not(.bh) .v-open,#notch[data-view=message]:not(.bh) .v-message{opacity:1;pointer-events:auto;transition-delay:.14s}
 .dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--violet);flex:none}
@@ -76,13 +76,19 @@ h1,h2,h3{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:700;
 .v-message{display:flex;gap:12px;padding:14px 18px;align-items:flex-start}
 .logo{width:30px;height:30px;border-radius:8px;background:#25d366;display:grid;place-items:center;font-weight:600;flex:none}
 
-.bhv{position:absolute;inset:0;display:flex;align-items:center;padding-right:18px;gap:12px;opacity:0;transition:opacity .2s}
-#notch.bh .bhv{opacity:1}
+.bhv{position:absolute;inset:0;z-index:12;pointer-events:none;display:flex;align-items:center;justify-content:space-between;padding:0 22px 0 14px;opacity:0;transition:opacity .3s ease}
+#notch.bh .bhv{opacity:1;transition-duration:.15s}
 #bhCanvas{width:112px;height:84px;flex:none}
-#bhPct{font:700 26px "Bricolage Grotesque",sans-serif;display:block;opacity:0;transition:opacity .3s}
-#bhLabel{font-size:10.5px;letter-spacing:.14em;color:#ffcc78;display:block;opacity:0;transition:opacity .3s}
-.bhv.off #bhLabel{color:#ff8c5a}
-.show-pct #bhPct,.show-label #bhLabel{opacity:1}
+.bhmeta{display:flex;flex-direction:column;align-items:flex-end;gap:3px;text-align:right}
+.bhmeta b{font:600 28px/1 "Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;color:#f5f5f7;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.bhmeta small{font-size:9.5px;font-weight:600;letter-spacing:.22em;color:#9ca3af}
+.bhmeta>*{opacity:0;transform:translateY(3px);transition:opacity .4s ease,transform .4s ease}
+.bhv.show-pct b,.bhv.show-label small{opacity:1;transform:none}
+.bhv.off small{color:#ff453a}
+.bhwave{position:absolute;top:0;bottom:0;left:70px;width:90px;opacity:0;background:radial-gradient(40px 34px at 50% 50%,#ff8c3240,transparent 70%)}
+.bhv.wave .bhwave{animation:bhwave .6s cubic-bezier(.4,0,.2,1) both}
+@keyframes bhwave{0%{opacity:0;transform:translateX(0)}30%{opacity:1}100%{opacity:0;transform:translateX(160px)}}
+@media (prefers-reduced-motion:reduce){.bhv.wave .bhwave{animation:none}.bhmeta>*{transform:none}}
 
 .tryit{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:clamp(24px,5vh,64px)}
 .tryit button{font:600 15px Figtree,sans-serif;background:transparent;color:var(--ink);border:1.5px solid var(--ink);border-radius:999px;padding:7px 15px;min-height:40px;cursor:pointer}
@@ -160,7 +166,7 @@ footer{background:var(--sea);padding:30px 0;font-size:15px}
         <div><div class="clock" id="clock"></div><span class="dim" id="date"></span><br><br><span class="dim">27%, on battery</span></div>
       </div>
       <div class="view v-message"><span class="logo">W</span><div><span class="dim">WhatsApp</span><br><b>Arun</b><br>Lunch at 1? I can book the table if you're in.</div></div>
-      <div class="bhv"><canvas id="bhCanvas"></canvas><div><span id="bhPct"></span><span id="bhLabel"></span></div></div>
+      <div class="bhv" aria-live="polite"><canvas id="bhCanvas"></canvas><div class="bhmeta"><b id="bhPct"></b><small id="bhLabel"></small></div><i class="bhwave" aria-hidden="true"></i></div>
     </div>
   </div>
   <div class="tryit" role="group" aria-label="Try the notch">
