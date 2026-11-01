@@ -327,6 +327,24 @@ footer{background:var(--sea);padding:30px 0;font-size:15px}
   paint();
   setPlaying(false);
   audio.addEventListener("timeupdate", () => { pos = audio.currentTime; paint(); });
+  // the song isn't in the repo (see README.md), so a clean deploy plays the film's own score;
+  // if that fails too, say so instead of leaving a dead play button
+  let usingScore = false;
+  audio.addEventListener("error", () => {
+    if (!usingScore) {
+      usingScore = true;
+      tracks[0] = { ...tracks[0], title: "Islet Theme", artist: "From the launch film" };
+      audio.src = "demo-loop.mp3";
+      load(0);
+      audio.play().then(() => { stopWaiting(); setPlaying(true); }).catch(() => {});
+      return;
+    }
+    stopWaiting();
+    setPlaying(false);
+    artist.textContent = "Demo audio unavailable";
+    $("toggle").disabled = true;
+    $("toggle").setAttribute("aria-label", "Demo audio unavailable");
+  });
 
   // browsers block sound until the visitor interacts, so try now and retry on the first gesture
   const gestures = ["pointerdown", "keydown", "touchend"];
