@@ -4,6 +4,9 @@
   "description": "Islet: a Dynamic-Island style notch for Windows: Spotify now playing + latest Claude Code activity",
   "main": "main.js",
   "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "start": "electron .",
     "test": "node --test test/*.test.js",
@@ -24,6 +27,7 @@
     "weather.js",
     "downloads.js",
     "shelf-file.js",
+    "config-check.js",
     "settings/**",
     "claude-bridge.js",
     "hooks/**",

@@ -41,25 +41,39 @@ async function lookup(title, artist, duration) {
   return best ? parse(best.syncedLyrics) : null;
 }
 
+// Same version of a song: players report the length a little differently between polls,
+// or not at all at first, so only a clear difference counts (the tolerance lookup uses)
+const sameLength = (a, b) => !a || !b || Math.abs(a - b) < 4;
+
 function get(title, artist, duration) {
   const key = `${title}|${artist}`;
-  if (!cache.has(key)) cache.set(key, lookup(title, artist, duration).catch(() => { cache.delete(key); return null; }));
-  return cache.get(key);
+  const versions = cache.get(key) || [];
+  cache.set(key, versions);
+  let hit = versions.find(v => sameLength(v.duration, duration));
+  if (!hit) {
+    hit = { duration };
+    hit.lines = lookup(title, artist, duration).catch(() => { versions.splice(versions.indexOf(hit), 1); return null; });
+    versions.push(hit);
+  }
+  return hit.lines;
 }
 
 // What the page should show follows the song: update() asks once per song (null = no song
 // or lyrics turned off), resend() fills a page that reloaded and lost them. An answer for
 // a song that's no longer current is dropped; one still on its way reaches the new page.
 function follower(send, fetchLines = get) {
-  let asked = "", lines = null;
+  let asked = null, lines = null;
   return {
     update(song) {
       const key = song ? `${song.title}|${song.artist}` : "";
-      if (key === asked) return;
-      asked = key;
+      if (key === (asked?.key ?? "") && (!song || sameLength(asked.duration, song.duration))) {
+        if (song?.duration) asked.duration = song.duration; // a length that only arrived now
+        return;
+      }
+      const now = asked = song ? { key, duration: song.duration } : null;
       lines = null;
       send(null);
-      if (song) fetchLines(song.title, song.artist || "", song.duration).then(l => { if (asked === key) { lines = l; send(l); } });
+      if (song) fetchLines(song.title, song.artist || "", song.duration).then(l => { if (asked === now) { lines = l; send(l); } });
     },
     resend() { send(lines); },
   };

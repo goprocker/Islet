@@ -103,9 +103,13 @@ function parseTime(prop, value) {
 
 const DAYS = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
 const RULE_PARTS = new Set(["FREQ", "INTERVAL", "COUNT", "UNTIL", "BYDAY", "WKST"]);
+// the walk below grows with INTERVAL and the feed picks it, so the work is capped here
+const MAX_INTERVAL = 1000;
+const validInterval = v => v === undefined || (/^[1-9]\d*$/.test(v) && Number(v) <= MAX_INTERVAL);
 // a rule this file follows exactly; "1MO" (first Monday) only means something to rules it doesn't
 const supported = rule => (rule.FREQ === "DAILY" || rule.FREQ === "WEEKLY")
   && Object.keys(rule).every(k => RULE_PARTS.has(k))
+  && validInterval(rule.INTERVAL)
   && (!rule.BYDAY || rule.BYDAY.split(",").every(d => DAYS.includes(d)));
 // First occurrence of a repeating event at or after `now`, or null. Walks day by day from
 // DTSTART (the first occurrence) so COUNT is counted from the real start.
@@ -113,7 +117,7 @@ function nextOccurrence(first, rr, now) {
   const start = first.at;
   const rule = Object.fromEntries(rr.split(";").map(p => p.split("=")));
   if (!supported(rule)) return start >= now ? start : null; // unsupported: first date only
-  const interval = Math.max(1, Number(rule.INTERVAL) || 1);
+  const interval = Number(rule.INTERVAL || 1);
   const count = rule.COUNT ? Number(rule.COUNT) : Infinity;
   const until = rule.UNTIL ? readTime(rule.UNTIL.length === 8 ? rule.UNTIL + "T235959" : rule.UNTIL, first.basis)?.at : null;
   const byday = rule.BYDAY ? new Set(rule.BYDAY.split(",").map(d => DAYS.indexOf(d))) : null;

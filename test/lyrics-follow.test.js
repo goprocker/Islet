@@ -81,3 +81,16 @@ test("lyrics turned off during the lookup: the answer is dropped", async () => {
   await tick();
   assert.deepStrictEqual(got, [null, null]);
 });
+test("same title and artist with a different length is a new lookup", () => {
+  const { f, asks } = setup();
+  f.update(SONG);
+  f.update({ ...SONG, duration: 300 });
+  assert.deepStrictEqual(asks.map(a => a.duration), [120, 300]);
+});
+test("small length changes between polls, or a length arriving late, ask nothing", () => {
+  const { f, asks } = setup();
+  f.update({ ...SONG, duration: 0 });
+  f.update(SONG);
+  f.update({ ...SONG, duration: 121 });
+  assert.strictEqual(asks.length, 1);
+});

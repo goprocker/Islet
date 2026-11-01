@@ -126,7 +126,7 @@ Get `Islet-Setup-<version>.exe` from the [**latest release**](https://github.com
 
 ### Run from source
 
-**You also need:** Node.js 20+ · Git
+**You also need:** Node.js 22 or 24 (a [supported LTS release](https://github.com/nodejs/Release#release-schedule)) · Git
 
 ```powershell
 git clone https://github.com/goprocker/Islet.git
