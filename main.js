@@ -27,7 +27,7 @@ if (!app.requestSingleInstanceLock()) app.exit(0);
 app.on("second-instance", () => openSettings());
 
 // ---- settings (userData/config.json) ----
-const { checkConfig } = require("./config-check");
+const { checkConfig, clock } = require("./config-check");
 const configPath = () => path.join(app.getPath("userData"), "config.json");
 const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true, lyrics: true, permissionWaitSeconds: 8, dnd: false, dndFrom: "", dndTo: "", dndSkipUntil: 0, clipboardHistory: true, weatherCity: "", weatherUnit: "C", downloadsFolder: "", size: "normal", accent: "album", idleHide: false, hideWindowsBanners: true, powerAnim: true, powerAnimStyle: "cinematic" };
 let config = { ...DEFAULTS };
@@ -435,7 +435,7 @@ ipcMain.handle("settings:load", () => settingsView());
 ipcMain.handle("settings:save", (_, v) => {
   // only known keys, each checked; the form can't write anything else
   const str = (x, max = 2000) => (typeof x === "string" ? x.trim().slice(0, max) : "");
-  const time = x => (/^\d{2}:\d{2}$/.test(x) ? x : "");
+  const time = x => (clock(x) ? x : "");
   const next = {
     ...config,
     size: ["compact", "normal", "large"].includes(v.size) ? v.size : "normal",

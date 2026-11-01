@@ -2,7 +2,8 @@
 // value fall back to their default, so nothing later trips over them; unknown keys stay.
 const bool = v => typeof v === "boolean";
 const text = v => typeof v === "string";
-const time = v => v === "" || (text(v) && /^\d{2}:\d{2}$/.test(v));
+const clock = v => text(v) && /^([01]\d|2[0-3]):[0-5]\d$/.test(v);
+const time = v => v === "" || clock(v);
 const number = v => typeof v === "number" && Number.isFinite(v);
 const CHECKS = {
   spotifyClientId: text, calendarIcsUrl: text, weatherCity: text, downloadsFolder: text,
@@ -26,4 +27,4 @@ function checkConfig(saved, defaults) {
   return { config, invalid };
 }
 
-module.exports = { checkConfig };
+module.exports = { checkConfig, clock };

@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert");
-const { checkConfig } = require("../config-check");
+const { checkConfig, clock } = require("../config-check");
 const { nextEvent } = require("../calendar");
 const { pickSessions } = require("../claude-bridge");
 
@@ -43,4 +43,24 @@ test("sessions: once nothing waits the newest shows again", () => {
 });
 test("sessions: other projects are unaffected", () => {
   assert.strictEqual(pickSessions([session("working", 20), session("waiting", 10, "C:/other")]).length, 2);
+});
+
+for (const bad of ["24:00", "12:60", "99:99", "7:30", 730]) {
+  test(`config: impossible DND time ${bad} falls back and is reported`, () => {
+    const { config, invalid } = checkConfig({ dndFrom: bad }, { dndFrom: "" });
+    assert.strictEqual(config.dndFrom, "");
+    assert.deepStrictEqual(invalid, ["dndFrom"]);
+  });
+}
+for (const good of ["00:00", "23:59", ""]) {
+  test(`config: DND time "${good}" is kept`, () => {
+    const { config, invalid } = checkConfig({ dndTo: good }, { dndTo: "07:00" });
+    assert.strictEqual(config.dndTo, good);
+    assert.deepStrictEqual(invalid, []);
+  });
+}
+test("config: the clock check used by settings save rejects what load rejects", () => {
+  assert.strictEqual(clock("23:59"), true);
+  assert.strictEqual(clock("24:00"), false);
+  assert.strictEqual(clock(""), false);
 });
