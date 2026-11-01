@@ -263,6 +263,7 @@ function showPerm() {
   pinned = null;
   $("permTool").textContent = `Allow ${p.tool}${p.project ? ` in ${p.project}` : ""}?`;
   $("permDetail").textContent = p.detail;
+  $("permDetail").parentElement.scrollTop = 0;
   clearTimeout(hoverTimer);
   if (!notch.classList.contains("hidden")) setOpen(true); // stays open until answered
 }

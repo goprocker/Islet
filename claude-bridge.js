@@ -138,7 +138,8 @@ function answer(id, decision, onGone) {
 
 function summarize(tool, input) {
   if (!input) return "";
-  if (input.command) return String(input.description || input.command).slice(0, 140);
+  // the command is what gets approved; the agent's description is only its own claim about it
+  if (input.command) return String(input.command).slice(0, 2000) + (input.description ? `\n(${String(input.description).slice(0, 140)})` : "");
   if (input.file_path) return path.basename(input.file_path);
   if (input.url) return input.url;
   if (input.pattern) return input.pattern;
@@ -209,4 +210,4 @@ function uninstall() {
   }
 }
 
-module.exports = { start, answer, status, codex, install, uninstall, installed, pickSessions, ensureToken: hookAuth.ensureToken };
+module.exports = { start, answer, status, codex, install, uninstall, installed, pickSessions, summarize, ensureToken: hookAuth.ensureToken };

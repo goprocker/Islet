@@ -71,3 +71,15 @@ test("the 1 MB limit counts bytes, not characters", () => {
   req.emit("data", body);
   assert.strictEqual(destroyed, true);
 });
+
+test("a permission card shows the real command, not just its description", () => {
+  const { summarize } = require("../claude-bridge");
+  const detail = summarize("Bash", { command: "echo actual-command", description: "Read project files" });
+  assert.strictEqual(detail, "echo actual-command\n(Read project files)");
+  assert.strictEqual(summarize("Bash", { command: "ls" }), "ls");
+});
+test("a long command is kept well past the old 140 characters", () => {
+  const { summarize } = require("../claude-bridge");
+  const tail = "x".repeat(1000) + "rm -rf build";
+  assert.ok(summarize("Bash", { command: tail }).endsWith("rm -rf build"));
+});
