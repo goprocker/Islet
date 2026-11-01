@@ -17,7 +17,7 @@ function lock() {
   if (process.platform !== "win32" || locked === file()) return;
   locked = file();
   try {
-    execFileSync("icacls", [file(), "/inheritance:r", "/grant:r", `${os.userInfo().username}:F`], { stdio: "ignore", windowsHide: true });
+    execFileSync("icacls", [file(), "/inheritance:r", "/remove:g", "*S-1-5-18", "*S-1-5-32-544", "/grant:r", `${os.userInfo().username}:F`], { stdio: "ignore", windowsHide: true });
   } catch (e) { console.warn("couldn't restrict the hook secret", e.message); }
 }
 function ensureToken() {
