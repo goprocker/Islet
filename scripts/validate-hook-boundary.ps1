@@ -10,13 +10,13 @@ $name = "isletcheck"
 $password = "Aa1!" + [guid]::NewGuid().ToString("N")
 $secure = ConvertTo-SecureString $password -AsPlainText -Force
 New-LocalUser -Name $name -Password $secure -AccountNeverExpires -Description "Temporary Islet test" | Out-Null
-$out = Join-Path $env:TEMP "islet-boundary.txt"
+$out = Join-Path $env:PUBLIC "islet-boundary.txt"
 Remove-Item $out -Force -ErrorAction SilentlyContinue
 New-Item $out -ItemType File | Out-Null
 icacls $out /grant "${name}:M" | Out-Null
 try {
   $cred = New-Object System.Management.Automation.PSCredential("$env:COMPUTERNAME\$name", $secure)
-  $probe = "try { [IO.File]::ReadAllText('$token') | Out-Null; 'READABLE' } catch { 'DENIED' } | Set-Content '$out'"
+  $probe = "`$r = try { [IO.File]::ReadAllText('$token') | Out-Null; 'READABLE' } catch [UnauthorizedAccessException] { 'DENIED' } catch { 'ERROR ' + `$_.Exception.Message }; Set-Content '$out' `$r"
   $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($probe))
   Start-Process powershell.exe -Credential $cred -WorkingDirectory $env:WINDIR -WindowStyle Hidden -Wait -ArgumentList "-NoProfile", "-EncodedCommand", $encoded
   $result = (Get-Content $out -Raw).Trim()
