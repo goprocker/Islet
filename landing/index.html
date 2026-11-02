@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Islet: launching soon</title>
-<meta name="description" content="Islet is a Dynamic-Island-style notch for Windows 10 and 11. Music, Claude Code and Codex, notifications and battery in one black pill. Launching soon.">
-<meta property="og:title" content="Islet: launching soon">
+<title>Islet: launching Nov 3</title>
+<meta name="description" content="Islet is a Dynamic-Island-style notch for Windows 10 and 11. Music, Claude Code and Codex, notifications and battery in one black pill. Launching Nov 3 at 5 PM IST.">
+<meta property="og:title" content="Islet: launching Nov 3">
 <meta property="og:description" content="The notch Windows never had. Music, AI agents, notifications and battery in one black pill.">
 <meta property="og:image" content="open.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -99,6 +99,10 @@ h1{font-size:clamp(3.2rem,min(10vw,15vh),9.5rem);line-height:.92;letter-spacing:
 .cta{display:inline-block;background:#000;color:#fff;font:600 17px Figtree,sans-serif;border:0;cursor:pointer;padding:13px 24px;border-radius:0 0 20px 20px}
 .cta:hover{background:#1d2747}
 .cta:disabled{cursor:default;background:#1d2747}
+.timer{display:flex;gap:10px;margin:0 0 22px}
+.timer>div{min-width:74px;padding:10px 6px 9px;background:#000;color:#c9d0e2;border-radius:0 0 18px 18px;text-align:center;font-size:13px}
+.timer b{display:block;font:700 2rem/1.1 "Bricolage Grotesque",sans-serif;font-variant-numeric:tabular-nums;color:#fff}
+@media (max-width:380px){.timer{gap:6px}.timer>div{min-width:0;flex:1}}
 a.note{display:block}
 .note{font-size:15px;color:var(--soft);margin-top:14px}
 
@@ -188,12 +192,13 @@ footer{background:var(--sea);padding:30px 0;font-size:15px}
     <button type="button" data-view="charge" aria-pressed="false">Plug in charger</button>
     <p class="hint">Tap the notch to open it, then press play for music.</p>
   </div>
-  <h1 aria-label="Islet is launching soon.">
-    <span aria-hidden="true">Islet is <span class="rotor" id="rotor"><span class="on">launching soon.</span><span>your music.</span><span>launching soon.</span><span>your AI agents.</span><span>launching soon.</span><span>every message.</span><span>launching soon.</span><span>one black pill.</span></span></span>
+  <h1 aria-label="Islet is launching November 3 at 5 PM IST.">
+    <span aria-hidden="true">Islet is <span class="rotor" id="rotor"><span class="on">launching Nov 3.</span><span>your music.</span><span>launching Nov 3.</span><span>your AI agents.</span><span>launching Nov 3.</span><span>every message.</span><span>launching Nov 3.</span><span>one black pill.</span></span></span>
   </h1>
   <p class="lede">A Dynamic-Island-style notch for Windows 11. Your music, AI agents, messages and battery, in one small black pill.</p>
+  <div class="timer" id="timer" role="timer" aria-label="Time until launch"><div><b id="tDays">--</b><span id="tDaysLabel">days</span></div><div><b id="tHours">--</b>hours</div><div><b id="tMins">--</b>minutes</div><div><b id="tSecs">--</b>seconds</div></div>
   <button class="cta" id="interest" type="button">I'm interested</button>
-  <p class="note" id="interestNote" aria-live="polite">One click, no sign-up. Free and open source, for Windows 10 and 11.</p>
+  <p class="note" id="interestNote" aria-live="polite">Launching Nov 3 at 5 PM IST. One click, no sign-up. Free and open source, for Windows 10 and 11.</p>
   <a class="note" href="https://github.com/goprocker/Islet">Follow Islet on GitHub</a>
 </header>
 
@@ -232,6 +237,7 @@ footer{background:var(--sea);padding:30px 0;font-size:15px}
   <section><div class="wrap">
     <h2>What to expect at launch.</h2>
     <dl class="facts">
+      <div><dt>Launch</dt><dd>Nov 3, 5 PM IST</dd></div>
       <div><dt>Version</dt><dd>2.0</dd></div>
       <div><dt>Runs on</dt><dd>Windows 10 1903+ and 11</dd></div>
       <div><dt>Licence</dt><dd>MIT</dd></div>
@@ -277,6 +283,33 @@ footer{background:var(--sea);padding:30px 0;font-size:15px}
     show("open");
     status.textContent = `${b.dataset.answer}. Claude, ${b.dataset.answer === "Allowed" ? "working" : "done"}`;
   }));
+
+  // counts down to Nov 3, 5 PM IST, then points at the release
+  const launchAt = Date.parse("2026-11-03T17:00:00+05:30");
+  const timer = document.getElementById("timer");
+  const tick = () => {
+    const left = launchAt - Date.now();
+    if (left <= 0) {
+      clearInterval(ticking);
+      timer.innerHTML = `<a class="cta" href="https://github.com/goprocker/Islet/releases/latest">Islet is out. Get it on GitHub</a>`;
+      timer.removeAttribute("role");
+      timer.removeAttribute("aria-label");
+      document.getElementById("interest").style.display = "none";
+      document.querySelector("h1").setAttribute("aria-label", "Islet is out now.");
+      document.querySelectorAll("#rotor>span").forEach(x => { if (x.textContent === "launching Nov 3.") x.textContent = "out now."; });
+      document.getElementById("interestNote").textContent = "Free and open source, for Windows 10 and 11.";
+      return;
+    }
+    const secs = Math.ceil(left / 1000);
+    const days = Math.floor(secs / 86400);
+    document.getElementById("tDays").textContent = days;
+    document.getElementById("tDaysLabel").textContent = days === 1 ? "day" : "days";
+    document.getElementById("tHours").textContent = String(Math.floor(secs / 3600) % 24).padStart(2, "0");
+    document.getElementById("tMins").textContent = String(Math.floor(secs / 60) % 60).padStart(2, "0");
+    document.getElementById("tSecs").textContent = String(secs % 60).padStart(2, "0");
+  };
+  const ticking = setInterval(tick, 1000);
+  tick();
 
   const interest = document.getElementById("interest");
   const interestNote = document.getElementById("interestNote");
