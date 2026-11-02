@@ -1,6 +1,8 @@
 <div align="center">
 
-# 🏝️ Islet
+<img src="assets/logo-apple/logo-512.png" alt="" width="120">
+
+# Islet
 
 **A Dynamic-Island-style notch for Windows 11**
 

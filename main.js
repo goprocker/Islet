@@ -437,10 +437,11 @@ const EMPTY_PNG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAA
 
 // ---- settings window ----
 let settingsWin = null;
+const APP_ICON = path.join(__dirname, "assets", "logo-apple", "icon.ico");
 function openSettings() {
   if (settingsWin && !settingsWin.isDestroyed()) return settingsWin.focus();
   settingsWin = new BrowserWindow({
-    width: 600, height: 760, title: "Islet settings", backgroundColor: "#0b0b0c", autoHideMenuBar: true,
+    width: 600, height: 760, title: "Islet settings", icon: APP_ICON, backgroundColor: "#0b0b0c", autoHideMenuBar: true,
     webPreferences: { preload: path.join(__dirname, "settings", "preload.js") },
   });
   settingsWin.loadFile(path.join(__dirname, "settings", "settings.html"));
@@ -596,12 +597,7 @@ function buildMenu() {
   ]));
 }
 function makeTray() {
-  const s = 16, px = Buffer.alloc(s * s * 4);
-  for (let y = 0; y < s; y++) for (let x = 0; x < s; x++) {
-    const inside = Math.abs(y - 8) < 4 && Math.abs(x - 8) < 7;
-    px.fill(inside ? 255 : 0, (y * s + x) * 4, (y * s + x) * 4 + 4);
-  }
-  tray = new Tray(nativeImage.createFromBitmap(px, { width: s, height: s }));
+  tray = new Tray(APP_ICON);
   tray.setToolTip("Islet");
   buildMenu();
 }

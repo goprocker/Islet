@@ -39,11 +39,13 @@
       "spotify-audio.ps1",
       "spotify-audio.cs",
       "renderer/**",
+      "assets/logo-apple/icon.ico",
       "LICENSE"
     ],
     "win": {
       "target": "nsis",
-      "signAndEditExecutable": false
+      "icon": "assets/logo-apple/icon.ico",
+      "signAndEditExecutable": true
     },
     "nsis": {
       "oneClick": true,
