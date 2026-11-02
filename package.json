@@ -46,8 +46,16 @@
       "assets/logo-apple/icon.ico",
       "LICENSE"
     ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "goprocker",
+        "repo": "Islet"
+      }
+    ],
     "win": {
       "target": "nsis",
+      "artifactName": "Islet-Setup-${version}.${ext}",
       "icon": "assets/logo-apple/icon.ico",
       "signAndEditExecutable": true
     },
@@ -66,5 +74,8 @@
   },
   "allowScripts": {
     "electron@45.2.1": true
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.11"
   }
 }

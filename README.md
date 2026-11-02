@@ -123,7 +123,7 @@ The open notch, left to right: **agent sessions** → **music** → **time and b
 
 ### Download the installer
 
-Get `Islet-Setup-<version>.exe` from the [**latest release**](https://github.com/goprocker/Islet/releases/latest) and run it. It adds a Start menu entry and installs to `%LOCALAPPDATA%\Programs\islet`. Islet doesn't update itself, so to update, install the new version.
+Get `Islet-Setup-<version>.exe` from the [**latest release**](https://github.com/goprocker/Islet/releases/latest) and run it. It adds a Start menu entry and installs to `%LOCALAPPDATA%\Programs\islet`. From 2.1 on, Islet downloads updates from GitHub Releases by itself and installs them when you quit, or from tray → **Restart to update**.
 
 > [!NOTE]
 > The installer is unsigned. SmartScreen may warn about it, and **Smart App Control** may block it. If it's blocked, run from source instead.
@@ -258,7 +258,7 @@ Useful page globals: `setOpen(true)`, `render()`.
 
 ## 🔐 Privacy
 
-Everything runs on your PC. Network calls go only to lrclib.net (title and artist, when lyrics are on), Open-Meteo (the city name), your ICS link, and Spotify if you connect it. Clipboard history never touches disk, and the shelf stores file paths only. The hook server listens on `127.0.0.1` only.
+Everything runs on your PC. Network calls go only to GitHub (update checks in the installed app), lrclib.net (title and artist, when lyrics are on), Open-Meteo (the city name), your ICS link, and Spotify if you connect it. Clipboard history never touches disk, and the shelf stores file paths only. The hook server listens on `127.0.0.1` only.
 
 ## 🩺 Troubleshooting
 

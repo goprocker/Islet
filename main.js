@@ -582,11 +582,26 @@ function enableLoginOnFirstRun() {
   fs.writeFileSync(flag, "1");
 }
 
+// ---- updates: downloaded in the background from GitHub Releases, installed on quit or from the tray ----
+const UPDATE_EVERY = 6 * 60 * 60 * 1000;
+let updater = null, updateReady = "";
+function startUpdates() {
+  if (!app.isPackaged) return; // a source copy updates with git
+  updater = require("electron-updater").autoUpdater;
+  updater.logger = console;
+  updater.on("update-downloaded", info => { updateReady = info.version; buildMenu(); });
+  updater.on("error", e => console.warn("update", e.message));
+  const check = () => updater.checkForUpdates().catch(e => console.warn("update", e.message));
+  check();
+  setInterval(check, UPDATE_EVERY);
+}
+
 // ---- tray ----
 function buildMenu() {
   const displays = screen.getAllDisplays();
   const current = targetDisplay().id;
   tray.setContextMenu(Menu.buildFromTemplate([
+    ...(updateReady ? [{ label: `Restart to update to ${updateReady}`, click: () => { app.isQuitting = true; updater.quitAndInstall(true, true); } }, { type: "separator" }] : []),
     { label: "Show / hide Islet  (Ctrl+Alt+N)", click: () => send("toggle") },
     {
       label: timerEnd ? "Timer (running)" : "Timer", submenu: [
@@ -642,6 +657,7 @@ app.whenReady().then(() => {
   startBridge();
   makeTray();
   if (welcomePending) openWelcome();
+  startUpdates();
   helpers.start();
   // AC/DC: powerMonitor rides on WM_POWERBROADCAST, so no polling. The renderer dedupes and debounces;
   // resume re-sends in case the charger changed while asleep
