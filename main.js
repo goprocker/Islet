@@ -14,6 +14,7 @@ const weather = require("./weather");
 const downloads = require("./downloads");
 const { readShelf } = require("./shelf-file");
 const { helperLifecycle } = require("./helper-lifecycle");
+const { audioTarget } = require("./audio-target");
 
 const BASE_W = 672, BASE_H = 190;
 const SCALES = { compact: 0.85, normal: 1, large: 1.2 };
@@ -110,7 +111,14 @@ function updateLyrics() {
   const d = lastMedia;
   lyricsNow.update(d?.active && config.lyrics && d.title && d.duration > 30 ? d : null);
 }
-let lastMediaLine = "";
+let lastMediaLine = "", capturing = null;
+// the wave follows the player on show
+function captureFor(source) {
+  const name = audioTarget(source);
+  if (name === capturing) return;
+  capturing = name;
+  helpers.current()?.stdin.write(`target ${name}\n`);
+}
 function onMediaLine(l) {
   // a paused player or an empty session repeats itself, and each line can carry the whole cover
   if (l === lastMediaLine && !l.includes('"playing":true')) return;
@@ -124,6 +132,7 @@ function onMediaLine(l) {
   }
   send("media", d);
   lastMedia = d;
+  captureFor(d.active ? d.source : "");
   const key = d.active ? `${d.title}|${d.artist}` : "";
   if (key !== lastTitle) { lastTitle = key; refreshSpotifyExtras(); }
   updateLyrics();
@@ -143,11 +152,11 @@ function onSystemLine(l) {
   fullscreen = d.fullscreen;
   applyVisibility();
 }
-// ---- media, system and Spotify-only audio share one PowerShell (helpers.ps1) ----
+// ---- media, system and the shown player's audio share one PowerShell (helpers.ps1) ----
 function startHelpers() {
   const helpers = spawn("powershell.exe", [...PS, path.join(__dirname, "helpers.ps1"), "-ParentPid", String(process.pid)], { windowsHide: true });
   helpers.stdin.on("error", e => console.warn("helpers", e.message)); // a write as it stops
-  lastMediaLine = ""; // the page gets the current state from the new helper's first line
+  lastMediaLine = ""; capturing = null; // the page gets the current state from the new helper's first line
   let latest = null, sent = null;
   lines(helpers.stdout, l => {
     if (l.startsWith("M ")) onMediaLine(l.slice(2));

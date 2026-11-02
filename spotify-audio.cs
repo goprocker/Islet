@@ -1,4 +1,4 @@
-// Captures only Spotify's audio (Windows process loopback) and prints
+// Captures only the audio of the player on show (Windows process loopback) and prints
 // 24 log-spaced frequency levels (0-255, comma separated) ~30 times a second.
 using System;
 using System.Diagnostics;
@@ -9,17 +9,21 @@ using System.Threading;
 public static class SpotifyAudio
 {
     const int Bands = 24, N = 1024, Rate = 44100;
+    // process name to capture; empty captures nothing. Spotify until told otherwise
+    static volatile string target = "Spotify";
 
     [MTAThread]
     public static void Main()
     {
         // stdin commands: "vol <delta>" (e.g. vol 0.05) -> prints "VOL <0..1>"
+        //                 "target <process name>", or "target" alone for none
         var cmds = new Thread(() =>
         {
             string line;
             while ((line = Console.In.ReadLine()) != null)
             {
                 var parts = line.Trim().Split(' ');
+                if (parts[0] == "target") { target = parts.Length == 2 ? parts[1] : ""; continue; }
                 float d;
                 if (parts.Length == 2 && parts[0] == "vol" && float.TryParse(parts[1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out d))
                 {
@@ -32,39 +36,67 @@ public static class SpotifyAudio
         cmds.Start();
         while (true)
         {
-            int pid = FindSpotify();
-            if (pid == 0) { Thread.Sleep(2000); continue; }
-            try { Capture(pid); } catch (Exception e) { Console.Error.WriteLine(e.Message); }
-            Thread.Sleep(1000);
+            string name = target;
+            int pid = FindProcess(name);
+            // nothing to capture: one flat line, so the old player's wave doesn't stay up
+            if (pid == 0)
+            {
+                if (name != flatFor) { flatFor = name; WriteLevels(new int[Bands]); }
+                WaitForTarget(name, 1000);
+                continue;
+            }
+            flatFor = null;
+            try { Capture(pid, name); } catch (Exception e) { Console.Error.WriteLine(e.Message); }
+            WriteLevels(new int[Bands]);
+            WaitForTarget(name, 1000);
         }
     }
 
-    // root Spotify process; its child processes are included via the process tree flag
-    static int FindSpotify()
+    static string flatFor = null;
+
+    static void WriteLevels(int[] levels)
     {
-        var procs = Process.GetProcessesByName("Spotify");
+        lock (Console.Out) { Console.Out.WriteLine(string.Join(",", levels)); Console.Out.Flush(); }
+    }
+
+    // sleeps, but no longer than it takes the player to change
+    static void WaitForTarget(string name, int ms)
+    {
+        for (int waited = 0; waited < ms && target == name; waited += 50) Thread.Sleep(50);
+    }
+
+    // the oldest process of that name is the root; its children come with the process tree flag
+    static int FindProcess(string name)
+    {
+        if (name == "") return 0;
+        var procs = Process.GetProcessesByName(name);
         if (procs.Length == 0) return 0;
         return procs.OrderBy(p => { try { return p.StartTime; } catch { return DateTime.MaxValue; } }).First().Id;
     }
 
-    static void Capture(int pid)
+    static void Capture(int pid, string name)
     {
         var client = Activate(pid);
         var fmt = new WAVEFORMATEX { wFormatTag = 1, nChannels = 2, nSamplesPerSec = Rate, wBitsPerSample = 16, nBlockAlign = 4, nAvgBytesPerSec = Rate * 4 };
         IntPtr pFmt = Marshal.AllocHGlobal(Marshal.SizeOf(fmt));
+        IAudioCaptureClient capture = null;
+        bool started = false;
+        try
+        {
         Marshal.StructureToPtr(fmt, pFmt, false);
         const uint LOOPBACK = 0x20000, AUTOCONVERT = 0x80000000, SRC_DEFAULT_QUALITY = 0x08000000;
         client.Initialize(0, LOOPBACK | AUTOCONVERT | SRC_DEFAULT_QUALITY, 2000000, 0, pFmt, Guid.Empty);
         Guid iidCapture = new Guid("C8ADBD64-E71E-48a0-A4DE-185C395CD317");
-        var capture = (IAudioCaptureClient)client.GetService(ref iidCapture);
+        capture = (IAudioCaptureClient)client.GetService(ref iidCapture);
         client.Start();
+        started = true;
 
         var ring = new float[N];
         int ringPos = 0;
         bool gotAudio = false;
         var proc = Process.GetProcessById(pid);
         var sw = Stopwatch.StartNew();
-        while (!proc.HasExited)
+        while (!proc.HasExited && target == name)
         {
             uint packet;
             capture.GetNextPacketSize(out packet);
@@ -93,12 +125,18 @@ public static class SpotifyAudio
                 // no packets while Spotify is paused: let the levels fall to zero
                 if (!gotAudio) Array.Clear(ring, 0, N);
                 gotAudio = false;
-                lock (Console.Out) { Console.Out.WriteLine(string.Join(",", Spectrum(ring, ringPos))); Console.Out.Flush(); }
+                WriteLevels(Spectrum(ring, ringPos));
             }
             Thread.Sleep(10);
         }
-        client.Stop();
-        Marshal.FreeHGlobal(pFmt);
+        }
+        finally
+        {
+            if (started) client.Stop();
+            if (capture != null) Marshal.ReleaseComObject(capture);
+            Marshal.ReleaseComObject(client);
+            Marshal.FreeHGlobal(pFmt);
+        }
     }
 
     static int[] Spectrum(float[] ring, int pos)

@@ -28,6 +28,7 @@
     "downloads.js",
     "shelf-file.js",
     "helper-lifecycle.js",
+    "audio-target.js",
     "config-check.js",
     "settings/**",
     "claude-bridge.js",
