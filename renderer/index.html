@@ -79,10 +79,10 @@
         <button id="like" class="like" aria-label="Save to Liked Songs" hidden><svg viewBox="0 0 24 24"><path d="M12 20.5 4.3 13a4.9 4.9 0 0 1 6.9-7l.8.8.8-.8a4.9 4.9 0 0 1 6.9 7z"/></svg></button>
         <canvas id="wave" width="44" height="18"></canvas>
       </div>
-      <div class="bar"><span id="pos">0:00</span><div class="seek" id="seekArea" title="Click to jump"><div class="track"><i id="prog"></i></div></div><span id="dur">0:00</span></div>
+      <div class="bar"><span id="pos">0:00</span><div class="seek" id="seekArea" title="Click to jump" role="slider" tabindex="-1" aria-label="Song position" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" aria-disabled="true"><div class="track"><i id="prog"></i></div></div><span id="dur">0:00</span></div>
       <div class="upnext" id="upnext"></div>
       <div class="ctl">
-        <span class="left"></span>
+        <span class="left"><span class="volume" id="volArea" role="slider" tabindex="-1" aria-label="Spotify volume" aria-valuemin="0" aria-valuemax="100" aria-disabled="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9zM16 8.5a5 5 0 0 1 0 7z"/></svg></span></span>
         <div class="buttons">
           <button id="prev" aria-label="Previous song"><svg viewBox="0 0 24 24"><path d="M5 5h3v14H5zM19 5v14L9.5 12z"/></svg></button>
           <button id="play" class="play" aria-label="Play"><svg viewBox="0 0 24 24" id="playIcon"><path d="M8 5v14l11-7z"/></svg></button>
@@ -106,6 +106,7 @@
   </div>
 </div>
 <script src="blackhole.js"></script>
+<script src="sliders.js"></script>
 <script src="notch.js"></script>
 </body>
 </html>

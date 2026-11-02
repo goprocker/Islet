@@ -170,6 +170,34 @@ $("seekArea").onclick = e => {
   Object.assign(track, { position: sec, updated: Date.now() });
   render();
 };
+// ---- keyboard sliders: same bridge calls as the mouse ----
+const shownPos = (now = Date.now()) => {
+  let pos = track.position;
+  if (track.playing) pos += (now - (track.updated || track.at)) / 1000; // Spotify only reports it now and then
+  return Math.min(Math.max(pos, 0), track.duration || 0);
+};
+const canChangeVolume = () => /spotify/i.test(track?.source || ""); // volume is Spotify's own
+let seekSend;
+$("seekArea").onkeydown = e => {
+  if (!track?.duration) return;
+  const delta = window.Sliders.sliderDelta(e.key, 5, 30, track.duration);
+  if (delta === null) return;
+  e.preventDefault();
+  const sec = Math.min(Math.max(shownPos() + delta, 0), track.duration);
+  Object.assign(track, { position: sec, updated: Date.now() });
+  render();
+  // each seek starts a PowerShell, so a held key sends only where it ends
+  clearTimeout(seekSend);
+  seekSend = setTimeout(() => window.bridge.seek(sec), 200);
+};
+$("volArea").onkeydown = e => {
+  if (!canChangeVolume()) return;
+  const delta = window.Sliders.sliderDelta(e.key, 0.05, 0.2, 1);
+  if (delta === null) return;
+  e.preventDefault();
+  window.bridge.volume(delta); // the helper keeps it within 0..1
+};
+$("volArea").onfocus = () => { if (canChangeVolume()) window.bridge.volume(0); }; // reads the current level
 $("play").onclick = () => { window.bridge.control("toggle"); if (track) { track.playing = !track.playing; render(); } };
 $("next").onclick = () => window.bridge.control("next");
 $("prev").onclick = () => window.bridge.control("prev");
@@ -183,7 +211,7 @@ $("like").onclick = () => {
 // scroll over the music side: Spotify's own volume, not the system's
 $("music").addEventListener("wheel", e => {
   e.preventDefault();
-  window.bridge.volume(e.deltaY < 0 ? 0.05 : -0.05);
+  if (canChangeVolume()) window.bridge.volume(e.deltaY < 0 ? 0.05 : -0.05);
 }, { passive: false });
 window.bridge.onVolume(v => { volume = v; volShownUntil = Date.now() + 1500; render(); });
 window.bridge.onSpotifyIcon(src => { src ? ($("spIcon").src = src) : $("spIcon").removeAttribute("src"); });
@@ -322,10 +350,7 @@ function render() {
   if (track) {
     $("title").textContent = track.title || "Unknown";
     $("artist").textContent = track.artist || "";
-    // Spotify only reports position now and then; extrapolate while playing
-    let pos = track.position;
-    if (track.playing) pos += (now - (track.updated || track.at)) / 1000;
-    pos = Math.min(Math.max(pos, 0), track.duration || 0);
+    const pos = shownPos(now);
     $("pos").textContent = fmt(pos); $("dur").textContent = fmt(track.duration || 0);
     $("prog").style.width = (track.duration ? pos / track.duration * 100 : 0) + "%";
     // current lyric line (slightly early so it lands with the singing)
@@ -340,6 +365,8 @@ function render() {
     $("pos").textContent = $("dur").textContent = "0:00";
     $("prog").style.width = "0";
   }
+  window.Sliders.syncSeek($("seekArea"), track ? shownPos(now) : 0, track?.duration || 0);
+  window.Sliders.syncVolume($("volArea"), volume, canChangeVolume());
   const playing = !!track?.playing;
   $("playIcon").innerHTML = playing ? PAUSE : PLAY;
   $("play").setAttribute("aria-label", playing ? "Pause" : "Play");

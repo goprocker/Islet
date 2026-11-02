@@ -126,7 +126,12 @@ body {
 .bar span { width: 26px; }
 .bar span:last-child { text-align: right; }
 .seek { flex: 1; padding: 6px 0; cursor: pointer; }
-.seek:hover .track { height: 5px; }
+.seek:hover .track, .seek:focus-visible .track { height: 5px; }
+.seek:focus-visible, .volume:focus-visible { outline: 1.5px solid var(--accent); border-radius: 4px; }
+.seek[aria-disabled="true"] { cursor: default; }
+.volume { display: grid; place-items: center; width: 20px; height: 20px; color: var(--muted); }
+.volume[aria-disabled="true"] { opacity: .35; }
+.volume svg { width: 14px; height: 14px; fill: currentColor; }
 .track { transition: height .15s; height: 3px; border-radius: 2px; background: var(--faint); position: relative; overflow: hidden; }
 .track i { position: absolute; inset: 0 auto 0 0; background: var(--accent); }
 .upnext { font-size: 10.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 34px; }
