@@ -8,6 +8,7 @@
 
 Music · Claude Code and Codex · notifications · battery · weather, all in one small black pill at the top of your screen.
 
+<a href="https://islet.loopfound.in"><img alt="Website" src="https://img.shields.io/badge/website-islet.loopfound.in-111?style=for-the-badge"></a>
 <a href="https://github.com/goprocker/Islet/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/goprocker/Islet?style=for-the-badge"></a>
 <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-blue?style=for-the-badge"></a>
 <img alt="Windows 10 / 11" src="https://img.shields.io/badge/Windows-10%20%7C%2011-0078d4?style=for-the-badge&logo=windows11&logoColor=white">
