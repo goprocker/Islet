@@ -639,6 +639,9 @@ app.whenReady().then(() => {
   });
   screen.on("display-added", () => { buildMenu(); placeWindow(); });
   screen.on("display-removed", () => { buildMenu(); placeWindow(); });
+  // resolution, scale or primary monitor changed with nothing plugged in. Sizes here are
+  // already device-independent, so the zoom stays the size setting and isn't scaled again
+  screen.on("display-metrics-changed", () => { buildMenu(); placeWindow(); });
   globalShortcut.register("Control+Alt+N", () => send("toggle"));
   globalShortcut.register("Control+Alt+M", nextScreen);
 });
