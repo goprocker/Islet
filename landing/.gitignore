@@ -1,3 +1,4 @@
 .netlify
 node_modules
 radhimaa-loop.mp3
+files/*.exe
