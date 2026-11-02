@@ -1,5 +1,5 @@
 const { app, BrowserWindow, globalShortcut, ipcMain, screen, Tray, Menu, nativeImage, shell, clipboard, dialog, powerMonitor } = require("electron");
-const { spawn } = require("child_process");
+const { spawn, spawnSync } = require("child_process");
 const { StringDecoder } = require("string_decoder");
 const fs = require("fs");
 const path = require("path");
@@ -15,6 +15,7 @@ const downloads = require("./downloads");
 const { readShelf } = require("./shelf-file");
 const { helperLifecycle } = require("./helper-lifecycle");
 const { audioTarget } = require("./audio-target");
+const { needsWelcome, finishWelcome } = require("./welcome");
 
 const BASE_W = 672, BASE_H = 190;
 const SCALES = { compact: 0.85, normal: 1, large: 1.2 };
@@ -26,7 +27,7 @@ let win, tray;
 // a second copy exits at once (quit() is async and would start helpers first)
 if (!app.requestSingleInstanceLock()) app.exit(0);
 // starting Islet again while it runs opens its settings
-app.on("second-instance", () => openSettings());
+app.on("second-instance", () => (welcomePending ? openWelcome() : openSettings()));
 
 // ---- settings (userData/config.json) ----
 const { checkConfig, clock } = require("./config-check");
@@ -319,6 +320,7 @@ function startBridge() {
     onPermissionGone: id => send("permissionGone", id),
     permissionWait: () => Number(config.permissionWaitSeconds ?? 8) * 1000,
   });
+  if (welcomePending) return; // the welcome window asks first
   // hooks are installed once automatically; the tray item can remove them
   const flag = path.join(app.getPath("userData"), "hooks-set");
   if (!fs.existsSync(flag)) {
@@ -476,6 +478,34 @@ ipcMain.handle("settings:save", (_, v) => {
   return settingsView();
 });
 
+// ---- welcome window: first run changes nothing on the PC until Continue ----
+let welcomePending = false, welcomeWin = null;
+function openWelcome() {
+  if (welcomeWin && !welcomeWin.isDestroyed()) return welcomeWin.focus();
+  welcomeWin = new BrowserWindow({
+    width: 560, height: 660, title: "Welcome to Islet", icon: APP_ICON, backgroundColor: "#0b0b0c", autoHideMenuBar: true,
+    webPreferences: { preload: path.join(__dirname, "settings", "welcome-preload.js") },
+  });
+  welcomeWin.loadFile(path.join(__dirname, "settings", "welcome.html"));
+}
+ipcMain.handle("welcome:load", () => ({
+  agents: [".claude", ".codex"].some(d => fs.existsSync(path.join(os.homedir(), d))),
+  node: spawnSync("where.exe", ["node"], { windowsHide: true }).status === 0,
+}));
+ipcMain.handle("welcome:finish", (_, v) => {
+  if (!welcomePending) return;
+  if (v.hooks) bridge.install(); // first: if it throws, nothing else has changed and the window says so
+  setLogin(!!v.login);
+  config.notifications = !!v.notifications;
+  config.hideWindowsBanners = !!v.notifications;
+  saveConfig();
+  finishWelcome(app.getPath("userData"));
+  welcomePending = false;
+  applyBanners();
+  buildMenu();
+  welcomeWin?.close();
+});
+
 // ---- look: size, accent colour, hide when idle ----
 function sendTheme() {
   win?.webContents.setZoomFactor(scale());
@@ -489,7 +519,7 @@ const saveBannersJournal = v => notifications.saveJournal(bannersPath(), v);
 function applyBanners(newIds) {
   if (!bannersSaved) { try { bannersSaved = JSON.parse(fs.readFileSync(bannersPath(), "utf8")); } catch { bannersSaved = {}; } }
   // banners come back while locked: Islet can't draw over the lock screen, Windows can
-  const want = config.notifications && config.hideWindowsBanners && !locked;
+  const want = config.notifications && config.hideWindowsBanners && !locked && !welcomePending;
   const before = Object.keys(bannersSaved).length;
   const missed = want ? notifications.hideBanners(bannersSaved, newIds, saveBannersJournal) : (notifications.restoreBanners(bannersSaved), 0);
   // a full pass tells whether Windows accepted the change; the tray shows it
@@ -606,10 +636,12 @@ app.whenReady().then(() => {
   loadConfig();
   spotify.init(app.getPath("userData"));
   ipcMain.on("hover", (_, over) => win.setIgnoreMouseEvents(!over, { forward: true }));
-  enableLoginOnFirstRun();
+  welcomePending = needsWelcome(app.getPath("userData"));
+  if (!welcomePending) enableLoginOnFirstRun();
   createWindow();
   startBridge();
   makeTray();
+  if (welcomePending) openWelcome();
   helpers.start();
   // AC/DC: powerMonitor rides on WM_POWERBROADCAST, so no polling. The renderer dedupes and debounces;
   // resume re-sends in case the charger changed while asleep
@@ -636,7 +668,7 @@ app.whenReady().then(() => {
   applyBanners();
   notifications.watch(async ({ aumid, xml, ...n }) => {
     if (aumid && bannersSaved && !(aumid in bannersSaved)) applyBanners([aumid]); // an app seen for the first time
-    if (!config.notifications || dndActive()) return;
+    if (!config.notifications || dndActive() || welcomePending) return;
     // what a click opens: the toast's own link when it has one, else the app
     const launch = xml.match(/<toast[^>]*\blaunch="([^"]+)"/)?.[1]?.replace(/&amp;/g, "&");
     const protocol = /<toast[^>]*activationType="protocol"/.test(xml) && launch && /^[a-z][\w+.-]*:/i.test(launch);

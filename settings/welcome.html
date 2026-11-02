@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'">
+<title>Welcome to Islet</title>
+<link rel="stylesheet" href="settings.css">
+<style>
+  .intro { color: var(--muted); margin-bottom: 18px; }
+  .row small { display: block; color: var(--muted); font-size: 11.5px; }
+  button { width: 100%; padding: 10px; border: 0; border-radius: 9px; background: var(--accent); color: #0b0b0c; font: inherit; font-weight: 600; cursor: pointer; }
+  button:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+  button:disabled { opacity: .6; cursor: default; }
+  .status { margin-top: 8px; }
+</style>
+</head>
+<body>
+<main>
+  <h1><img src="logo.png" alt="" width="32" height="32">Welcome to Islet</h1>
+  <p class="intro">Islet is the black pill at the top centre of your screen.</p>
+
+  <section>
+    <h2>How it works</h2>
+    <div class="row"><span>Open and close</span><span>Hover over the pill, then move away</span></div>
+    <div class="row"><span>Pill, open, hidden</span><span>Ctrl+Alt+N</span></div>
+    <div class="row"><span>Settings and Quit</span><span>Right-click the tray icon</span></div>
+  </section>
+
+  <section>
+    <h2>Your choices</h2>
+    <label class="row"><span>Start with Windows</span><input type="checkbox" id="login"></label>
+    <label class="row"><span>Show notifications in the notch<small>Also turns off Windows' own banners while Islet runs. They come back when you quit.</small></span><input type="checkbox" id="notifications"></label>
+    <label class="row"><span>Connect to Claude Code and Codex<small id="hooksNote">Adds Islet's hooks to their settings files and saves a backup of each.</small></span><input type="checkbox" id="hooks"></label>
+    <p class="hint">You can change all of these later in Settings.</p>
+  </section>
+
+  <button id="continue" type="button">Continue</button>
+  <p class="status" id="status" role="status"></p>
+</main>
+<script src="welcome-page.js"></script>
+</body>
+</html>
