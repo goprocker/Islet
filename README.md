@@ -4,7 +4,7 @@
 
 # Islet
 
-**A Dynamic-Island-style notch for Windows 11**
+**A Dynamic-Island-style notch for Windows 10 and 11**
 
 Music · Claude Code and Codex · notifications · battery · weather, all in one small black pill at the top of your screen.
 
@@ -12,7 +12,7 @@ Music · Claude Code and Codex · notifications · battery · weather, all in on
 <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-blue?style=for-the-badge"></a>
 <img alt="Windows 10 / 11" src="https://img.shields.io/badge/Windows-10%20%7C%2011-0078d4?style=for-the-badge&logo=windows11&logoColor=white">
 <img alt="Electron 45" src="https://img.shields.io/badge/Electron-45-47848f?style=for-the-badge&logo=electron&logoColor=white">
-<img alt="169 tests passing" src="https://img.shields.io/badge/tests-169%20passing-34c759?style=for-the-badge">
+<img alt="228 tests passing" src="https://img.shields.io/badge/tests-228%20passing-34c759?style=for-the-badge">
 
 <br><br>
 
@@ -40,6 +40,7 @@ The open notch, left to right: **agent sessions** → **music** → **time and b
 
 ## ✨ What's new
 
+- 👋 **Version 2.1:** a welcome screen that asks before Islet changes anything, an installer with setup screens, authenticated agent hooks, a wave for the player on show and lighter background work.
 - 📦 **Version 2.0:** 14 reliability fixes, a ready-made [installer](https://github.com/goprocker/Islet/releases/latest) and redrawn player controls.
 - 🌌 **Black hole charger animation:** an Interstellar-style black hole plays when the charger goes in (*CHARGING INITIATED*) or out (*RUNNING ON BATTERY*). You can pick Cinematic or Subtle, or turn it off.
 - 💬 **Full notification text:** pop-ups are wider, grow up to about 7 lines and stay on screen longer for long messages.
@@ -57,7 +58,7 @@ The open notch, left to right: **agent sessions** → **music** → **time and b
 - Album art, title and artist; the accent colour is taken from the art
 - Prev / play-pause / next, click to seek, scroll to change Spotify's own volume
 - Like the song (`Alt+Shift+B`)
-- A live wave drawn from **Spotify's audio only** (24 FFT bands)
+- A live wave drawn from **the audio of the player on show** (24 FFT bands). For a browser, that includes all its tabs
 - Timed lyrics from lrclib.net and an enlarged album view
 
 </td>
@@ -144,7 +145,7 @@ Code changes apply on restart. To build your own installer, run `npm run dist`, 
 
 Only one copy of Islet runs at a time, so quit the `npm start` copy before installing.
 
-On first run, Islet adds itself to **Start with Windows** and installs the agent hooks. Right-click the tray icon for the menu.
+On first run, a welcome screen asks about **Start with Windows**, notifications and the agent hooks. Islet changes none of them until you click **Continue**. Right-click the tray icon for the menu.
 
 ## 🖱️ Usage
 
@@ -162,7 +163,7 @@ On first run, Islet adds itself to **Start with Windows** and installs the agent
 
 ## 🤖 Claude Code and Codex
 
-Islet installs the hooks on first run. Tray → **Connect to Claude Code and Codex** removes or adds them. Adding saves a backup next to each file, and only Islet's own handlers are ever removed.
+The welcome screen offers to install the hooks. Tray → **Connect to Claude Code and Codex** removes or adds them later. Adding saves a backup next to each file, and only Islet's own handlers are ever removed.
 
 > [!IMPORTANT]
 > The hooks run with `node`, so Node.js must be on your PATH, even with the installed app. They also point at the copy of Islet that installed them. If you move that folder or switch between source and the installed app, untick and tick the option again in the copy you're using.
@@ -248,7 +249,7 @@ main.js ── window, tray, hotkeys, powerMonitor, config, IPC
 ### 🛠️ Develop
 
 ```powershell
-npm test     # 19 test files, node --test
+npm test     # 27 test files, node --test
 node_modules\electron\dist\electron.exe . --remote-debugging-port=9333   # then chrome://inspect
 ```
 
