@@ -19,7 +19,7 @@ const SCALES = { compact: 0.85, normal: 1, large: 1.2 };
 const scale = () => SCALES[config.size] || 1;
 const PS = ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File"];
 const MEDIA = [...PS, path.join(__dirname, "media.ps1")];
-let win, tray, media, audio;
+let win, tray, helpers;
 
 // a second copy exits at once (quit() is async and would start helpers first)
 if (!app.requestSingleInstanceLock()) app.exit(0);
@@ -109,23 +109,23 @@ function updateLyrics() {
   const d = lastMedia;
   lyricsNow.update(d?.active && config.lyrics && d.title && d.duration > 30 ? d : null);
 }
-function startMedia() {
-  media = spawn("powershell.exe", [...MEDIA, "watch"], { windowsHide: true });
-  lines(media.stdout, l => {
-    let d; try { d = JSON.parse(l); } catch { return; }
-    // logo of whichever player is shown (Spotify, a browser, VLC...)
-    if (d.active && d.source && d.source !== iconFor) {
-      const src = iconFor = d.source;
-      (/spotify/i.test(src) ? icons.forSpotify() : icons.forNotification(src))
-        .then(icon => send("spotifyIcon", icon || null));
-    }
-    send("media", d);
-    lastMedia = d;
-    const key = d.active ? `${d.title}|${d.artist}` : "";
-    if (key !== lastTitle) { lastTitle = key; refreshSpotifyExtras(); }
-    updateLyrics();
-  });
-  media.on("exit", () => { if (!app.isQuitting) setTimeout(startMedia, 2000); });
+let lastMediaLine = "";
+function onMediaLine(l) {
+  // a paused player or an empty session repeats itself, and each line can carry the whole cover
+  if (l === lastMediaLine && !l.includes('"playing":true')) return;
+  lastMediaLine = l;
+  let d; try { d = JSON.parse(l); } catch { return; }
+  // logo of whichever player is shown (Spotify, a browser, VLC...)
+  if (d.active && d.source && d.source !== iconFor) {
+    const src = iconFor = d.source;
+    (/spotify/i.test(src) ? icons.forSpotify() : icons.forNotification(src))
+      .then(icon => send("spotifyIcon", icon || null));
+  }
+  send("media", d);
+  lastMedia = d;
+  const key = d.active ? `${d.title}|${d.artist}` : "";
+  if (key !== lastTitle) { lastTitle = key; refreshSpotifyExtras(); }
+  updateLyrics();
 }
 ipcMain.on("control", (_, cmd) => {
   if (["toggle", "next", "prev"].includes(cmd)) spawn("powershell.exe", [...MEDIA, cmd], { windowsHide: true });
@@ -134,29 +134,30 @@ ipcMain.on("seek", (_, sec) => {
   if (Number.isFinite(sec)) spawn("powershell.exe", [...MEDIA, "seek", String(Math.max(0, sec))], { windowsHide: true });
 });
 
-// ---- Spotify-only audio: wave levels + volume (C# run through signed PowerShell) ----
-function startAudio() {
-  audio = spawn("powershell.exe", [...PS, path.join(__dirname, "spotify-audio.ps1")], { windowsHide: true });
-  let latest = null;
-  lines(audio.stdout, l => {
-    if (l.startsWith("VOL ")) send("volume", Number(l.slice(4)));
+// ---- mic / camera / screen capture in use + fullscreen apps ----
+let fullscreen = false;
+function onSystemLine(l) {
+  let d; try { d = JSON.parse(l); } catch { return; }
+  send("system", d);
+  fullscreen = d.fullscreen;
+  applyVisibility();
+}
+// ---- media, system and Spotify-only audio share one PowerShell (helpers.ps1) ----
+function startHelpers() {
+  helpers = spawn("powershell.exe", [...PS, path.join(__dirname, "helpers.ps1"), "-ParentPid", String(process.pid)], { windowsHide: true });
+  let latest = null, sent = null;
+  lines(helpers.stdout, l => {
+    if (l.startsWith("M ")) onMediaLine(l.slice(2));
+    else if (l.startsWith("S ")) onSystemLine(l.slice(2));
+    else if (l.startsWith("VOL ")) send("volume", Number(l.slice(4)));
     else latest = l;
   });
-  // forward only the newest levels, at most ~30/s
-  const timer = setInterval(() => { if (latest) { send("levels", latest.split(",").map(Number)); latest = null; } }, 33);
-  audio.on("exit", () => { clearInterval(timer); if (!app.isQuitting) setTimeout(startAudio, 2000); });
-}
-// ---- mic / camera / screen capture in use + fullscreen apps ----
-let sys, fullscreen = false;
-function startSystem() {
-  sys = spawn("powershell.exe", [...PS, path.join(__dirname, "system.ps1")], { windowsHide: true });
-  lines(sys.stdout, l => {
-    let d; try { d = JSON.parse(l); } catch { return; }
-    send("system", d);
-    fullscreen = d.fullscreen;
-    applyVisibility();
-  });
-  sys.on("exit", () => { if (!app.isQuitting) setTimeout(startSystem, 2000); });
+  // forward only the newest levels, at most ~30/s; paused Spotify repeats the same zeros
+  const timer = setInterval(() => {
+    if (latest && latest !== sent) { send("levels", latest.split(",").map(Number)); sent = latest; }
+    latest = null;
+  }, 33);
+  helpers.on("exit", () => { clearInterval(timer); if (!app.isQuitting) setTimeout(startHelpers, 2000); });
 }
 // out of the way during games and videos (unless turned off in settings)
 function applyVisibility() {
@@ -167,7 +168,7 @@ function applyVisibility() {
 }
 
 ipcMain.on("volume",(_, delta) => {
-  if (Number.isFinite(delta)) audio?.stdin.write(`vol ${delta}\n`);
+  if (Number.isFinite(delta)) helpers?.stdin.write(`vol ${delta}\n`);
 });
 
 // ---- Spotify Web API: like + up next ----
@@ -599,9 +600,7 @@ app.whenReady().then(() => {
   createWindow();
   startBridge();
   makeTray();
-  startMedia();
-  startAudio();
-  startSystem();
+  startHelpers();
   // AC/DC: powerMonitor rides on WM_POWERBROADCAST, so no polling. The renderer dedupes and debounces;
   // resume re-sends in case the charger changed while asleep
   const sendPower = () => send("power", { ac: !powerMonitor.isOnBatteryPower() });
@@ -610,7 +609,7 @@ app.whenReady().then(() => {
   powerMonitor.on("unlock-screen", () => { locked = false; applyBanners(); });
   win.webContents.on("did-finish-load", () => {
     sendPower();
-    lastClaude = ""; iconFor = null; readClaude(); refreshSpotifyExtras(); send("timer", timerEnd); sendDnd(true); send("shelf", shelf); sendTheme(); lyricsNow.resend();
+    lastClaude = ""; iconFor = null; lastMediaLine = ""; readClaude(); refreshSpotifyExtras(); send("timer", timerEnd); sendDnd(true); send("shelf", shelf); sendTheme(); lyricsNow.resend();
     send("clipboard", clips.map(c => c.replace(/\s+/g, " ").slice(0, 160)));
     calendar.poll(config.calendarIcsUrl, ev => send("calendar", ev));
     startWeather();
@@ -649,5 +648,5 @@ app.on("will-quit", () => {
   globalShortcut.unregisterAll();
   // keeps what failed for the next start
   if (bannersSaved) { notifications.restoreBanners(bannersSaved); try { saveBannersJournal(bannersSaved); } catch (e) { console.warn("banners", e.message); } }
-  media?.kill(); audio?.kill(); sys?.kill();
+  helpers?.kill();
 });

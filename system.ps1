@@ -2,7 +2,6 @@
 #   mic / cam / screen : apps using the microphone, camera, or Windows screen capture
 #   fullscreen         : the foreground window covers its whole monitor (game, video)
 $ErrorActionPreference = "SilentlyContinue"
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Add-Type @"
 using System;
 using System.Runtime.InteropServices;

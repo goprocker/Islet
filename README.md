@@ -219,6 +219,7 @@ Stored in `%APPDATA%\islet\config.json` and edited from the settings window. Han
 
 ```
 main.js ── window, tray, hotkeys, powerMonitor, config, IPC
+ ├─ helpers.ps1           one PowerShell that runs the three watchers below
  ├─ media.ps1             Windows media session → JSON every second; play/seek/next
  ├─ spotify-audio.ps1/.cs process-loopback capture of Spotify → 24 FFT bands, volume
  ├─ system.ps1            mic / camera / screen use, fullscreen detection
