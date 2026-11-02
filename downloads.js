@@ -6,10 +6,16 @@ const fs = require("fs");
 const path = require("path");
 
 const TEMP = /\.(crdownload|part|partial|download)$/i;
-let timer = null;
+const BUSY_MS = 1500; // Windows can hold back change events for a file still being written
+const IDLE_MS = 60000; // only a safety net; the folder watcher does the work
+const BURST_MS = 100;
+let stopCurrent = () => {};
+
+function stop() { stopCurrent(); stopCurrent = () => {}; }
 
 function watch(dir, onChange, onDone) {
-  clearInterval(timer);
+  stop();
+  let watcher = null, timer = null, burst = null;
   let active = new Map(); // temp file -> bytes
   let prevReal = null; // real files at the last scan
   let published = false; // a new watch always reports once, even an empty list
@@ -17,6 +23,7 @@ function watch(dir, onChange, onDone) {
     let names = [];
     try { names = fs.readdirSync(dir); } catch {
       // folder gone or unreadable: nothing in it is watched any more
+      closeWatcher();
       if (active.size || !published) { active = new Map(); published = true; onChange([]); }
       return;
     }
@@ -70,8 +77,32 @@ function watch(dir, onChange, onDone) {
       onChange([...now].map(([n, bytes]) => ({ name: n.replace(TEMP, "").replace(/^Unconfirmed \d+$/, "Download"), bytes })));
     }
   };
-  scan();
-  timer = setInterval(scan, 1500);
+  function closeWatcher() {
+    try { watcher?.close(); } catch {}
+    watcher = null;
+  }
+  function openWatcher() {
+    if (watcher) return;
+    try {
+      watcher = fs.watch(dir, () => { clearTimeout(burst); burst = setTimeout(run, BURST_MS); });
+      // the folder went away: keep trying until it's back
+      watcher.on("error", () => { closeWatcher(); schedule(); });
+    } catch { watcher = null; } // missing for now; the next scan tries again
+  }
+  // a temp file's size, expiry and disappearance are all polled while one is active.
+  // With none, or no working watcher, the timer decides how soon to look again
+  function schedule() {
+    clearTimeout(timer);
+    timer = setTimeout(run, watcher && !active.size ? IDLE_MS : BUSY_MS);
+  }
+  function run() {
+    clearTimeout(burst);
+    scan();
+    openWatcher();
+    schedule();
+  }
+  stopCurrent = () => { clearTimeout(timer); clearTimeout(burst); closeWatcher(); };
+  run();
 }
 
-module.exports = { watch };
+module.exports = { watch, stop };

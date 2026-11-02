@@ -7,17 +7,19 @@ const path = require("path");
 // drives watch() one scan at a time instead of waiting on its timer
 function run(setup, steps) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "islet-dl-"));
-  const realSetInterval = global.setInterval;
+  const realSetTimeout = global.setTimeout;
   let scan;
-  global.setInterval = fn => { scan = fn; return 0; };
+  global.setTimeout = fn => { scan = fn; return 0; };
   const done = [];
   delete require.cache[require.resolve("../downloads")];
+  const downloads = require("../downloads");
   try {
     setup(dir);
-    require("../downloads").watch(dir, () => {}, d => done.push(d.name));
+    downloads.watch(dir, () => {}, d => done.push(d.name));
     for (const step of steps) { step(dir); scan(); }
   } finally {
-    global.setInterval = realSetInterval;
+    downloads.stop();
+    global.setTimeout = realSetTimeout;
     fs.rmSync(dir, { recursive: true, force: true });
   }
   return done;
@@ -43,19 +45,20 @@ test("stale temp file that still exists is not a completion", () => {
 });
 
 test("switching to an empty folder reports an empty list", () => {
-  const realSetInterval = global.setInterval;
-  global.setInterval = () => 0;
+  const realSetTimeout = global.setTimeout;
+  global.setTimeout = () => 0;
   const old = fs.mkdtempSync(path.join(os.tmpdir(), "islet-dl-")), empty = fs.mkdtempSync(path.join(os.tmpdir(), "islet-dl-"));
   const seen = [];
   delete require.cache[require.resolve("../downloads")];
+  const { watch, stop } = require("../downloads");
   try {
     write(old, "a.zip.crdownload", 42);
-    const { watch } = require("../downloads");
     watch(old, l => seen.push(l), () => {});
     watch(empty, l => seen.push(l), () => {});
     watch(path.join(empty, "missing"), l => seen.push(l), () => {});
   } finally {
-    global.setInterval = realSetInterval;
+    stop();
+    global.setTimeout = realSetTimeout;
     fs.rmSync(old, { recursive: true, force: true }); fs.rmSync(empty, { recursive: true, force: true });
   }
   assert.deepStrictEqual(seen, [[{ name: "a.zip", bytes: 42 }], [], []]);
@@ -95,4 +98,97 @@ test("an exact name is taken first and isn't handed to an Unconfirmed download",
 test("two temp files with one real name announce it once", () => {
   const done = run(d => { write(d, "a.zip.crdownload", 10); write(d, "a.zip.part", 10); }, [d => { rm(d, "a.zip.crdownload"); rm(d, "a.zip.part"); write(d, "a.zip", 10); }]);
   assert.deepStrictEqual(done, ["a.zip"]);
+});
+
+// the delays watch() asks for, plus the real folder watcher's open and close calls
+function timing(fn) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "islet-dl-"));
+  const realSetTimeout = global.setTimeout, realWatch = fs.watch;
+  const delays = [];
+  let scan, open = 0;
+  global.setTimeout = (f, ms) => { scan = f; delays.push(ms); return 0; };
+  fs.watch = (...args) => {
+    const w = realWatch(...args), close = w.close.bind(w);
+    open++;
+    w.close = () => { open--; close(); };
+    return w;
+  };
+  delete require.cache[require.resolve("../downloads")];
+  const downloads = require("../downloads");
+  try {
+    fn({ dir, downloads, delays, scan: () => scan(), open: () => open });
+  } finally {
+    downloads.stop();
+    global.setTimeout = realSetTimeout; fs.watch = realWatch;
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+}
+const noop = () => {};
+
+test("an idle folder waits a minute between scans", () => timing(({ dir, downloads, delays }) => {
+  downloads.watch(dir, noop, noop);
+  assert.strictEqual(delays.at(-1), 60000);
+}));
+test("an active download is polled for progress, then the folder goes idle", () => timing(({ dir, downloads, delays, scan }) => {
+  write(dir, "a.zip.crdownload");
+  const sizes = [];
+  downloads.watch(dir, l => sizes.push(l[0]?.bytes), noop);
+  assert.strictEqual(delays.at(-1), 1500);
+  write(dir, "a.zip.crdownload", 99);
+  scan();
+  assert.deepStrictEqual(sizes, [10, 99]);
+  rm(dir, "a.zip.crdownload");
+  scan();
+  assert.strictEqual(delays.at(-1), 60000);
+}));
+test("a temp file that stops growing expires on the poll", () => timing(({ dir, downloads, delays, scan }) => {
+  write(dir, "a.zip.crdownload");
+  const lists = [];
+  downloads.watch(dir, l => lists.push(l.length), noop);
+  const old = Date.now() / 1000 - 120;
+  fs.utimesSync(path.join(dir, "a.zip.crdownload"), old, old);
+  scan();
+  assert.deepStrictEqual(lists, [1, 0]);
+  assert.strictEqual(delays.at(-1), 60000);
+}));
+test("a missing folder is retried and picked up when it appears", () => timing(({ dir, downloads, delays, scan, open }) => {
+  const later = path.join(dir, "later");
+  downloads.watch(later, noop, noop);
+  assert.strictEqual(open(), 0);
+  assert.strictEqual(delays.at(-1), 1500);
+  fs.mkdirSync(later);
+  scan();
+  assert.strictEqual(open(), 1);
+  assert.strictEqual(delays.at(-1), 60000);
+  downloads.stop();
+}));
+test("switching folders leaves one watcher, and stop leaves none", () => timing(({ dir, downloads, open }) => {
+  const other = path.join(dir, "other");
+  fs.mkdirSync(other);
+  downloads.watch(dir, noop, noop);
+  downloads.watch(other, noop, noop);
+  assert.strictEqual(open(), 1);
+  downloads.stop();
+  assert.strictEqual(open(), 0);
+}));
+
+test("a new temp file and its rename are noticed without waiting for the timer", async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "islet-dl-"));
+  delete require.cache[require.resolve("../downloads")];
+  const downloads = require("../downloads");
+  const until = async check => { for (let i = 0; i < 100 && !check(); i++) await new Promise(r => setTimeout(r, 20)); };
+  const lists = [], done = [];
+  try {
+    downloads.watch(dir, l => lists.push(l.length), d => done.push(d.name));
+    write(dir, "a.zip.crdownload");
+    await until(() => lists.at(-1) === 1);
+    assert.strictEqual(lists.at(-1), 1);
+    fs.renameSync(path.join(dir, "a.zip.crdownload"), path.join(dir, "a.zip"));
+    await until(() => done.length);
+    await new Promise(r => setTimeout(r, 200)); // a second event mustn't announce it again
+    assert.deepStrictEqual(done, ["a.zip"]);
+  } finally {
+    downloads.stop();
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
