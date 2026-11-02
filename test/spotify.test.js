@@ -4,8 +4,23 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 
-// spotify-web.js only needs electron's shell for the login page
-require.cache[require.resolve("electron")] = { exports: { shell: {} } };
+// spotify-web.js only needs electron's shell for the login page. Only its first load asks
+// for electron, and a clean checkout may not have it installed, so answer that one request
+// from a made-up cache entry and put everything back afterwards.
+function loadWithoutElectron() {
+  const Module = require("module");
+  const fake = path.join(__dirname, "fake-electron.js");
+  const realResolve = Module._resolveFilename;
+  Module._resolveFilename = function (request, ...rest) {
+    return request === "electron" ? fake : realResolve.call(this, request, ...rest);
+  };
+  require.cache[fake] = { id: fake, filename: fake, loaded: true, exports: { shell: {} } };
+  try { return require("../spotify-web"); } finally {
+    Module._resolveFilename = realResolve;
+    delete require.cache[fake];
+  }
+}
+loadWithoutElectron();
 
 test("a refresh that finishes after disconnect doesn't reconnect", async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "islet-sp-"));
