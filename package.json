@@ -27,6 +27,7 @@
     "weather.js",
     "downloads.js",
     "shelf-file.js",
+    "helper-lifecycle.js",
     "config-check.js",
     "settings/**",
     "claude-bridge.js",

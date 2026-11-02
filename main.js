@@ -13,13 +13,14 @@ const lyrics = require("./lyrics");
 const weather = require("./weather");
 const downloads = require("./downloads");
 const { readShelf } = require("./shelf-file");
+const { helperLifecycle } = require("./helper-lifecycle");
 
 const BASE_W = 672, BASE_H = 190;
 const SCALES = { compact: 0.85, normal: 1, large: 1.2 };
 const scale = () => SCALES[config.size] || 1;
 const PS = ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File"];
 const MEDIA = [...PS, path.join(__dirname, "media.ps1")];
-let win, tray, helpers;
+let win, tray;
 
 // a second copy exits at once (quit() is async and would start helpers first)
 if (!app.requestSingleInstanceLock()) app.exit(0);
@@ -144,7 +145,9 @@ function onSystemLine(l) {
 }
 // ---- media, system and Spotify-only audio share one PowerShell (helpers.ps1) ----
 function startHelpers() {
-  helpers = spawn("powershell.exe", [...PS, path.join(__dirname, "helpers.ps1"), "-ParentPid", String(process.pid)], { windowsHide: true });
+  const helpers = spawn("powershell.exe", [...PS, path.join(__dirname, "helpers.ps1"), "-ParentPid", String(process.pid)], { windowsHide: true });
+  helpers.stdin.on("error", e => console.warn("helpers", e.message)); // a write as it stops
+  lastMediaLine = ""; // the page gets the current state from the new helper's first line
   let latest = null, sent = null;
   lines(helpers.stdout, l => {
     if (l.startsWith("M ")) onMediaLine(l.slice(2));
@@ -157,8 +160,10 @@ function startHelpers() {
     if (latest && latest !== sent) { send("levels", latest.split(",").map(Number)); sent = latest; }
     latest = null;
   }, 33);
-  helpers.on("exit", () => { clearInterval(timer); if (!app.isQuitting) setTimeout(startHelpers, 2000); });
+  helpers.on("exit", () => clearInterval(timer));
+  return helpers;
 }
+const helpers = helperLifecycle(startHelpers);
 // out of the way during games and videos (unless turned off in settings)
 function applyVisibility() {
   if (!win) return;
@@ -168,7 +173,7 @@ function applyVisibility() {
 }
 
 ipcMain.on("volume",(_, delta) => {
-  if (Number.isFinite(delta)) helpers?.stdin.write(`vol ${delta}\n`);
+  if (Number.isFinite(delta)) helpers.current()?.stdin.write(`vol ${delta}\n`);
 });
 
 // ---- Spotify Web API: like + up next ----
@@ -600,13 +605,15 @@ app.whenReady().then(() => {
   createWindow();
   startBridge();
   makeTray();
-  startHelpers();
+  helpers.start();
   // AC/DC: powerMonitor rides on WM_POWERBROADCAST, so no polling. The renderer dedupes and debounces;
   // resume re-sends in case the charger changed while asleep
   const sendPower = () => send("power", { ac: !powerMonitor.isOnBatteryPower() });
   for (const ev of ["on-ac", "on-battery", "resume"]) powerMonitor.on(ev, sendPower);
-  powerMonitor.on("lock-screen", () => { locked = true; applyBanners(); });
-  powerMonitor.on("unlock-screen", () => { locked = false; applyBanners(); });
+  powerMonitor.on("lock-screen", () => { locked = true; applyBanners(); helpers.pause("locked"); });
+  powerMonitor.on("unlock-screen", () => { locked = false; applyBanners(); helpers.resume("locked"); });
+  powerMonitor.on("suspend", () => helpers.pause("asleep"));
+  powerMonitor.on("resume", () => helpers.resume("asleep"));
   win.webContents.on("did-finish-load", () => {
     sendPower();
     lastClaude = ""; iconFor = null; lastMediaLine = ""; readClaude(); refreshSpotifyExtras(); send("timer", timerEnd); sendDnd(true); send("shelf", shelf); sendTheme(); lyricsNow.resend();
@@ -651,5 +658,5 @@ app.on("will-quit", () => {
   globalShortcut.unregisterAll();
   // keeps what failed for the next start
   if (bannersSaved) { notifications.restoreBanners(bannersSaved); try { saveBannersJournal(bannersSaved); } catch (e) { console.warn("banners", e.message); } }
-  helpers?.kill();
+  helpers.quit();
 });
