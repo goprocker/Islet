@@ -74,7 +74,10 @@ function nextToast() {
   toastBusy = true;
   // real app logo when we have one, else a coloured letter / emoji badge
   const badge = $("tBadge");
-  if (t.icon) {
+  if (t.svg) { // our own inline icon, never message text
+    badge.innerHTML = t.svg;
+    badge.style.background = t.color || "";
+  } else if (t.icon) {
     badge.replaceChildren(Object.assign(document.createElement("img"), { src: t.icon, alt: "" }));
     badge.style.background = "transparent";
   } else {
@@ -110,12 +113,20 @@ $("notch").querySelector(".toastv").addEventListener("click", () => {
 });
 const APP_COLORS = { WhatsApp: "#25d366", Discord: "#5865f2", Telegram: "#2aabee", Teams: "#5b5fc7", Outlook: "#0f6cbd", Slack: "#611f69", Chrome: "#4285f4", Edge: "#0c88d8", "Phone Link": "#0067c0" };
 // volume / brightness HUD: the notch takes over from the Windows overlay
+const HUD_SPEAKER = '<path class="fill" d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z"/>';
+const hudSvg = body => `<svg viewBox="0 0 24 24" aria-hidden="true">${body}</svg>`;
+const HUD_ICONS = {
+  low: hudSvg(HUD_SPEAKER + '<path d="M15.2 9.6a3.4 3.4 0 0 1 0 4.8"/>'),
+  high: hudSvg(HUD_SPEAKER + '<path d="M15.2 9.6a3.4 3.4 0 0 1 0 4.8M17.8 7a7 7 0 0 1 0 10"/>'),
+  mute: hudSvg(HUD_SPEAKER + '<path d="M16 9.5l5 5M21 9.5l-5 5"/>'),
+  brightness: hudSvg('<circle cx="12" cy="12" r="3.6"/><path d="M12 3.5v2M12 18.5v2M3.5 12h2M18.5 12h2M6 6l1.4 1.4M16.6 16.6L18 18M6 18l1.4-1.4M16.6 7.4L18 6"/>'),
+};
 window.bridge.onVolumeHud(h => {
   if (notch.classList.contains("hidden")) return;
   const pct = Math.round(h.level * 100);
-  const icon = h.kind === "brightness" ? "☀" : h.muted || pct === 0 ? "🔇" : pct < 40 ? "🔈" : "🔊";
+  const icon = h.kind === "brightness" ? HUD_ICONS.brightness : h.muted || pct === 0 ? HUD_ICONS.mute : pct < 40 ? HUD_ICONS.low : HUD_ICONS.high;
   const title = h.kind === "mute" ? (h.muted ? "Muted" : "Unmuted") : h.kind === "brightness" ? `Brightness ${pct}%` : h.muted ? "Muted" : `Volume ${pct}%`;
-  toast({ hud: h.kind === "brightness" ? "brightness" : "volume", app: h.kind === "brightness" ? "Display" : "Sound", badge: icon, color: "#3a3a3c", title, bar: h.muted ? 0 : h.level, ms: 1600 });
+  toast({ hud: h.kind === "brightness" ? "brightness" : "volume", app: h.kind === "brightness" ? "Display" : "Sound", svg: icon, color: "#3a3a3c", title, bar: h.muted ? 0 : h.level, ms: 1600 });
 });
 window.bridge.onNotification(n => toast({ ...n, color: APP_COLORS[n.app] }));
 

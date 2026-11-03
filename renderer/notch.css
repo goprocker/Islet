@@ -78,6 +78,8 @@ body {
 /* full message, wrapped; 7 lines fit the window */
 .tmeta span { white-space: pre-line; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 7; -webkit-box-orient: vertical; overflow: hidden; }
 .tmeta b { font-weight: 600; }
+.badge svg { width: 21px; height: 21px; fill: none; stroke: var(--text); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.badge svg .fill { fill: var(--text); stroke-width: 1; }
 /* level bar of the volume / brightness HUD */
 .tbar { display: block; height: 5px; margin-top: 7px; border-radius: 3px; background: #3a3a3c; overflow: hidden; }
 .tbar[hidden] { display: none; }
