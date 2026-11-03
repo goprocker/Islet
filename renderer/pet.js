@@ -58,11 +58,13 @@
     return MOOD_LINES[ctx.mood] || `Hello${who}!`;
   }
 
-  // shows text in a bubble over the pet for a few seconds
+  // shows text beside the pet for a few seconds, on whichever side has more room in the notch
   function say(el, text, ms = 3500) {
     let b = el.querySelector(".say");
     if (!b) { b = document.createElement("span"); b.className = "say"; el.appendChild(b); }
     b.textContent = text;
+    const box = el.parentElement?.getBoundingClientRect(), me = el.getBoundingClientRect();
+    el.classList.toggle("left", !!box && me.left - box.left > box.width / 2);
     el.classList.add("talking");
     clearTimeout(el._sayT);
     el._sayT = setTimeout(() => el.classList.remove("talking"), ms);

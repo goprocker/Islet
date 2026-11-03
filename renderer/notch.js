@@ -586,11 +586,10 @@ setInterval(renderAlbum, 500);
 // ---- Do Not Disturb ----
 window.bridge.onDnd(on => {
   $("dndBtn").setAttribute("aria-pressed", on);
-  $("dockDnd").setAttribute("aria-pressed", on);
   $("dndBtn").title = on ? "Do Not Disturb is on. Click to turn off." : "Do Not Disturb: pause notification pop-ups";
   $("pillMoon").toggleAttribute("hidden", !on); // svg has no .hidden property
 });
-$("dndBtn").onclick = $("dockDnd").onclick = () => window.bridge.toggleDnd();
+$("dndBtn").onclick = () => window.bridge.toggleDnd();
 function drawHello() {
   const h = new Date().getHours(), part = h < 5 ? "Still up" : h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
   $("dashHello").textContent = theme.name ? `${part}, ${theme.name}` : part;
