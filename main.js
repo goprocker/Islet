@@ -22,6 +22,9 @@ const { readShelf } = require("./shelf-file");
 const { helperLifecycle } = require("./helper-lifecycle");
 const { audioTarget } = require("./audio-target");
 const { needsWelcome, finishWelcome } = require("./welcome");
+const { loadLinks, saveLinks } = require("./links");
+const phoneDrop = require("./phone-drop");
+const QRCode = require("qrcode");
 
 const BASE_W = 672, BASE_H = 270;
 const SCALES = { compact: 0.85, normal: 1, large: 1.2 };
@@ -558,6 +561,41 @@ ipcMain.on("shelfDrag", (e, p) => {
   const icon = dragIcons.get(p);
   e.sender.startDrag({ file: p, icon: icon && !icon.isEmpty() ? icon : nativeImage.createFromDataURL(EMPTY_PNG) });
 });
+// ---- phone drop: a phone on the same network sends files to the shelf and takes shelf files back ----
+ipcMain.handle("phoneStart", async () => {
+  try {
+    const url = await phoneDrop.start({ dir: path.join(app.getPath("downloads"), "Islet drop"), shelf: () => shelf, onFile: p => shelfAdd([p]) });
+    return { url, qr: await QRCode.toDataURL(url, { margin: 1, width: 240, color: { dark: "#000000", light: "#ffffff" } }) };
+  } catch (e) { return { error: e.message }; }
+});
+ipcMain.on("phoneStop", () => phoneDrop.stop());
+
+// ---- links: saved sites, and web searches opened in the browser ----
+ipcMain.handle("linksGet", () => loadLinks(app.getPath("userData")));
+ipcMain.handle("linksSave", (_, list) => saveLinks(app.getPath("userData"), list));
+ipcMain.on("openLink", (_, url) => { try { if (/^https?:$/.test(new URL(url).protocol)) shell.openExternal(url); } catch {} });
+
+// ---- timer tool: the same timers as the tray menu ----
+ipcMain.on("timerStart", (_, min) => { if (min === "pomodoro") startPomodoro(); else if (Number.isFinite(min) && min >= 0 && min <= 600) setTimer(min); });
+ipcMain.on("stopwatchToggle", () => toggleStopwatch());
+ipcMain.on("openSettings", () => openSettings());
+
+// ---- system tool: CPU (since the last call), memory, disk and uptime ----
+let lastCpu = os.cpus();
+ipcMain.handle("sysStats", () => {
+  const now = os.cpus();
+  let idle = 0, total = 0;
+  now.forEach((c, i) => {
+    const was = lastCpu[i]?.times || c.times;
+    for (const k of Object.keys(c.times)) total += c.times[k] - was[k];
+    idle += c.times.idle - was.idle;
+  });
+  lastCpu = now;
+  let disk = null;
+  try { const s = fs.statfsSync(path.parse(os.homedir()).root); disk = { free: s.bavail * s.bsize, total: s.blocks * s.bsize }; } catch {}
+  return { cpu: total ? Math.round(100 * (1 - idle / total)) : 0, cpuName: now[0]?.model.trim() || "", cores: now.length, mem: { free: os.freemem(), total: os.totalmem() }, disk, uptime: os.uptime() };
+});
+
 // 1x1 transparent fallback: startDrag needs some icon
 const EMPTY_PNG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
 
@@ -860,6 +898,7 @@ app.whenReady().then(() => {
 app.on("window-all-closed", e => e.preventDefault());
 app.on("before-quit", () => { app.isQuitting = true; });
 app.on("will-quit", () => {
+  phoneDrop.stop();
   globalShortcut.unregisterAll();
   // keeps what failed for the next start
   if (bannersSaved) { notifications.restoreBanners(bannersSaved); try { saveBannersJournal(bannersSaved); } catch (e) { console.warn("banners", e.message); } }

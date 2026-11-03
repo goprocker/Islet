@@ -19,6 +19,22 @@
     <span class="batt" id="pillBatt" hidden></span>
   </div>
 
+  <nav class="dock" id="dock" aria-label="Tools">
+    <button id="dockHome" data-panel="dashPanel" aria-pressed="false" title="Home"><svg viewBox="0 0 24 24"><path d="M12 3 3 10.5V21h6.5v-6h5v6H21V10.5zm0 2.6 7 5.8V19h-2.5v-6h-9v6H5v-7.6z"/></svg><span>Home</span></button>
+    <button id="phoneBtn" data-panel="phonePanel" aria-pressed="false" title="Phone drop"><svg viewBox="0 0 24 24"><path d="M8 2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm0 2v16h8V4zm3 13h2v2h-2z"/></svg><span>Phone drop</span></button>
+    <button id="linksBtn" data-panel="linksPanel" aria-pressed="false" title="Links"><svg viewBox="0 0 24 24"><path d="M10.6 13.4a1 1 0 0 1 0-1.4l3.5-3.5a1 1 0 1 1 1.4 1.4L12 13.4a1 1 0 0 1-1.4 0zM7.8 19.1a3.5 3.5 0 0 1-2.5-6l2.1-2.1 1.4 1.4-2.1 2.1a1.5 1.5 0 0 0 2.1 2.1l2.1-2.1 1.4 1.4-2.1 2.1a3.5 3.5 0 0 1-2.4 1.1zm8.8-6.1-1.4-1.4 2.1-2.1a1.5 1.5 0 0 0-2.1-2.1l-2.1 2.1-1.4-1.4 2.1-2.1a3.5 3.5 0 0 1 4.9 4.9z"/></svg><span>Links</span></button>
+    <button id="clockBtn" data-panel="clockPanel" aria-pressed="false" title="World clock"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm0 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16zm-1 3h2v4.6l3.2 3.2-1.4 1.4L11 12.4z"/></svg><span>World clock</span></button>
+    <button id="clipBtn" data-panel="clipPanel" aria-pressed="false" title="Clipboard"><svg viewBox="0 0 24 24"><path d="M9 2h6a1 1 0 0 1 1 1v1h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2V3a1 1 0 0 1 1-1zm1 2v1h4V4zM6 6v14h12V6h-2v1H8V6zm2 4h8v2H8zm0 4h6v2H8z"/></svg><span>Clipboard</span></button>
+    <button id="notesBtn" data-panel="notesPanel" aria-pressed="false" title="Notes"><svg viewBox="0 0 24 24"><path d="M5 3h14a2 2 0 0 1 2 2v10l-6 6H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm0 2v14h8v-4a2 2 0 0 1 2-2h4V5zm10 12.8V17h.8z"/></svg><span>Notes</span></button>
+    <button id="timerBtn" data-panel="timerPanel" aria-pressed="false" title="Timer and focus"><svg viewBox="0 0 24 24"><path d="M9 1h6v2H9zm3 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18zm0 2a7 7 0 1 0 0 14 7 7 0 0 0 0-14zm-1 2h2v5h-2zm7.3-3.7 1.4 1.4-1.5 1.5-1.4-1.4z"/></svg><span>Timer and focus</span></button>
+    <button id="shelfBtn" data-panel="shelfPanel" aria-pressed="false" title="File shelf"><svg viewBox="0 0 24 24"><path d="M3 5a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zm2 0v14h14V7h-8.8l-2-2z"/></svg><span>File shelf</span></button>
+    <button id="weatherBtn" data-panel="weatherPanel" aria-pressed="false" title="Weather"><svg viewBox="0 0 24 24"><path d="M6.5 19a4.5 4.5 0 0 1-.4-9 6 6 0 0 1 11.5 1.5A3.8 3.8 0 0 1 17.3 19zm0-2h10.8a1.8 1.8 0 0 0 0-3.6h-1.6l-.1-1.5a4 4 0 0 0-7.8-1l-.3 1H6.5a2.5 2.5 0 0 0 0 5.1z"/></svg><span>Weather</span></button>
+    <button id="unitsBtn" data-panel="unitsPanel" aria-pressed="false" title="Units"><svg viewBox="0 0 24 24"><path d="M2 8h20v8H2zm2 2v4h16v-4h-1v2h-2v-2h-2v2h-2v-2h-2v2H9v-2H7v2H5v-2z"/></svg><span>Units</span></button>
+    <button id="sysBtn" data-panel="sysPanel" aria-pressed="false" title="System"><svg viewBox="0 0 24 24"><path d="M4 20V10h3v10zm6.5 0V4h3v16zM17 20v-7h3v7z"/></svg><span>System</span></button>
+    <button id="aiBtn" data-panel="aiPanel" aria-pressed="false" title="AI coding"><svg viewBox="0 0 24 24"><path d="M11 2h2v3h4a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3h4zM7 7a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1zm2 3a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm6 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zM1 10h2v5H1zm20 0h2v5h-2z"/></svg><span>AI coding</span></button>
+    <i class="dsep" aria-hidden="true"></i>
+    <button id="dockMore" title="Settings"><svg viewBox="0 0 24 24"><path d="M11 4h2v7h7v2h-7v7h-2v-7H4v-2h7z"/></svg><span>Settings</span></button>
+  </nav>
   <span class="pet walker" id="fullPet" hidden></span>
 
   <div class="toastv" role="status" aria-live="polite">
@@ -79,6 +95,46 @@
         <header><b>Notes</b><button class="link" id="notesClear">Clear</button></header>
         <textarea id="notesText" placeholder="Jot something down" spellcheck="false" aria-label="Quick notes"></textarea>
       </section>
+      <section class="panel" id="phonePanel" hidden aria-label="Phone drop">
+        <header><b>Phone drop</b><span class="dsub">Same Wi-Fi, no app needed</span></header>
+        <div class="phone"><img id="phoneQr" alt="QR code for Phone drop" hidden><div><p id="phoneMsg">Starting…</p><code id="phoneUrl"></code><p class="dsub">Scan with your phone camera. Files you send land on the shelf and in Downloads\Islet drop, and shelf files can be taken back. Stops after 10 minutes.</p></div></div>
+      </section>
+      <section class="panel" id="linksPanel" hidden aria-label="Links">
+        <header><b>Links</b><span class="dsub">Search the web or open a saved site</span></header>
+        <form class="lsearch" id="linkSearch"><input id="linkQ" type="search" placeholder="Search" autocomplete="off" spellcheck="false" aria-label="Search the web"><select id="linkEngine" aria-label="Search with"><option value="https://www.google.com/search?q=">Google</option><option value="https://www.youtube.com/results?search_query=">YouTube</option><option value="https://github.com/search?q=">GitHub</option><option value="https://stackoverflow.com/search?q=">Stack Overflow</option></select></form>
+        <ul class="lgrid" id="linkList"></ul>
+        <form class="ladd" id="linkAdd"><input id="linkUrl" type="url" placeholder="Paste a link to save it" autocomplete="off" aria-label="Link to save"><button class="link">Save</button></form>
+      </section>
+      <section class="panel" id="clockPanel" hidden aria-label="World clock">
+        <header><b>World clock</b><select id="clockAdd" aria-label="Add a city"><option value="">Add a city</option></select></header>
+        <ul class="clocks" id="clockList"></ul>
+      </section>
+      <section class="panel" id="timerPanel" hidden aria-label="Timer and focus">
+        <header><b>Timer and focus</b><span class="dsub" id="timerSub">Pick a length</span></header>
+        <div class="tbig"><strong id="timerBig">0:00</strong><small id="timerWhat">No timer running</small></div>
+        <div class="chips" id="timerChips"><button data-min="5">5 min</button><button data-min="15">15 min</button><button data-min="25">25 min</button><button data-min="50">50 min</button><button data-min="pomodoro">Pomodoro</button><button data-min="0">Cancel</button><button id="swBtn">Stopwatch</button></div>
+      </section>
+      <section class="panel" id="weatherPanel" hidden aria-label="Weather">
+        <header><b id="wPlace">Weather</b><span class="dsub" id="wMeta"></span></header>
+        <div class="wnow"><span id="wIcon"></span><strong id="wTemp"></strong><span id="wLabel"></span></div>
+        <ol class="whours" id="wHours"></ol>
+        <ol class="wdays" id="wDays"></ol>
+        <p class="empty" id="wEmpty" hidden>Set a city in Settings to see the weather.</p>
+      </section>
+      <section class="panel" id="unitsPanel" hidden aria-label="Units">
+        <header><b>Units</b><select id="uKind" aria-label="What to convert"></select></header>
+        <div class="ubox"><input id="uIn" type="number" value="1" aria-label="Value"><select id="uFrom" aria-label="From"></select><span>=</span><output id="uOut"></output><select id="uTo" aria-label="To"></select></div>
+        <ul class="uall" id="uAll"></ul>
+      </section>
+      <section class="panel" id="sysPanel" hidden aria-label="System">
+        <header><b>System</b><span class="dsub" id="sysCpuName"></span></header>
+        <div class="meters" id="sysMeters"></div>
+      </section>
+      <section class="panel" id="aiPanel" hidden aria-label="AI coding">
+        <header><b>AI coding</b><span class="dsub">Claude Code and Codex sessions</span></header>
+        <ul class="ai" id="aiList"></ul>
+        <p class="empty" id="aiEmpty">No sessions yet. Start Claude Code or Codex and they show up here.</p>
+      </section>
       <section class="panel" id="dashPanel" hidden aria-label="Dashboard">
         <header><b id="dashHello">Dashboard</b><span class="dsub" id="dashDate">Quick settings</span></header>
         <div class="qtiles" id="qTiles">
@@ -91,16 +147,6 @@
         </div>
         <label class="qslide"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10zM11 1h2v3h-2zm0 19h2v3h-2zM1 11h3v2H1zm19 0h3v2h-3z"/></svg><input type="range" id="qBright" min="0" max="100" aria-label="Brightness"><output id="qBrightN">0</output></label>
         <label class="qslide"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9zM16 8.5a5 5 0 0 1 0 7z"/></svg><input type="range" id="qVol" min="0" max="100" aria-label="Volume"><output id="qVolN">0</output></label>
-        <nav class="dock" aria-label="Tools">
-          <button id="dashHome" class="on" aria-current="page" title="Dashboard" tabindex="-1"><svg viewBox="0 0 24 24"><path d="M12 3 3 10.5V21h6.5v-6h5v6H21V10.5zm0 2.6 7 5.8V19h-2.5v-6h-9v6H5v-7.6z"/></svg><span>Home</span></button>
-          <button id="searchBtn" aria-pressed="false" title="Search (Alt+Space)"><svg viewBox="0 0 24 24"><path d="M10.5 3a7.5 7.5 0 0 1 5.9 12.1l4.3 4.3-1.4 1.4-4.3-4.3A7.5 7.5 0 1 1 10.5 3zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11z"/></svg><span>Search</span></button>
-          <button id="clipBtn" aria-pressed="false" title="Clipboard history"><svg viewBox="0 0 24 24"><path d="M9 2h6a1 1 0 0 1 1 1v1h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2V3a1 1 0 0 1 1-1zm1 2v1h4V4zM6 6v14h12V6h-2v1H8V6zm2 4h8v2H8zm0 4h6v2H8z"/></svg><span>Clipboard</span></button>
-          <button id="shelfBtn" aria-pressed="false" title="File shelf"><svg viewBox="0 0 24 24"><path d="M3 5a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zm2 0v14h14V7h-8.8l-2-2z"/></svg><span>Shelf</span></button>
-          <button id="notesBtn" aria-pressed="false" title="Quick notes"><svg viewBox="0 0 24 24"><path d="M5 3h14a2 2 0 0 1 2 2v10l-6 6H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm0 2v14h8v-4a2 2 0 0 1 2-2h4V5zm10 12.8V17h.8z"/></svg><span>Notes</span></button>
-          <button id="dockDnd" aria-pressed="false" title="Do Not Disturb"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg><span>Focus</span></button>
-          <i class="dsep" aria-hidden="true"></i>
-          <button id="dockClose" title="Close dashboard"><svg viewBox="0 0 24 24"><path d="m6.4 5 5.6 5.6L17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4-5.6-5.6L6.4 19 5 17.6 10.6 12 5 6.4z"/></svg><span>Close</span></button>
-        </nav>
       </section>
       <div class="albumv" id="albumv" hidden>
         <img class="art bg" alt="">
@@ -137,13 +183,14 @@
     </section>
     <nav class="tools" aria-label="Islet tools">
       <button id="dndBtn" aria-pressed="false" title="Do Not Disturb: pause notification pop-ups"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></button>
-      <button id="dashBtn" aria-pressed="false" title="Dashboard"><svg viewBox="0 0 24 24"><path d="M4 4h7v7H4zm9 0h7v7h-7zM4 13h7v7H4zm9 0h7v7h-7z"/></svg></button>
+      <button id="dashBtn" data-panel="dashPanel" aria-pressed="false" title="Dashboard"><svg viewBox="0 0 24 24"><path d="M4 4h7v7H4zm9 0h7v7h-7zM4 13h7v7H4zm9 0h7v7h-7z"/></svg></button>
     </nav>
   </div>
 </div>
 <script src="blackhole.js"></script>
 <script src="sliders.js"></script>
 <script src="pet.js"></script>
+<script src="units.js"></script>
 <script src="notch.js"></script>
 </body>
 </html>

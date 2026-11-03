@@ -312,8 +312,12 @@ button.link:hover { color: var(--text); }
 .panel textarea { flex: 1; min-height: 0; resize: none; background: #1c1c1e; border: 0; border-radius: 7px; padding: 5px 8px; font: inherit; font-size: 11.5px; color: #f5f5f7; outline: none; }
 .panel textarea:focus { box-shadow: inset 0 0 0 1.5px var(--accent); }
 /* dashboard: its own taller view, laid over the whole notch */
-.notch.open.dash { height: 248px; }
-#dashPanel { position: fixed; inset: 0; padding: 16px 24px 18px; gap: 12px; z-index: 20; border-radius: 0 0 26px 26px; }
+.notch.open.dash { height: 258px; }
+/* in the tall view every tool panel fills the notch above the dock */
+.notch.dash .panel { position: fixed; inset: 0 0 56px; padding: 16px 24px 6px; gap: 10px; z-index: 20; }
+#dashPanel { gap: 12px; }
+.panel header b { font-size: 15px; letter-spacing: -.01em; }
+.panel header select { background: #1c1c1e; color: #d1d1d6; border: 0; border-radius: 7px; font: inherit; font-size: 11.5px; padding: 3px 6px; }
 #dashPanel header b { font-size: 15px; letter-spacing: -.01em; }
 .dsub { color: var(--muted); font-size: 11px; }
 .qtiles { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
@@ -327,8 +331,9 @@ button.link:hover { color: var(--text); }
 .qslide input { flex: 1; accent-color: #bf8cff; height: 16px; }
 .qslide output { width: 28px; text-align: right; color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
 /* dock: one rounded bar of icons; the open one gets a dot under it */
-.dock { display: flex; align-items: center; justify-content: center; gap: 4px; margin: auto auto 0; padding: 5px 8px; border-radius: 18px; background: #ffffff0d; box-shadow: inset 0 0 0 1px #ffffff14; }
-.dock button { position: relative; width: 38px; height: 34px; border-radius: 12px; color: #a1a1a6; display: grid; place-items: center; transition: background .15s, color .15s, transform .15s; }
+.dock { position: fixed; left: 50%; bottom: 8px; z-index: 21; translate: -50% 0; opacity: 0; pointer-events: none; transition: opacity .2s; display: flex; align-items: center; justify-content: center; gap: 2px; padding: 4px 6px; border-radius: 18px; background: #ffffff0d; box-shadow: inset 0 0 0 1px #ffffff14; }
+.notch.open.dash .dock { opacity: 1; pointer-events: auto; transition-delay: .12s; }
+.dock button { position: relative; width: 36px; height: 34px; border-radius: 12px; color: #a1a1a6; display: grid; place-items: center; transition: background .15s, color .15s, transform .15s; }
 .dock button svg { width: 17px; height: 17px; fill: currentColor; }
 .dock button span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 .dock button:hover { background: #ffffff14; color: #f5f5f7; transform: translateY(-1px); }
@@ -387,3 +392,68 @@ button.link:hover { color: var(--text); }
 .pet .say { position: absolute; bottom: 100%; left: -4px; margin-bottom: 5px; padding: 3px 8px; border-radius: 9px; background: #f5f5f7; color: #111; font-size: 10px; font-weight: 600; white-space: nowrap; transform: translateY(4px) scale(.9); transform-origin: 12px 100%; opacity: 0; transition: opacity .2s, transform .2s; }
 .pet .say::after { content: ""; position: absolute; top: 100%; left: 11px; border: 4px solid transparent; border-top-color: #f5f5f7; }
 .pet.talking .say { opacity: 1; transform: none; }
+
+/* phone drop */
+.phone { display: flex; gap: 18px; align-items: center; flex: 1; min-height: 0; }
+.phone img { width: 132px; height: 132px; border-radius: 12px; background: #fff; padding: 6px; flex: none; }
+.phone p { font-size: 13px; margin-bottom: 4px; }
+.phone code { display: block; font-size: 11px; color: #bf8cff; word-break: break-all; margin-bottom: 8px; user-select: text; }
+/* links */
+.lsearch, .ladd { display: flex; gap: 6px; }
+.lsearch input, .ladd input { flex: 1; background: #1c1c1e; border: 0; border-radius: 9px; padding: 6px 10px; font: inherit; font-size: 12px; color: #f5f5f7; outline: none; }
+.lsearch input:focus, .ladd input:focus { box-shadow: inset 0 0 0 1.5px var(--accent); }
+.lsearch select { background: #1c1c1e; color: #d1d1d6; border: 0; border-radius: 9px; font: inherit; font-size: 12px; padding: 0 8px; }
+.panel .lgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; align-content: start; }
+.lgrid li { position: relative; }
+.lgrid .lk { width: 100%; height: 34px; border-radius: 9px; background: #1c1c1e; display: flex; align-items: center; gap: 7px; padding: 0 8px; font: inherit; font-size: 11.5px; color: #d1d1d6; overflow: hidden; }
+.lgrid .lk:hover { background: #2c2c2e; }
+.lgrid .lk i { width: 18px; height: 18px; border-radius: 5px; background: #bf8cff33; color: #d9bcff; font-style: normal; font-size: 10px; font-weight: 700; display: grid; place-items: center; flex: none; }
+.lgrid .lk span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lx { width: 18px; height: 18px; border-radius: 50%; color: var(--muted); font-size: 13px; line-height: 1; }
+.lgrid .lx { position: absolute; top: -5px; right: -5px; background: #2c2c2e; opacity: 0; }
+.lgrid li:hover .lx { opacity: 1; }
+/* world clock */
+.panel .clocks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; align-content: start; }
+.clocks li { position: relative; background: #1c1c1e; border-radius: 12px; padding: 10px 12px; display: grid; }
+.clocks b { font-size: 12px; }
+.clocks small { color: var(--muted); font-size: 10.5px; }
+.clocks strong { font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; margin-top: 4px; }
+.clocks .lx { position: absolute; top: 6px; right: 6px; }
+/* timer */
+.tbig { flex: 1; display: grid; place-content: center; text-align: center; }
+.tbig strong { font-size: 52px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
+.tbig small { color: var(--muted); font-size: 12px; margin-top: 4px; }
+.chips { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+.chips button { width: auto; height: 28px; padding: 0 12px; border-radius: 14px; background: #1c1c1e; color: #d1d1d6; font: inherit; font-size: 11.5px; }
+.chips button:hover { background: #2c2c2e; }
+/* weather */
+.wnow { display: flex; align-items: center; gap: 10px; }
+.wnow span:first-child, .wnow strong { font-size: 30px; font-weight: 600; }
+.wnow span:last-child { color: var(--muted); font-size: 12px; }
+.panel .whours, .panel .wdays { flex-direction: row; gap: 6px; flex: none; overflow: visible; }
+.whours li, .wdays li { flex: 1; background: #1c1c1e; border-radius: 10px; padding: 5px 0; display: grid; justify-items: center; font-size: 11px; }
+.whours small, .wdays small { color: var(--muted); font-size: 10px; }
+/* units */
+.ubox { display: grid; grid-template-columns: 1fr auto auto 1fr auto; gap: 8px; align-items: center; }
+.ubox input, .ubox output, .ubox select { background: #1c1c1e; border: 0; border-radius: 9px; padding: 8px 10px; font: inherit; font-size: 14px; color: #f5f5f7; outline: none; min-width: 0; }
+.ubox output { font-weight: 600; }
+.ubox span { color: var(--muted); }
+.panel .uall { flex-direction: row; flex-wrap: wrap; gap: 6px; align-content: start; }
+.uall li { background: #1c1c1e; border-radius: 8px; padding: 4px 9px; font-size: 11.5px; color: #d1d1d6; }
+/* system */
+.meters { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; flex: 1; align-content: center; }
+.meters div { background: #1c1c1e; border-radius: 12px; padding: 10px; display: grid; gap: 3px; }
+.meters small, .meters span { color: var(--muted); font-size: 10.5px; }
+.meters strong { font-size: 20px; font-weight: 600; }
+.meters i { height: 4px; border-radius: 2px; background: linear-gradient(90deg, #bf8cff var(--p), #2c2c2e var(--p)); }
+/* AI coding */
+.panel .ai { gap: 6px; }
+.ai li { background: #1c1c1e; border-radius: 10px; padding: 7px 10px; }
+.ai button { width: 100%; height: auto; display: flex; align-items: center; gap: 7px; text-align: left; font: inherit; color: #f5f5f7; }
+.ai button i { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex: none; }
+.ai li[data-status=working] i { background: #0a84ff; }
+.ai li[data-status=waiting] i { background: var(--warn); }
+.ai li[data-status=done] i { background: #30d158; }
+.ai b { font-size: 12px; }
+.ai small { color: var(--muted); font-size: 10.5px; margin-left: auto; }
+.ai p { color: #a1a1a6; font-size: 11px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

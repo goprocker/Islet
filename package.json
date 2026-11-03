@@ -34,6 +34,17 @@
       "audio-target.js",
       "welcome.js",
       "config-check.js",
+      "clip-history.js",
+      "notes.js",
+      "pomodoro.js",
+      "quick-settings.js",
+      "search.js",
+      "volume-hud.js",
+      "links.js",
+      "phone-drop.js",
+      "quickset.ps1",
+      "radios.ps1",
+      "volume-hud.ps1",
       "settings/**",
       "claude-bridge.js",
       "hooks/**",
@@ -76,6 +87,7 @@
     "electron@45.2.1": true
   },
   "dependencies": {
-    "electron-updater": "^6.8.11"
+    "electron-updater": "^6.8.11",
+    "qrcode": "^1.5.4"
   }
 }

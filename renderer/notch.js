@@ -591,24 +591,25 @@ window.bridge.onDnd(on => {
   $("pillMoon").toggleAttribute("hidden", !on); // svg has no .hidden property
 });
 $("dndBtn").onclick = $("dockDnd").onclick = () => window.bridge.toggleDnd();
-$("dockClose").onclick = () => showPanel(null);
 function drawHello() {
   const h = new Date().getHours(), part = h < 5 ? "Still up" : h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
   $("dashHello").textContent = theme.name ? `${part}, ${theme.name}` : part;
   $("dashDate").textContent = new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
 }
 
-// ---- tools panels: clipboard history and file shelf (one at a time) ----
-const PANELS = { searchBtn: "searchPanel", clipBtn: "clipPanel", shelfBtn: "shelfPanel", notesBtn: "notesPanel", dashBtn: "dashPanel" };
-function showPanel(btnId) {
-  for (const [b, p] of Object.entries(PANELS)) {
-    const on = b === btnId && $(p).hidden;
-    $(p).hidden = !on;
-    $(b).setAttribute("aria-pressed", on);
-    if (on && p === "dashPanel") refreshQuick();
-  }
-  notch.classList.toggle("dash", !$("dashPanel").hidden);
-  if (!$("dashPanel").hidden) drawHello();
+// ---- tools: one panel at a time, in the tall view with the dock under it ----
+const PANELS = [...document.querySelectorAll(".panel")].map(p => p.id);
+const OPENED = { dashPanel: () => { refreshQuick(); drawHello(); }, phonePanel: startPhone, linksPanel: loadLinks, clockPanel: drawClocks, timerPanel: drawTimer, weatherPanel: drawWeather, unitsPanel: drawUnits, sysPanel: drawSys, aiPanel: drawAi };
+let openPanel = null;
+// toggle: a second click on the button that opened it closes it (the dock only switches)
+function showPanel(id, toggle = true) {
+  if (toggle && id === openPanel) id = null;
+  if (openPanel === "phonePanel" && id !== "phonePanel") window.bridge.phoneStop();
+  openPanel = id;
+  for (const p of PANELS) $(p).hidden = p !== id;
+  for (const b of document.querySelectorAll("[data-panel]")) b.setAttribute("aria-pressed", b.dataset.panel === id);
+  notch.classList.toggle("dash", !!id);
+  if (id) OPENED[id]?.();
 }
 
 // ---- quick settings: tiles and sliders read from the system when the panel opens ----
@@ -639,7 +640,9 @@ let quickTimer;
 for (const [id, kind, scale] of [["qBright", "bright", 1], ["qVol", "vol", 100]]) {
   $(id).oninput = () => { $(id + "N").textContent = $(id).value; clearTimeout(quickTimer); quickTimer = setTimeout(() => quickDo(kind, $(id).value / scale), 120); };
 }
-for (const b of Object.keys(PANELS)) $(b).onclick = () => showPanel(b);
+for (const b of document.querySelectorAll("[data-panel]")) b.onclick = () => showPanel(b.dataset.panel, !b.closest(".dock"));
+$("dockMore").onclick = () => window.bridge.openSettings();
+setInterval(() => { if (openPanel === "clockPanel") drawClocks(); else if (openPanel === "timerPanel") drawTimer(); else if (openPanel === "sysPanel") drawSys(); }, 1000);
 // panels close with the notch
 new MutationObserver(() => { if (!notch.classList.contains("open")) showPanel(null); })
   .observe(notch, { attributes: true, attributeFilter: ["class"] });
@@ -684,7 +687,7 @@ $("searchInput").onkeydown = e => {
 window.bridge.onSearch(() => {
   notch.classList.remove("hidden");
   setOpen(true);
-  if ($("searchPanel").hidden) showPanel("searchBtn");
+  if ($("searchPanel").hidden) showPanel("searchPanel");
   $("searchInput").value = ""; searchHits = []; drawSearch();
   $("searchInput").focus();
 });
@@ -741,7 +744,7 @@ notch.addEventListener("dragover", e => {
   if (![...e.dataTransfer.types].includes("Files")) return;
   e.preventDefault();
   if (!notch.classList.contains("open")) setOpen(true);
-  if ($("shelfPanel").hidden) showPanel("shelfBtn");
+  if ($("shelfPanel").hidden) showPanel("shelfPanel");
   $("shelfPanel").classList.add("dropping");
 });
 notch.addEventListener("dragleave", () => $("shelfPanel").classList.remove("dropping"));
@@ -764,3 +767,131 @@ window.bridge.onTheme(t => {
   else document.documentElement.style.removeProperty("--accent");
   render();
 });
+
+// ---- phone drop ----
+async function startPhone() {
+  $("phoneMsg").textContent = "Starting…"; $("phoneUrl").textContent = ""; $("phoneQr").hidden = true;
+  const r = await window.bridge.phoneStart();
+  if (openPanel !== "phonePanel") return window.bridge.phoneStop();
+  if (r.error) { $("phoneMsg").textContent = r.error; return; }
+  $("phoneMsg").textContent = "Scan to connect";
+  $("phoneUrl").textContent = r.url;
+  $("phoneQr").src = r.qr; $("phoneQr").hidden = false;
+}
+
+// ---- links: saved sites and a web search box ----
+let links = [];
+const favicon = url => { try { return new URL(url).hostname.replace(/^www\./, "")[0].toUpperCase(); } catch { return "?"; } };
+async function loadLinks() { links = await window.bridge.linksGet(); drawLinks(); }
+function drawLinks() {
+  $("linkList").replaceChildren(...links.map((l, i) => {
+    const li = document.createElement("li"), b = document.createElement("button"), x = document.createElement("button");
+    b.className = "lk"; b.title = l.url;
+    b.append(Object.assign(document.createElement("i"), { textContent: favicon(l.url) }), Object.assign(document.createElement("span"), { textContent: l.title }));
+    b.onclick = () => window.bridge.openLink(l.url);
+    x.className = "lx"; x.textContent = "×"; x.title = "Remove"; x.setAttribute("aria-label", `Remove ${l.title}`);
+    x.onclick = async () => { links = await window.bridge.linksSave(links.filter((_, k) => k !== i)); drawLinks(); };
+    li.append(b, x);
+    return li;
+  }));
+}
+$("linkSearch").onsubmit = e => { e.preventDefault(); const q = $("linkQ").value.trim(); if (q) { window.bridge.openLink($("linkEngine").value + encodeURIComponent(q)); $("linkQ").value = ""; } };
+$("linkAdd").onsubmit = async e => { e.preventDefault(); const url = $("linkUrl").value.trim(); if (!url) return; links = await window.bridge.linksSave([...links, { url }]); $("linkUrl").value = ""; drawLinks(); };
+
+// ---- world clock: your time and the cities you add (kept in this window's storage) ----
+const CITIES = { "Chennai": "Asia/Kolkata", "Dubai": "Asia/Dubai", "Singapore": "Asia/Singapore", "Tokyo": "Asia/Tokyo", "Sydney": "Australia/Sydney", "London": "Europe/London", "Berlin": "Europe/Berlin", "New York": "America/New_York", "Chicago": "America/Chicago", "San Francisco": "America/Los_Angeles", "São Paulo": "America/Sao_Paulo" };
+const loadCities = () => { try { const c = JSON.parse(localStorage.getItem("clocks")); return Array.isArray(c) ? c.filter(n => n in CITIES) : ["London", "New York"]; } catch { return ["London", "New York"]; } };
+let cities = loadCities();
+const saveCities = () => { try { localStorage.setItem("clocks", JSON.stringify(cities)); } catch {} };
+function drawClocks() {
+  const now = new Date(), mine = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const sel = $("clockAdd");
+  if (sel.options.length === 1) sel.append(...Object.keys(CITIES).map(c => new Option(c, c)));
+  const offset = tz => { const d = new Date(now.toLocaleString("en-US", { timeZone: tz })), h = Math.round((d - new Date(now.toLocaleString("en-US"))) / 36e5 * 2) / 2; return h === 0 ? "Same time" : `${h > 0 ? "+" : ""}${h}h`; };
+  const row = (name, time, sub, tz) => {
+    const li = document.createElement("li");
+    li.append(Object.assign(document.createElement("b"), { textContent: name }), Object.assign(document.createElement("small"), { textContent: sub }), Object.assign(document.createElement("strong"), { textContent: time }));
+    if (tz) { const x = Object.assign(document.createElement("button"), { className: "lx", textContent: "×", title: `Remove ${name}` }); x.onclick = () => { cities = cities.filter(c => c !== name); saveCities(); drawClocks(); }; li.append(x); }
+    return li;
+  };
+  $("clockList").replaceChildren(row("Here", mine, now.toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" })),
+    ...cities.map(c => row(c, now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", timeZone: CITIES[c] }), offset(CITIES[c]), CITIES[c])));
+}
+$("clockAdd").onchange = e => { const c = e.target.value; if (c && !cities.includes(c)) { cities.push(c); saveCities(); } e.target.value = ""; drawClocks(); };
+
+// ---- timer and focus: the same timers as the tray, plus the stopwatch ----
+function drawTimer() {
+  const now = Date.now(), left = Math.max(0, (timerEnd - now) / 1000);
+  if (timerEnd > now) { $("timerBig").textContent = fmt(left); $("timerWhat").textContent = timerLabel; }
+  else if (stopwatchStart) { $("timerBig").textContent = fmt((now - stopwatchStart) / 1000); $("timerWhat").textContent = "Stopwatch"; }
+  else { $("timerBig").textContent = "0:00"; $("timerWhat").textContent = "No timer running"; }
+  $("timerSub").textContent = timerEnd > now ? "Running" : "Pick a length";
+  $("swBtn").textContent = stopwatchStart ? "Stop stopwatch" : "Stopwatch";
+}
+$("timerChips").onclick = e => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  if (b.id === "swBtn") window.bridge.stopwatchToggle();
+  else window.bridge.timerStart(b.dataset.min === "pomodoro" ? "pomodoro" : Number(b.dataset.min));
+};
+
+// ---- weather: now, the next hours and the next days ----
+function drawWeather() {
+  const ok = wx && !wx.error;
+  $("wEmpty").hidden = ok; $("wEmpty").textContent = wx?.error || "Set a city in Settings to see the weather.";
+  $("wPlace").textContent = ok ? wx.place : "Weather";
+  $("wMeta").textContent = ok && wx.humidity != null ? `Humidity ${wx.humidity}% · Wind ${wx.wind} km/h` : "";
+  $("wIcon").textContent = ok ? wx.icon : ""; $("wTemp").textContent = ok ? `${wx.temp}°${wx.unit}` : ""; $("wLabel").textContent = ok ? wx.label : "";
+  const li = (top, icon, bottom) => { const e = document.createElement("li"); e.append(Object.assign(document.createElement("small"), { textContent: top }), Object.assign(document.createElement("span"), { textContent: icon }), Object.assign(document.createElement("b"), { textContent: bottom })); return e; };
+  $("wHours").replaceChildren(...(ok ? wx.hours || [] : []).map(h => li(h.time, h.icon, `${h.temp}°`)));
+  $("wDays").replaceChildren(...(ok ? wx.days || [] : []).map(d => li(new Date(d.date + "T12:00").toLocaleDateString([], { weekday: "short" }), d.icon, `${d.hi}° / ${d.lo}°`)));
+}
+window.bridge.onWeather(() => { if (openPanel === "weatherPanel") drawWeather(); });
+
+// ---- units ----
+function drawUnits(resetUnits) {
+  const k = $("uKind");
+  if (!k.options.length) { k.append(...Object.entries(window.Units.KINDS).map(([id, x]) => new Option(x.label, id))); resetUnits = true; }
+  const names = Object.keys(window.Units.KINDS[k.value].units);
+  if (resetUnits) {
+    for (const [s, i] of [[$("uFrom"), 0], [$("uTo"), 1]]) { s.replaceChildren(...names.map(n => new Option(n, n))); s.value = names[Math.min(i + (k.value === "length" ? 1 : 0), names.length - 1)]; }
+  }
+  const v = $("uIn").value, from = $("uFrom").value;
+  $("uOut").textContent = window.Units.show(window.Units.convert(v, k.value, from, $("uTo").value));
+  $("uAll").replaceChildren(...names.filter(n => n !== from).map(n => Object.assign(document.createElement("li"), { textContent: `${window.Units.show(window.Units.convert(v, k.value, from, n))} ${n}` })));
+}
+$("uKind").onchange = () => drawUnits(true);
+for (const id of ["uIn", "uFrom", "uTo"]) $(id).oninput = () => drawUnits(false);
+
+// ---- system: CPU, memory, disk, battery, uptime ----
+const gb = n => `${(n / 1024 ** 3).toFixed(1)} GB`;
+async function drawSys() {
+  const s = await window.bridge.sysStats();
+  $("sysCpuName").textContent = `${s.cpuName} · ${s.cores} threads`;
+  const used = s.mem.total - s.mem.free, up = Math.floor(s.uptime / 3600);
+  const m = [["CPU", s.cpu, `${s.cpu}%`], ["Memory", Math.round(100 * used / s.mem.total), `${gb(used)} of ${gb(s.mem.total)}`]];
+  if (s.disk) m.push(["Disk", Math.round(100 * (1 - s.disk.free / s.disk.total)), `${gb(s.disk.free)} free`]);
+  if (battery) m.push(["Battery", Math.round(battery.level * 100), battery.charging ? "Charging" : "On battery"]);
+  m.push(["Uptime", null, up >= 24 ? `${Math.floor(up / 24)}d ${up % 24}h` : `${up}h ${Math.floor(s.uptime % 3600 / 60)}m`]);
+  $("sysMeters").replaceChildren(...m.map(([name, pct, text]) => {
+    const d = document.createElement("div");
+    d.append(Object.assign(document.createElement("small"), { textContent: name }), Object.assign(document.createElement("strong"), { textContent: pct == null ? text : `${pct}%` }));
+    if (pct != null) { const bar = document.createElement("i"); bar.style.setProperty("--p", `${pct}%`); d.append(bar, Object.assign(document.createElement("span"), { textContent: text })); }
+    return d;
+  }));
+}
+
+// ---- AI coding: every Claude Code and Codex session with its last actions ----
+function drawAi() {
+  $("aiEmpty").hidden = sessions.length > 0;
+  $("aiList").replaceChildren(...sessions.map(s => {
+    const li = document.createElement("li"), head = document.createElement("button");
+    li.dataset.status = s.status;
+    head.append(Object.assign(document.createElement("i"), {}), Object.assign(document.createElement("b"), { textContent: s.project }), Object.assign(document.createElement("small"), { textContent: `${s.agent === "codex" ? "Codex" : "Claude"} · ${STATUS[s.status]} · ${ago(Date.now() - s.time)}` }));
+    head.title = s.cwd ? "Open project folder" : "";
+    head.onclick = () => s.cwd && window.bridge.openProject(s.cwd);
+    li.append(head, Object.assign(document.createElement("p"), { textContent: s.actions.map(a => a.action).join(" · ") || "No activity yet" }));
+    return li;
+  }));
+}
+window.bridge.onClaude(() => { if (openPanel === "aiPanel") drawAi(); });

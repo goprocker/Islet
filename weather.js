@@ -24,6 +24,15 @@ async function locate(city) {
   return place;
 }
 
+// the next 6 hours and the next 5 days, for the Weather tool
+function forecast(data) {
+  const h = data.hourly || {}, d = data.daily || {};
+  const from = Math.max(0, (h.time || []).findIndex(t => t >= (data.current?.time || "")));
+  const hours = (h.time || []).slice(from, from + 6).map((t, i) => ({ time: t.slice(11, 16), temp: Math.round(h.temperature_2m[from + i]), icon: describe(h.weather_code[from + i], h.is_day[from + i] === 1)[0] }));
+  const days = (d.time || []).map((t, i) => ({ date: t, hi: Math.round(d.temperature_2m_max[i]), lo: Math.round(d.temperature_2m_min[i]), icon: describe(d.weather_code[i], true)[0] }));
+  return { hours, days };
+}
+
 function poll(city, unit, onWeather) {
   clearInterval(timer);
   const gen = ++generation;
@@ -34,14 +43,14 @@ function poll(city, unit, onWeather) {
     try {
       const p = await locate(city);
       if (!p) return publish({ error: `Couldn't find "${city}". Check weatherCity in settings.` });
-      const q = new URLSearchParams({ latitude: p.lat, longitude: p.lon, current: "temperature_2m,weather_code,is_day", temperature_unit: unit === "F" ? "fahrenheit" : "celsius" });
-      const c = (await (await fetch(`https://api.open-meteo.com/v1/forecast?${q}`)).json()).current;
+      const q = new URLSearchParams({ latitude: p.lat, longitude: p.lon, current: "temperature_2m,weather_code,is_day,relative_humidity_2m,wind_speed_10m", hourly: "temperature_2m,weather_code,is_day", daily: "weather_code,temperature_2m_max,temperature_2m_min", forecast_days: 5, timezone: "auto", temperature_unit: unit === "F" ? "fahrenheit" : "celsius" });
+      const data = await (await fetch(`https://api.open-meteo.com/v1/forecast?${q}`)).json(), c = data.current;
       const [icon, label] = describe(c.weather_code, c.is_day === 1);
-      publish({ place: p.name, temp: Math.round(c.temperature_2m), unit: unit === "F" ? "F" : "C", icon, label });
+      publish({ place: p.name, temp: Math.round(c.temperature_2m), unit: unit === "F" ? "F" : "C", icon, label, humidity: c.relative_humidity_2m, wind: Math.round(c.wind_speed_10m), ...forecast(data) });
     } catch (e) { console.warn("weather", e.message); }
   };
   run();
   timer = setInterval(run, 15 * 60 * 1000);
 }
 
-module.exports = { poll };
+module.exports = { poll, forecast };
