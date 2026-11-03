@@ -159,6 +159,25 @@ function times(list) {
   return list.flatMap(p => p.value.split(",").map(v => parseTime(p.prop, v.trim())?.at.getTime())).filter(Number.isFinite);
 }
 
+// Only https links to the usual meeting services can be joined from the notch. A calendar
+// feed is text from other people, so anything else in it is never opened.
+const MEETING_HOSTS = [/(^|\.)zoom\.us$/, /^meet\.google\.com$/, /^teams\.microsoft\.com$/, /^teams\.live\.com$/, /(^|\.)webex\.com$/];
+function isMeetingUrl(url) {
+  try {
+    const u = new URL(url);
+    return u.protocol === "https:" && !u.username && !u.password && MEETING_HOSTS.some(r => r.test(u.hostname));
+  } catch { return false; }
+}
+// the first meeting link in the text of an event (location, description...), or null
+function meetingLink(text) {
+  const clean = String(text || "").replace(/\\[nN]/g, " ").replace(/\\([,;\\])/g, "$1"); // ICS escapes
+  for (const m of clean.matchAll(/https:\/\/[^\s<>"')\]]+/g)) {
+    const url = m[0].replace(/[.,;:!?]+$/, "");
+    if (isMeetingUrl(url)) return url;
+  }
+  return null;
+}
+
 function nextEvent(ics, now = new Date()) {
   const events = unfold(ics).split("BEGIN:VEVENT").slice(1).map(block => {
     const body = block.split("END:VEVENT")[0];
@@ -190,9 +209,12 @@ function nextEvent(ics, now = new Date()) {
     }
     if (start < now) continue;
     const summary = (get("SUMMARY")?.value || "Event").replace(/\\,/g, ",").replace(/\\n/g, " ");
-    if (!best || start < best.start) best = { title: summary, start };
+    if (!best || start < best.start) {
+      const link = meetingLink([get("LOCATION"), get("X-GOOGLE-CONFERENCE"), get("URL"), get("DESCRIPTION")].map(p => p?.value || "").join(" "));
+      best = { title: summary, start, link };
+    }
   }
-  return best && best.start - now < 24 * 3600e3 ? { title: best.title, start: best.start.getTime() } : null;
+  return best && best.start - now < 24 * 3600e3 ? { title: best.title, start: best.start.getTime(), ...(best.link && { link: best.link }) } : null;
 }
 
 function poll(url, onEvent) {
@@ -210,4 +232,4 @@ function poll(url, onEvent) {
   timer = setInterval(run, 5 * 60 * 1000);
 }
 
-module.exports = { poll, nextEvent };
+module.exports = { poll, nextEvent, meetingLink, isMeetingUrl };

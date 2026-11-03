@@ -109,7 +109,8 @@ function endToast() {
   setTimeout(nextToast, 450);
 }
 $("notch").querySelector(".toastv").addEventListener("click", () => {
-  if (current?.id) window.bridge.openNotification(current.id);
+  if (current?.link) window.bridge.joinMeeting(current.link);
+  else if (current?.id) window.bridge.openNotification(current.id);
   endToast();
 });
 const APP_COLORS = { WhatsApp: "#25d366", Discord: "#5865f2", Telegram: "#2aabee", Teams: "#5b5fc7", Outlook: "#0f6cbd", Slack: "#611f69", Chrome: "#4285f4", Edge: "#0c88d8", "Phone Link": "#0067c0" };
@@ -193,6 +194,8 @@ navigator.getBattery?.().then(b => {
 window.bridge.onTimer(end => { timerEnd = end; render(); });
 window.bridge.onTimerLabel(l => { timerLabel = l || "Timer"; });
 window.bridge.onStopwatch(t => { stopwatchStart = t || 0; render(); });
+let sideLink = null; // the meeting the right-hand text would join
+$("side").onclick = () => { if (sideLink) window.bridge.joinMeeting(sideLink); };
 window.bridge.onCalendar(ev => { event = ev; render(); });
 let eventPeeked = null;
 
@@ -418,7 +421,7 @@ function render() {
   $("upnext").classList.toggle("lyric", lyricShown);
 
   // right of the controls + pill chip: running timer beats the next meeting
-  let side = "", chip = "", soon = false;
+  let side = "", chip = "", soon = false, joinable = null;
   if (timerEnd > now) {
     side = chip = `${timerLabel} ${fmt((timerEnd - now) / 1000)}`;
     soon = true;
@@ -444,16 +447,19 @@ function render() {
     else {
       const when = mins <= 0 ? "now" : mins < 60 ? `in ${mins}m` : new Date(event.start).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
       side = `${event.title} ${when}`;
+      if (event.link && mins <= 10) { joinable = event.link; side = `Join ${when}`; } // the Join link appears 10 minutes ahead
       soon = mins <= 15;
       if (soon) chip = `${event.title} ${when}`;
-      if (mins <= 5 && eventPeeked !== event.start) { eventPeeked = event.start; toast({ app: "Calendar", badge: "📅", color: "#e8453c", title: event.title, body: mins <= 0 ? "Starting now" : `Starts in ${mins} min` }); }
+      if (mins <= 5 && eventPeeked !== event.start) { eventPeeked = event.start; toast({ app: "Calendar", badge: "📅", color: "#e8453c", title: event.title, body: mins <= 0 ? "Starting now" : `Starts in ${mins} min`, link: event.link && mins <= 10 ? event.link : undefined }); }
     }
   }
   // nothing else to say: the weather
   if (!side && wx) side = wx.error ? "" : `${wx.icon} ${wx.temp}°${wx.unit}`;
   $("side").textContent = side;
-  $("side").title = wx && !wx.error ? `${wx.label}, ${wx.temp}°${wx.unit} in ${wx.place}` : wx?.error || "";
+  $("side").title = joinable ? `Join ${event.title}` : wx && !wx.error ? `${wx.label}, ${wx.temp}°${wx.unit} in ${wx.place}` : wx?.error || "";
   $("side").classList.toggle("soon", soon);
+  $("side").classList.toggle("join", !!joinable);
+  sideLink = joinable;
   $("pillChip").textContent = chip;
   notch.classList.toggle("wide", !!chip);
 

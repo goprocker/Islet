@@ -51,4 +51,5 @@ contextBridge.exposeInMainWorld("bridge", {
   like: () => ipcRenderer.send("like"),
   openProject: cwd => ipcRenderer.send("openProject", cwd),
   openNotification: id => ipcRenderer.send("openNotification", id),
+  joinMeeting: url => ipcRenderer.send("joinMeeting", url),
 });

@@ -175,6 +175,8 @@ body {
 .batt.charging svg { animation: glow 2.4s ease-in-out infinite; }
 @keyframes glow { 0%, 100% { filter: drop-shadow(0 0 1px #63d47a66); } 50% { filter: drop-shadow(0 0 4px var(--ok)) drop-shadow(0 0 7px #63d47a99); } }
 .side.soon { color: var(--accent); }
+.side.join { color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.side.join:hover { filter: brightness(1.25); }
 .buttons { display: flex; gap: 4px; }
 button { background: none; border: 0; color: var(--text); width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; cursor: pointer; transition: background .15s, transform .1s; }
 button:hover { background: #ffffff14; }

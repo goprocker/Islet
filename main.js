@@ -351,6 +351,8 @@ function startBridge() {
 // clicked notification: open its link, or bring up the app that sent it
 const notifTargets = new Map();
 let notifCount = 0;
+// a meeting link comes from calendar text, so it is checked again here before anything is opened
+ipcMain.on("joinMeeting", (_, url) => { if (typeof url === "string" && calendar.isMeetingUrl(url)) shell.openExternal(url); });
 ipcMain.on("openNotification", (_, id) => {
   const t = notifTargets.get(id);
   if (!t) return;
