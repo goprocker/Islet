@@ -1,3 +1,3 @@
 [build]
-  command = "mkdir -p public && cp -r index.html features.html changelog.html about.html site.css shots downloads.html privacy.html terms.html blackhole.js demo-loop.mp3 islet-film.mp4 islet-film-poster.jpg open.png favicon-32.png apple-touch-icon.png public/"
+  command = "mkdir -p public && cp -r index.html features.html changelog.html about.html site.css chrome.css shots downloads.html privacy.html terms.html blackhole.js demo-loop.mp3 islet-film.mp4 islet-film-poster.jpg open.png favicon-32.png apple-touch-icon.png public/"
   publish = "public"

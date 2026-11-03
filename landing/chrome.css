@@ -1,0 +1,26 @@
+/* site top bar and footer, shared by every page; scoped so each page keeps its own base styles */
+.top{position:sticky;top:0;z-index:50;background:#e9eefbe6;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid #c9d3ea;font:400 15px/1.4 Figtree,system-ui,sans-serif}
+.top.over{position:absolute;left:0;right:0;background:transparent;border:0;backdrop-filter:none;-webkit-backdrop-filter:none}
+.top .sbar{width:min(1080px,100% - 32px);margin-inline:auto;display:flex;align-items:center;gap:20px;height:60px}
+.top .brand,.foot .brand{display:flex;align-items:center;gap:8px;font:700 19px "Bricolage Grotesque",system-ui,sans-serif;color:#000;text-decoration:none}
+.top nav{display:flex;gap:4px;margin-left:auto;align-items:center}
+.top nav a{text-decoration:none;font-size:15px;padding:6px 10px;border-radius:8px;color:#4a5578;white-space:nowrap}
+.top nav a:hover{background:#ffffff88;color:#000}
+.top nav a[aria-current=page]{color:#000;font-weight:600}
+.top nav a.get{background:#000;color:#fff;margin-left:6px}
+.top nav a.get:hover{background:#1d2747}
+@media (max-width:560px){.top nav a:not(.get):not([aria-current]){display:none}}
+/* the home page notch hangs from the top centre, so the bar steps aside there on mid-size screens */
+@media (max-width:1180px){.top.over nav a:not(.get){display:none}}
+
+.foot{background:#000;color:#a9a9a9;padding:56px 0 32px;font:400 15px/1.55 Figtree,system-ui,sans-serif;text-align:left}
+.foot .sbar{width:min(1080px,100% - 32px);margin-inline:auto}
+.foot .cols{display:grid;grid-template-columns:2fr repeat(3,1fr);gap:32px}
+.foot h4{color:#fff;font:600 14px Figtree,system-ui,sans-serif;margin:0 0 12px}
+.foot ul{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.foot li{margin:0}
+.foot p{margin:0;color:#a9a9a9}
+.foot a{color:#a9a9a9;text-decoration:none}.foot a:hover{color:#fff}
+.foot .brand{color:#fff;margin-bottom:10px}
+.foot small{display:block;border-top:1px solid #222;margin-top:40px;padding-top:20px;font-size:13px}
+@media (max-width:720px){.foot .cols{grid-template-columns:1fr 1fr}}

@@ -11,6 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="site.css">
+<link rel="stylesheet" href="chrome.css">
 <style>
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px;list-style:none;padding:0}
 .chips a{display:block;text-decoration:none;font-size:14px;padding:6px 14px;border-radius:99px;background:#fff;border:1px solid var(--line)}
@@ -33,6 +34,8 @@
 .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.tiles i{font-style:normal;font-size:11px;text-align:center;padding:14px 0;border-radius:12px;background:#1c1c1e}.tiles i.on{background:#bf8cff2e;color:#d9bcff}
 .dock{display:flex;gap:8px;justify-content:center;margin-top:14px;padding:8px;border-radius:16px;background:#ffffff0d}.dock span{width:26px;height:22px;border-radius:8px;background:#2c2c2e;position:relative}.dock span.on{background:#ffffff26}.dock span.on::after{content:"";position:absolute;bottom:-6px;left:11px;width:4px;height:4px;border-radius:50%;background:#fff}
 .mock.center{text-align:center}.mock small{color:#8e8e93}.mock strong{display:block;font:700 48px "Bricolage Grotesque",sans-serif;margin:4px 0 12px}
+.tiles b{display:block;font-size:15px;color:#fff;margin-top:2px}
+.qr{width:120px;height:120px;margin:0 auto 10px;border-radius:10px;background:#fff repeating-conic-gradient(#000 0 25%,#fff 0 50%) 0 0/20px 20px;border:8px solid #fff}
 .bar{height:5px;border-radius:3px;background:#2c2c2e}.bar i{display:block;width:62%;height:100%;border-radius:3px;background:#ff9f0a}
 .end{text-align:center;padding:clamp(48px,8vw,88px) 0 0}.end h2{font-size:clamp(1.8rem,4vw,2.8rem)}.end p{color:var(--soft);margin:10px 0 22px}
 .btn{display:inline-block;background:#000;color:#fff;text-decoration:none;font-weight:600;padding:12px 22px;border-radius:0 0 18px 18px}
@@ -40,14 +43,14 @@
 </style>
 </head>
 <body>
-<header class="top"><div class="wrap">
+<header class="top"><div class="sbar">
   <a class="brand" href="./"><img src="favicon-32.png" alt="" width="22" height="22">Islet</a>
   <nav aria-label="Site"><a href="features.html" aria-current="page">Features</a><a href="changelog.html">Changelog</a><a href="about.html">About</a><a class="get" href="downloads.html">Get Islet</a></nav>
 </div></header>
 <main class="wrap">
   <div class="pagehead"><p class="eyebrow">The collection</p><h1>Every tool, one small pill.</h1>
-  <p>Islet puts 10 everyday things in a notch at the top of your screen. Open it when you need it, and it shrinks out of the way when you don't.</p>
-  <ul class="chips"><li><a href="#media">Media</a></li><li><a href="#agents">AI agents</a></li><li><a href="#notify">Notifications</a></li><li><a href="#tools">Tools</a></li><li><a href="#system">System</a></li></ul></div>
+  <p>Islet puts 16 everyday things in a notch at the top of your screen. Open it when you need it, and it shrinks out of the way when you don't.</p>
+  <ul class="chips"><li><a href="#media">Media</a></li><li><a href="#agents">AI agents</a></li><li><a href="#notify">Notifications</a></li><li><a href="#tools">Tools</a></li><li><a href="#files">Files</a></li><li><a href="#time">Time and focus</a></li><li><a href="#desktop">Desktop</a></li><li><a href="#system">System</a></li></ul></div>
 <section class="group" id="media"><div class="ghead"><h2>Media</h2><span>2 tools</span></div>
   <article class="row">
     <div class="pic"><img src="shots/album.png" alt="Music in the Islet notch" loading="lazy"></div>
@@ -70,7 +73,7 @@
     <div class="txt"><p class="eyebrow">Pop-ups</p><h3>Toasts that stay out of your way.</h3><p>Windows notifications drop out of the notch with the real app logo and the full message. Do Not Disturb can follow a schedule or your focus timer.</p><ul class="tags"><li>App logos</li><li>Do Not Disturb</li><li>Mic toast</li></ul></div>
   </article>
 </section>
-<section class="group" id="tools"><div class="ghead"><h2>Tools</h2><span>4 tools</span></div>
+<section class="group" id="tools"><div class="ghead"><h2>Tools</h2><span>6 tools</span></div>
   <article class="row">
     <div class="pic"><img src="shots/search.png" alt="Search in the Islet notch" loading="lazy"></div>
     <div class="txt"><p class="eyebrow">Search</p><h3>Find anything with Alt+Space.</h3><p>Apps, files and folders, Wi-Fi, Bluetooth, clipboard and notes from one box. The arrow keys move, Enter opens.</p><ul class="tags"><li>Alt+Space</li><li>Files</li><li>Settings</li></ul></div>
@@ -87,6 +90,36 @@
     <div class="pic"><div class="mock"><b>Notes</b><p>Ship landing changelog<br>Buy milk<br>Call Asha back</p></div></div>
     <div class="txt"><p class="eyebrow">Notes and shelf</p><h3>Write it down. Drop it in.</h3><p>Quick notes that save as you type, and a file shelf that holds files until you drag them out somewhere else.</p><ul class="tags"><li>Notes</li><li>Drag and drop</li></ul></div>
   </article>
+  <article class="row">
+    <div class="pic"><div class="mock"><b>Links</b><div class="tiles"><i>GitHub</i><i>YouTube</i><i>Gmail</i><i>Figma</i></div></div></div>
+    <div class="txt"><p class="eyebrow">Links</p><h3>The sites you open every day.</h3><p>Save your everyday links and open them with one click, or search Google, YouTube, GitHub and Stack Overflow straight from the notch.</p><ul class="tags"><li>Saved links</li><li>Web search</li></ul></div>
+  </article>
+  <article class="row flip">
+    <div class="pic"><div class="mock center"><small>Length</small><strong>10 km</strong><small>= 6.21371 mi · 10000 m · 32808.4 ft</small></div></div>
+    <div class="txt"><p class="eyebrow">Units</p><h3>Kilometres to miles, without a browser tab.</h3><p>Length, weight, temperature, volume, speed, data and time. Type a number and see it in every other unit at once.</p><ul class="tags"><li>7 kinds</li><li>Live results</li></ul></div>
+  </article>
+</section>
+<section class="group" id="files"><div class="ghead"><h2>Files</h2><span>1 tool</span></div>
+  <article class="row">
+    <div class="pic"><div class="mock center"><div class="qr"></div><small>Scan to connect</small></div></div>
+    <div class="txt"><p class="eyebrow">Phone drop</p><h3>Phone and PC in one scan.</h3><p>Scan a QR code on the same Wi-Fi to send photos and files from your phone to the shelf, or take shelf files back. No app, no account, and it stops by itself after 10 minutes.</p><ul class="tags"><li>QR code</li><li>Same Wi-Fi</li><li>No app needed</li></ul></div>
+  </article>
+</section>
+<section class="group" id="time"><div class="ghead"><h2>Time and focus</h2><span>1 tool</span></div>
+  <article class="row flip">
+    <div class="pic"><div class="mock"><div class="tiles"><i>Here<br><b>21:30</b></i><i>London<br><b>16:00</b></i><i>New York<br><b>11:00</b></i><i>Tokyo<br><b>01:00</b></i></div></div></div>
+    <div class="txt"><p class="eyebrow">World clock</p><h3>Know the time where your people are.</h3><p>Your local time next to the cities you work with, with the difference in hours, so you can check before you message someone at 3 AM.</p><ul class="tags"><li>11 cities</li><li>Time difference</li></ul></div>
+  </article>
+</section>
+<section class="group" id="desktop"><div class="ghead"><h2>Desktop</h2><span>2 tools</span></div>
+  <article class="row">
+    <div class="pic"><div class="mock"><b>System</b><div class="tiles"><i>CPU<br><b>23%</b></i><i>Memory<br><b>62%</b></i><i>Disk<br><b>60%</b></i><i>Battery<br><b>88%</b></i></div></div></div>
+    <div class="txt"><p class="eyebrow">System</p><h3>Why is the fan so loud?</h3><p>CPU, memory, disk, battery and uptime at a glance, refreshed every second while you look.</p><ul class="tags"><li>CPU</li><li>Memory</li><li>Disk</li><li>Battery</li></ul></div>
+  </article>
+  <article class="row flip">
+    <div class="pic"><div class="mock"><b>AI coding</b><ol><li>● notch · Claude · Working</li><li>● landing · Codex · Done</li><li>● api · Claude · Needs you</li></ol></div></div>
+    <div class="txt"><p class="eyebrow">AI coding</p><h3>Every agent session in one list.</h3><p>All your Claude Code and Codex sessions with their status, how long ago they last moved, and their last actions. Click one to open its folder.</p><ul class="tags"><li>Claude Code</li><li>Codex</li><li>Status</li></ul></div>
+  </article>
 </section>
 <section class="group" id="system"><div class="ghead"><h2>System</h2><span>2 tools</span></div>
   <article class="row">
@@ -100,7 +133,7 @@
 </section>
   <div class="end"><h2>All of it, free.</h2><p>Open source under MIT. No account, no tracking.</p><a class="btn" href="downloads.html">Download Islet</a></div>
 </main>
-<footer class="foot"><div class="wrap">
+<footer class="foot"><div class="sbar">
   <div class="cols">
     <div><a class="brand" href="./"><img src="favicon-32.png" alt="" width="22" height="22">Islet</a><p>The notch Windows never had. Free and open source, for Windows 10 and 11.</p></div>
     <div><h4>Product</h4><ul><li><a href="features.html">Features</a></li><li><a href="downloads.html">Download</a></li><li><a href="changelog.html">Changelog</a></li></ul></div>

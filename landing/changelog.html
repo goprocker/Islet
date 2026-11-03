@@ -11,6 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="site.css">
+<link rel="stylesheet" href="chrome.css">
 <style>
 .rel{display:grid;grid-template-columns:200px 1fr;gap:24px;padding:36px 0;border-top:1px solid var(--line)}
 .rel aside{position:sticky;top:84px;align-self:start}
@@ -24,14 +25,14 @@
 </style>
 </head>
 <body>
-<header class="top"><div class="wrap">
+<header class="top"><div class="sbar">
   <a class="brand" href="./"><img src="favicon-32.png" alt="" width="22" height="22">Islet</a>
   <nav aria-label="Site"><a href="features.html">Features</a><a href="changelog.html" aria-current="page">Changelog</a><a href="about.html">About</a><a class="get" href="downloads.html">Get Islet</a></nav>
 </div></header>
 <main class="wrap">
   <div class="pagehead"><p class="eyebrow">Changelog</p><h1>What's new in Islet.</h1><p>Every release, in plain words. The full history is on <a href="https://github.com/goprocker/Islet/commits/main">GitHub</a>.</p></div>
   <section class="rel" id="v2-2"><aside><h2>2.2</h2><time>Coming next</time><span class="badge">Unreleased</span></aside>
-    <ul><li><span class="kind k-new">New</span><span>A Dashboard with Quick Settings tiles, brightness and volume sliders, a greeting and a dock to every tool.</span></li><li><span class="kind k-new">New</span><span>A pet cat in the notch that reacts to music, focus, pop-ups and battery, and says hello by name.</span></li><li><span class="kind k-new">New</span><span>Universal search on Alt+Space, including files and folders by name.</span></li><li><span class="kind k-new">New</span><span>A Join button for calendar meetings.</span></li><li><span class="kind k-new">New</span><span>Volume, mute and brightness HUD, and a toast when the microphone is muted.</span></li><li><span class="kind k-new">New</span><span>Pomodoro cycles and a stopwatch; Do Not Disturb turns on during focus.</span></li><li><span class="kind k-new">New</span><span>Clipboard history keeps 20 items with pins and search, plus a quick notes panel.</span></li><li><span class="kind k-fixed">Fixed</span><span>Setting the volume from the dashboard no longer drops it to 0.</span></li><li><span class="kind k-fixed">Fixed</span><span>Quitting no longer touches the window after it is gone.</span></li></ul></section>
+    <ul><li><span class="kind k-new">New</span><span>A dock with every tool: Phone drop, Links, World clock, Clipboard, Notes, Timer, Shelf, Weather, Units, System and AI coding.</span></li><li><span class="kind k-new">New</span><span>Phone drop: scan a QR code to move files between your phone and the shelf over Wi-Fi.</span></li><li><span class="kind k-new">New</span><span>Weather shows the next 6 hours and 5 days, with humidity and wind.</span></li><li><span class="kind k-new">New</span><span>A Dashboard with Quick Settings tiles, brightness and volume sliders, a greeting and a dock to every tool.</span></li><li><span class="kind k-new">New</span><span>A pet cat in the notch that reacts to music, focus, pop-ups and battery, and says hello by name.</span></li><li><span class="kind k-new">New</span><span>Universal search on Alt+Space, including files and folders by name.</span></li><li><span class="kind k-new">New</span><span>A Join button for calendar meetings.</span></li><li><span class="kind k-new">New</span><span>Volume, mute and brightness HUD, and a toast when the microphone is muted.</span></li><li><span class="kind k-new">New</span><span>Pomodoro cycles and a stopwatch; Do Not Disturb turns on during focus.</span></li><li><span class="kind k-new">New</span><span>Clipboard history keeps 20 items with pins and search, plus a quick notes panel.</span></li><li><span class="kind k-fixed">Fixed</span><span>Setting the volume from the dashboard no longer drops it to 0.</span></li><li><span class="kind k-fixed">Fixed</span><span>Quitting no longer touches the window after it is gone.</span></li></ul></section>
   <section class="rel" id="v2-1-0"><aside><h2>2.1.0</h2><time>Nov 2, 2026</time><span class="badge">Launch</span></aside>
     <ul><li><span class="kind k-new">New</span><span>A welcome screen that asks before changing anything on first run.</span></li><li><span class="kind k-new">New</span><span>Background auto-update from GitHub Releases.</span></li><li><span class="kind k-new">New</span><span>The waveform follows audio from whichever media player is shown.</span></li><li><span class="kind k-new">New</span><span>The Islet logo in the app, website and README.</span></li><li><span class="kind k-fixed">Fixed</span><span>Seek and volume controls work from the keyboard.</span></li><li><span class="kind k-fixed">Fixed</span><span>The notch moves to the right place when display scaling changes.</span></li><li><span class="kind k-security">Security</span><span>Agent hook events are authenticated and the hook secret is locked down.</span></li></ul></section>
   <section class="rel" id="v2-0-0"><aside><h2>2.0.0</h2><time>Oct 30, 2026</time><span class="badge">Hardening</span></aside>
@@ -39,7 +40,7 @@
   <section class="rel" id="v1-0-0"><aside><h2>1.0.0</h2><time>Oct 29, 2026</time><span class="badge">First release</span></aside>
     <ul><li><span class="kind k-new">New</span><span>Music, Claude Code sessions, notifications and battery in one notch.</span></li><li><span class="kind k-new">New</span><span>File shelf, clipboard history, weather and calendar.</span></li><li><span class="kind k-new">New</span><span>A black-hole animation when the charger goes in or out.</span></li></ul></section>
 </main>
-<footer class="foot"><div class="wrap">
+<footer class="foot"><div class="sbar">
   <div class="cols">
     <div><a class="brand" href="./"><img src="favicon-32.png" alt="" width="22" height="22">Islet</a><p>The notch Windows never had. Free and open source, for Windows 10 and 11.</p></div>
     <div><h4>Product</h4><ul><li><a href="features.html">Features</a></li><li><a href="downloads.html">Download</a></li><li><a href="changelog.html">Changelog</a></li></ul></div>
