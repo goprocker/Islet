@@ -11,6 +11,8 @@ contextBridge.exposeInMainWorld("bridge", {
   onNotification: on("notification"),
   onCalendar: on("calendar"),
   onTimer: on("timer"),
+  onTimerLabel: on("timerLabel"),
+  onStopwatch: on("stopwatch"),
   onSpotifyIcon: on("spotifyIcon"),
   onSystem: on("system"),
   onPower: on("power"),

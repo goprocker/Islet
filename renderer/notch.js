@@ -6,7 +6,7 @@ const PLAY = '<path d="M8 5v14l11-7z"/>', PAUSE = '<path d="M7 5h3.5v14H7zM13.5 
 
 let track = null, lastArt = null, extras = { connected: false };
 let sessions = [], pinned = null;       // Claude projects; pinned = project the user picked
-let timerEnd = 0, event = null, volShownUntil = 0, volume = null;
+let timerEnd = 0, timerLabel = "Timer", stopwatchStart = 0, event = null, volShownUntil = 0, volume = null;
 let wx = null, dls = [];             // weather, downloads in progress
 let theme = { accent: "album", idleHide: false };
 
@@ -158,6 +158,8 @@ navigator.getBattery?.().then(b => {
 
 // ---- timer + calendar ----
 window.bridge.onTimer(end => { timerEnd = end; render(); });
+window.bridge.onTimerLabel(l => { timerLabel = l || "Timer"; });
+window.bridge.onStopwatch(t => { stopwatchStart = t || 0; render(); });
 window.bridge.onCalendar(ev => { event = ev; render(); });
 let eventPeeked = null;
 
@@ -385,11 +387,16 @@ function render() {
   // right of the controls + pill chip: running timer beats the next meeting
   let side = "", chip = "", soon = false;
   if (timerEnd > now) {
-    side = chip = `Timer ${fmt((timerEnd - now) / 1000)}`;
+    side = chip = `${timerLabel} ${fmt((timerEnd - now) / 1000)}`;
     soon = true;
   } else if (timerEnd && timerEnd <= now) {
     timerEnd = 0;
-    toast({ app: "Timer", badge: "⏱", color: "#5e5ce6", title: "Time's up", body: "Your timer has finished." });
+    toast({ app: "Timer", badge: "⏱", color: "#5e5ce6", title: "Time's up", body: `${timerLabel} has finished.` });
+  }
+  // a running stopwatch counts up when no timer is on
+  if (!side && stopwatchStart) {
+    side = chip = `⏱ ${fmt((now - stopwatchStart) / 1000)}`;
+    soon = true;
   }
   // then a download in progress
   if (!side && dls.length) {

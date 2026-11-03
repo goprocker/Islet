@@ -11,6 +11,7 @@ const icons = require("./icons");
 const bridge = require("./claude-bridge");
 const lyrics = require("./lyrics");
 const weather = require("./weather");
+const pomodoro = require("./pomodoro");
 const downloads = require("./downloads");
 const { readShelf } = require("./shelf-file");
 const { helperLifecycle } = require("./helper-lifecycle");
@@ -560,14 +561,28 @@ function startDownloads() {
   });
 }
 
-// ---- timer ----
-let timerEnd = 0, timerDone;
-function setTimer(min) {
+// ---- timer + pomodoro ----
+let timerEnd = 0, timerDone, timerLabel = "Timer", pomo = null;
+function runTimer(min, label) {
   timerEnd = min ? Date.now() + min * 60000 : 0;
-  send("timer", timerEnd); buildMenu();
-  // the page shows "Time's up" itself; here just mark it finished afterwards
+  timerLabel = label;
+  send("timerLabel", timerLabel); send("timer", timerEnd); buildMenu();
   clearTimeout(timerDone);
-  if (min) timerDone = setTimeout(() => { timerEnd = 0; buildMenu(); }, min * 60000 + 2000);
+  if (!min) return;
+  // a pomodoro moves straight to its next phase; the page shows "Time's up" itself, a plain timer is just marked finished afterwards
+  timerDone = setTimeout(() => {
+    if (pomo) { pomo = pomodoro.next(pomo); runTimer(pomo.min, pomo.label); }
+    else { timerEnd = 0; buildMenu(); }
+  }, min * 60000 + (pomo ? 0 : 2000));
+}
+function setTimer(min) { pomo = null; runTimer(min, "Timer"); }
+function startPomodoro() { pomo = pomodoro.next(null); runTimer(pomo.min, pomo.label); }
+
+// ---- stopwatch ----
+let stopwatchStart = 0;
+function toggleStopwatch() {
+  stopwatchStart = stopwatchStart ? 0 : Date.now();
+  send("stopwatch", stopwatchStart); buildMenu();
 }
 
 // ---- login item ----
@@ -606,10 +621,12 @@ function buildMenu() {
     {
       label: timerEnd ? "Timer (running)" : "Timer", submenu: [
         ...[5, 15, 25, 50].map(m => ({ label: `${m} minutes`, click: () => setTimer(m) })),
+        { label: "Pomodoro (25 / 5)", click: startPomodoro },
         { type: "separator" },
         { label: "Cancel timer", enabled: !!timerEnd, click: () => setTimer(0) },
       ],
     },
+    { label: stopwatchStart ? "Stop stopwatch" : "Start stopwatch", click: toggleStopwatch },
     {
       label: "Show on screen (Ctrl+Alt+M: next)", enabled: displays.length > 1, submenu: displays.map((d, i) => ({
         label: `Screen ${i + 1} (${d.size.width}×${d.size.height})`, type: "radio", checked: d.id === current,
@@ -669,7 +686,7 @@ app.whenReady().then(() => {
   powerMonitor.on("resume", () => helpers.resume("asleep"));
   win.webContents.on("did-finish-load", () => {
     sendPower();
-    lastClaude = ""; iconFor = null; lastMediaLine = ""; readClaude(); refreshSpotifyExtras(); send("timer", timerEnd); sendDnd(true); send("shelf", shelf); sendTheme(); lyricsNow.resend();
+    lastClaude = ""; iconFor = null; lastMediaLine = ""; readClaude(); refreshSpotifyExtras(); send("timerLabel", timerLabel); send("timer", timerEnd); send("stopwatch", stopwatchStart); sendDnd(true); send("shelf", shelf); sendTheme(); lyricsNow.resend();
     send("clipboard", clips.map(c => c.replace(/\s+/g, " ").slice(0, 160)));
     calendar.poll(config.calendarIcsUrl, ev => send("calendar", ev));
     startWeather();
