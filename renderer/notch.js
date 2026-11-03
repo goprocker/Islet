@@ -119,11 +119,17 @@ const HUD_ICONS = {
   low: hudSvg(HUD_SPEAKER + '<path d="M15.2 9.6a3.4 3.4 0 0 1 0 4.8"/>'),
   high: hudSvg(HUD_SPEAKER + '<path d="M15.2 9.6a3.4 3.4 0 0 1 0 4.8M17.8 7a7 7 0 0 1 0 10"/>'),
   mute: hudSvg(HUD_SPEAKER + '<path d="M16 9.5l5 5M21 9.5l-5 5"/>'),
+  mic: hudSvg('<rect class="fill" x="9" y="3.5" width="6" height="10.5" rx="3"/><path d="M6 11.5a6 6 0 0 0 12 0M12 17.5v3"/>'),
+  micOff: hudSvg('<rect class="fill" x="9" y="3.5" width="6" height="10.5" rx="3"/><path d="M6 11.5a6 6 0 0 0 12 0M12 17.5v3M4 4l16 16"/>'),
   brightness: hudSvg('<circle cx="12" cy="12" r="3.6"/><path d="M12 3.5v2M12 18.5v2M3.5 12h2M18.5 12h2M6 6l1.4 1.4M16.6 16.6L18 18M6 18l1.4-1.4M16.6 7.4L18 6"/>'),
 };
 window.bridge.onVolumeHud(h => {
   if (notch.classList.contains("hidden")) return;
   const pct = Math.round(h.level * 100);
+  if (h.kind === "mic") { // no level bar: it is only on or off
+    toast({ hud: "mic", app: "Microphone", svg: h.muted ? HUD_ICONS.micOff : HUD_ICONS.mic, color: h.muted ? "#5c2323" : "#3a3a3c", title: h.muted ? "Microphone muted" : "Microphone on", ms: 1600 });
+    return;
+  }
   const icon = h.kind === "brightness" ? HUD_ICONS.brightness : h.muted || pct === 0 ? HUD_ICONS.mute : pct < 40 ? HUD_ICONS.low : HUD_ICONS.high;
   const title = h.kind === "mute" ? (h.muted ? "Muted" : "Unmuted") : h.kind === "brightness" ? `Brightness ${pct}%` : h.muted ? "Muted" : `Volume ${pct}%`;
   toast({ hud: h.kind === "brightness" ? "brightness" : "volume", app: h.kind === "brightness" ? "Display" : "Sound", svg: icon, color: "#3a3a3c", title, bar: h.muted ? 0 : h.level, ms: 1600 });

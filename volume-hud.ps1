@@ -1,5 +1,6 @@
-# Watches the system volume, mute and (laptop screens only) brightness and prints a JSON line
-# whenever one changes: {"vol":0.42,"mute":false,"bright":55}  (bright is null without a built-in screen).
+# Watches the system volume, mute, the default microphone's mute and (laptop screens only) brightness
+# and prints a JSON line whenever one changes: {"vol":0.42,"mute":false,"mic":false,"bright":55}
+# (mic is null without a microphone, bright is null without a built-in screen).
 # Runs inside helpers.ps1 as the "H" watcher.
 $ErrorActionPreference = "SilentlyContinue"
 Add-Type @"
@@ -24,21 +25,21 @@ public static class SysVolume {
     void GetChannelVolumeLevel(uint c, out float l); void GetChannelVolumeLevelScalar(uint c, out float l);
     void SetMute([MarshalAs(UnmanagedType.Bool)] bool m, ref Guid g); void GetMute([MarshalAs(UnmanagedType.Bool)] out bool m);
   }
-  static IAudioEndpointVolume ep;
-  // false when there is no output device right now
-  public static bool Read(out float vol, out bool mute) {
+  static IAudioEndpointVolume[] ep = new IAudioEndpointVolume[2]; // 0 = speakers, 1 = microphone
+  // false when there is no such device right now
+  public static bool Read(int flow, out float vol, out bool mute) {
     vol = 0; mute = false;
     try {
-      if (ep == null) {
+      if (ep[flow] == null) {
         var en = (IMMDeviceEnumerator)new MMDeviceEnumerator();
-        IMMDevice dev; en.GetDefaultAudioEndpoint(0, 1, out dev);
+        IMMDevice dev; en.GetDefaultAudioEndpoint(flow, 1, out dev);
         Guid iid = typeof(IAudioEndpointVolume).GUID; object o;
         dev.Activate(ref iid, 23, IntPtr.Zero, out o);
-        ep = (IAudioEndpointVolume)o;
+        ep[flow] = (IAudioEndpointVolume)o;
       }
-      ep.GetMasterVolumeLevelScalar(out vol); ep.GetMute(out mute);
+      ep[flow].GetMasterVolumeLevelScalar(out vol); ep[flow].GetMute(out mute);
       return true;
-    } catch { ep = null; return false; } // device changed or went away: look it up again next time
+    } catch { ep[flow] = null; return false; } // device changed or went away: look it up again next time
   }
 }
 "@
@@ -52,8 +53,10 @@ while ($true) {
   }
   $tick++
   $v = [single]0; $m = $false
-  if ([SysVolume]::Read([ref]$v, [ref]$m)) {
-    $line = '{"vol":' + [math]::Round($v, 3).ToString([Globalization.CultureInfo]::InvariantCulture) + ',"mute":' + $m.ToString().ToLower() + ',"bright":' + $(if ($null -eq $bright) { 'null' } else { $bright }) + '}'
+  if ([SysVolume]::Read(0, [ref]$v, [ref]$m)) {
+    $mv = [single]0; $mm = $false
+    $mic = if ([SysVolume]::Read(1, [ref]$mv, [ref]$mm)) { $mm.ToString().ToLower() } else { 'null' }
+    $line = '{"vol":' + [math]::Round($v, 3).ToString([Globalization.CultureInfo]::InvariantCulture) + ',"mute":' + $m.ToString().ToLower() + ',"mic":' + $mic + ',"bright":' + $(if ($null -eq $bright) { 'null' } else { $bright }) + '}'
     if ($line -ne $last) { $last = $line; $line }
   }
   Start-Sleep -Milliseconds 130
