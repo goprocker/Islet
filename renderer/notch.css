@@ -78,6 +78,10 @@ body {
 /* full message, wrapped; 7 lines fit the window */
 .tmeta span { white-space: pre-line; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 7; -webkit-box-orient: vertical; overflow: hidden; }
 .tmeta b { font-weight: 600; }
+/* level bar of the volume / brightness HUD */
+.tbar { display: block; height: 5px; margin-top: 7px; border-radius: 3px; background: #3a3a3c; overflow: hidden; }
+.tbar[hidden] { display: none; }
+.tbar i { display: block; height: 100%; width: 0; border-radius: 3px; background: var(--text); transition: width .08s linear; }
 .tmeta span { color: #d1d1d6; }
 
 /* expanded */

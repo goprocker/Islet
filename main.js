@@ -15,6 +15,7 @@ const pomodoro = require("./pomodoro");
 const { clipHistory } = require("./clip-history");
 const { loadNotes, saveNotes } = require("./notes");
 const downloads = require("./downloads");
+const volumeHud = require("./volume-hud");
 const { readShelf } = require("./shelf-file");
 const { helperLifecycle } = require("./helper-lifecycle");
 const { audioTarget } = require("./audio-target");
@@ -35,7 +36,7 @@ app.on("second-instance", () => (welcomePending ? openWelcome() : openSettings()
 // ---- settings (userData/config.json) ----
 const { checkConfig, clock } = require("./config-check");
 const configPath = () => path.join(app.getPath("userData"), "config.json");
-const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true, lyrics: true, permissionWaitSeconds: 8, dnd: false, dndFrom: "", dndTo: "", dndSkipUntil: 0, clipboardHistory: true, weatherCity: "", weatherUnit: "C", downloadsFolder: "", size: "normal", accent: "album", idleHide: false, hideWindowsBanners: true, powerAnim: true, powerAnimStyle: "cinematic" };
+const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true, lyrics: true, permissionWaitSeconds: 8, dnd: false, dndFrom: "", dndTo: "", dndSkipUntil: 0, clipboardHistory: true, volumeHud: true, weatherCity: "", weatherUnit: "C", downloadsFolder: "", size: "normal", accent: "album", idleHide: false, hideWindowsBanners: true, powerAnim: true, powerAnimStyle: "cinematic" };
 let config = { ...DEFAULTS };
 // only a missing file is created; one that can't be read or parsed (a hand edit in
 // progress, a half-written save) is left alone and the current settings stay in use.
@@ -156,6 +157,15 @@ function onSystemLine(l) {
   fullscreen = d.fullscreen;
   applyVisibility();
 }
+// ---- system volume / brightness HUD ----
+let hudPrev = null;
+function onVolumeHudLine(line) {
+  const next = volumeHud.parse(line);
+  if (!next) return;
+  const shown = volumeHud.change(hudPrev, next);
+  hudPrev = next;
+  if (shown && config.volumeHud) send("volumeHud", shown);
+}
 // ---- media, system and the shown player's audio share one PowerShell (helpers.ps1) ----
 function startHelpers() {
   const helpers = spawn("powershell.exe", [...PS, path.join(__dirname, "helpers.ps1"), "-ParentPid", String(process.pid)], { windowsHide: true });
@@ -165,6 +175,7 @@ function startHelpers() {
   lines(helpers.stdout, l => {
     if (l.startsWith("M ")) onMediaLine(l.slice(2));
     else if (l.startsWith("S ")) onSystemLine(l.slice(2));
+    else if (l.startsWith("H ")) onVolumeHudLine(l.slice(2));
     else if (l.startsWith("VOL ")) send("volume", Number(l.slice(4)));
     else latest = l;
   });
@@ -476,7 +487,7 @@ ipcMain.handle("settings:save", (_, v) => {
     lyrics: !!v.lyrics, spotifyClientId: str(v.spotifyClientId, 100),
     weatherCity: str(v.weatherCity, 100), weatherUnit: v.weatherUnit === "F" ? "F" : "C",
     calendarIcsUrl: /^(https?|webcal):\/\//i.test(str(v.calendarIcsUrl)) ? str(v.calendarIcsUrl).replace(/^webcal:/i, "https:") : "",
-    downloadsFolder: str(v.downloadsFolder, 500), clipboardHistory: !!v.clipboardHistory,
+    downloadsFolder: str(v.downloadsFolder, 500), clipboardHistory: !!v.clipboardHistory, volumeHud: !!v.volumeHud,
   };
   config = next;
   updateLyrics();

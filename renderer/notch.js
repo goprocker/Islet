@@ -59,6 +59,11 @@ const HIDDEN_BACKLOG = 5;
 const toasts = [];
 let toastBusy = false;
 function toast(t) {
+  if (t.hud) {
+    // the HUD follows the key presses: queued ones are stale, and a HUD already on screen is redrawn in place
+    for (let i = toasts.length - 1; i >= 0; i--) if (toasts[i].hud) toasts.splice(i, 1);
+    if (current?.hud) { toasts.unshift(t); clearTimeout(toastTimer); nextToast(); return; }
+  }
   toasts.push(t);
   if (notch.classList.contains("hidden") && toasts.length > HIDDEN_BACKLOG) toasts.shift();
   if (!toastBusy) nextToast();
@@ -79,6 +84,8 @@ function nextToast() {
   $("tApp").textContent = t.app || "";
   $("tTitle").textContent = t.title || "";
   $("tBody").textContent = t.body || "";
+  $("tBar").hidden = t.bar == null; // volume / brightness HUD level
+  if (t.bar != null) $("tFill").style.width = Math.round(t.bar * 100) + "%";
   // grow to fit the whole message (window is 190 tall)
   notch.style.setProperty("--toast-h", Math.min(180, Math.max(62, notch.querySelector(".tmeta").scrollHeight + 20)) + "px");
   notch.classList.add("toast");
@@ -102,6 +109,14 @@ $("notch").querySelector(".toastv").addEventListener("click", () => {
   endToast();
 });
 const APP_COLORS = { WhatsApp: "#25d366", Discord: "#5865f2", Telegram: "#2aabee", Teams: "#5b5fc7", Outlook: "#0f6cbd", Slack: "#611f69", Chrome: "#4285f4", Edge: "#0c88d8", "Phone Link": "#0067c0" };
+// volume / brightness HUD: the notch takes over from the Windows overlay
+window.bridge.onVolumeHud(h => {
+  if (notch.classList.contains("hidden")) return;
+  const pct = Math.round(h.level * 100);
+  const icon = h.kind === "brightness" ? "☀" : h.muted || pct === 0 ? "🔇" : pct < 40 ? "🔈" : "🔊";
+  const title = h.kind === "mute" ? (h.muted ? "Muted" : "Unmuted") : h.kind === "brightness" ? `Brightness ${pct}%` : h.muted ? "Muted" : `Volume ${pct}%`;
+  toast({ hud: h.kind === "brightness" ? "brightness" : "volume", app: h.kind === "brightness" ? "Display" : "Sound", badge: icon, color: "#3a3a3c", title, bar: h.muted ? 0 : h.level, ms: 1600 });
+});
 window.bridge.onNotification(n => toast({ ...n, color: APP_COLORS[n.app] }));
 
 // battery: tell when the charger goes in or out, and once when it gets low

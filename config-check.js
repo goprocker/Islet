@@ -8,7 +8,7 @@ const number = v => typeof v === "number" && Number.isFinite(v);
 const CHECKS = {
   spotifyClientId: text, calendarIcsUrl: text, weatherCity: text, downloadsFolder: text,
   displayId: v => v === null || number(v),
-  notifications: bool, hideInFullscreen: bool, lyrics: bool, dnd: bool, clipboardHistory: bool,
+  notifications: bool, hideInFullscreen: bool, lyrics: bool, dnd: bool, clipboardHistory: bool, volumeHud: bool,
   idleHide: bool, hideWindowsBanners: bool, powerAnim: bool,
   permissionWaitSeconds: v => number(v) && v >= 0 && v <= 24,
   dndFrom: time, dndTo: time, dndSkipUntil: number,

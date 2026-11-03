@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld("bridge", {
   onToggle: on("toggle"),
   onLevels: on("levels"),
   onVolume: on("volume"),
+  onVolumeHud: on("volumeHud"),
   onSpotifyExtras: on("spotifyExtras"),
   onNotification: on("notification"),
   onCalendar: on("calendar"),
