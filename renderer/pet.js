@@ -42,10 +42,43 @@
     <g class="plant"><path class="pot" d="M25 16h6l-1 4h-4z"/><path class="stem" d="M28 16V7"/><path class="leaf l1" d="M28 14c-2 0-3-1-3-3 2 0 3 1 3 3zm0-.5c2 0 3-1 3-3-2 0-3 1-3 3z"/><path class="leaf l2" d="M28 11.5c-2 0-3-1-3-3 2 0 3 1 3 3zm0-.5c2 0 3-1 3-3-2 0-3 1-3 3z"/><path class="leaf l3" d="M28 9c-2 0-3-1-3-3 2 0 3 1 3 3zm0-.5c2 0 3-1 3-3-2 0-3 1-3 3z"/><circle class="leaf l4" cx="28" cy="5.6" r="1.4"/></g>
   </svg>`;
 
-  // sets the mood class on every pet element (only touches the DOM when it changed)
-  function paint(els, mood) {
+  // a custom pet (Codex Pets sprite sheet): which row each mood plays, and how many frames that row has
+  const ROWS = { idle: [0, 6], waving: [3, 4], jumping: [4, 5], failed: [5, 8], waiting: [6, 6], running: [7, 6], review: [8, 6] };
+  const MOOD_ROW = { idle: "idle", sleep: "idle", dance: "jumping", work: "review", alert: "waving", sick: "failed", code: "running", ask: "waiting", plant: "waving" };
+  const FPS = 8, SLEEP_FPS = 2;
+
+  // the sheet position for a mood at time `now`: { x, y } in percent for background-position
+  function frameAt(mood, now, rows) {
+    const [row, frames] = ROWS[MOOD_ROW[mood] || "idle"];
+    const frame = Math.floor(now / (1000 / (mood === "sleep" ? SLEEP_FPS : FPS))) % frames;
+    return { x: (frame / 7) * 100, y: (row / (rows - 1)) * 100 };
+  }
+
+  // steps every custom pet element to its current frame
+  function tick(els, now) {
     for (const el of els) {
-      if (!el.firstChild) el.innerHTML = SVG;
+      if (el.dataset.kind !== "custom") continue;
+      const f = frameAt(el.dataset.mood, now, Number(el.dataset.rows));
+      el.style.backgroundPosition = `${f.x}% ${f.y}%`;
+    }
+  }
+
+  // sets the mood class on every pet element (only touches the DOM when it changed);
+  // custom: {id, sheet, rows} draws that sprite sheet instead of the cat
+  function paint(els, mood, custom) {
+    for (const el of els) {
+      if (el.dataset.kind !== (custom ? "custom" : "cat") || (custom && el.dataset.petId !== custom.id)) {
+        el.dataset.kind = custom ? "custom" : "cat";
+        el.dataset.petId = custom ? custom.id : "";
+        el.innerHTML = custom ? "" : SVG;
+        if (custom) el.classList.add("custom"); else el.classList.remove("custom");
+        if (el.style) {
+          el.style.backgroundImage = custom ? `url("${custom.sheet}")` : "";
+          el.style.backgroundSize = custom ? `800% ${custom.rows * 100}%` : "";
+        }
+        if (custom) el.dataset.rows = custom.rows;
+        el.dataset.mood = "";
+      }
       if (el.dataset.mood === mood) continue;
       el.dataset.mood = mood;
       el.classList.remove(...MOODS);
@@ -77,7 +110,7 @@
     el._sayT = setTimeout(() => el.classList.remove("talking"), ms);
   }
 
-  const api = { MOODS, pick, paint, SVG, line, say };
+  const api = { MOODS, pick, paint, tick, frameAt, SVG, line, say };
   if (typeof module !== "undefined") module.exports = api;
   else window.Pet = api;
 })();

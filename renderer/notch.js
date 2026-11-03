@@ -522,7 +522,7 @@ function updatePet(now, busy) {
   // agents: one asking for you beats one working; a "working" session that went quiet over 2 minutes ago doesn't count
   const agent = sessions.some(x => x.status === "waiting") ? "waiting" : sessions.some(x => x.status === "working" && now - x.time < 120000) ? "working" : "";
   const mood = window.Pet.pick({ now, battery, toastAt: lastToastAt, timerEnd, timerLabel, playing: !!track?.playing, quietSince, agent, plantUntil });
-  window.Pet.paint(pets, mood);
+  window.Pet.paint(pets, mood, theme.petPack);
   // hello once the name has arrived; then a word on each new mood (not the 4-second pop-up startle), or a chat after a quiet spell
   if (!saidMood) { if (theme.name !== undefined) { saidMood = mood; petSay(mood, true); } }
   else if (mood !== saidMood && mood !== "alert") { saidMood = mood; petSay(mood); }
@@ -925,3 +925,6 @@ function drawAi() {
   }));
 }
 window.bridge.onClaude(() => { if (openPanel === "aiPanel") drawAi(); });
+
+// a custom pet's sprite sheet steps through its frames; the cat animates with CSS instead
+setInterval(() => { if (theme.petPack && theme.pet !== false) window.Pet.tick([$("pillPet"), $("fullPet")], Date.now()); }, 125);

@@ -3,4 +3,6 @@ const { contextBridge, ipcRenderer } = require("electron");
 contextBridge.exposeInMainWorld("settings", {
   load: () => ipcRenderer.invoke("settings:load"),
   save: values => ipcRenderer.invoke("settings:save", values),
+  pickPet: () => ipcRenderer.invoke("settings:pickPet"),
+  clearPet: () => ipcRenderer.invoke("settings:clearPet"),
 });

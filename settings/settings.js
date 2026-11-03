@@ -50,8 +50,20 @@ form.addEventListener("change", () => { if (loaded) save(); else changedEarly = 
 // picking a colour means using it
 field("accentColor").addEventListener("input", () => { form.querySelector('[name="accentMode"][value="fixed"]').checked = true; });
 
+// custom pet: shown by name, picked or cleared through the main process
+function drawPet(s) {
+  document.getElementById("petName").textContent = s.petName || "the cat";
+  document.getElementById("petClear").hidden = !s.petName;
+}
+for (const [id, call] of [["petPick", "pickPet"], ["petClear", "clearPet"]]) {
+  document.getElementById(id).addEventListener("click", async () => {
+    try { saved = await window.settings[call](); fill(saved, snapshot()); drawPet(saved); status.textContent = saved.petName ? `Pet: ${saved.petName}` : "Back to the cat."; }
+    catch (e) { status.textContent = `Couldn't use that pet: ${e.message.replace(/^.*Error: /, "")}`; }
+  });
+}
+
 const atStart = snapshot();
 window.settings.load().then(s => {
-  saved = s; fill(s, atStart); loaded = true;
+  saved = s; fill(s, atStart); drawPet(s); loaded = true;
   if (changedEarly) save();
 });

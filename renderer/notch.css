@@ -489,3 +489,7 @@ button.link:hover { color: var(--text); }
 .notch.dash .full > :not(.music), .notch.dash .music > :not(.panel) { visibility: hidden; }
 .panel li .lx { width: 18px; height: 18px; padding: 0; display: grid; place-items: center; text-align: center; color: var(--muted); }
 .panel li .lx:hover { color: #fff; background: #3a3a3c; }
+
+/* a custom pet from a Codex Pets sprite sheet (192x208 frames) */
+.pet.custom { width: 24px; height: 26px; background-repeat: no-repeat; image-rendering: pixelated; }
+.pill .pet.custom { margin: -2px 2px 0 0; }

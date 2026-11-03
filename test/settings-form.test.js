@@ -28,7 +28,7 @@ function open(initial) {
   }, "form");
   const load = deferred(), saves = [];
   const context = {
-    document: { querySelector: () => form, getElementById: () => ({ textContent: "" }) },
+    document: { querySelector: () => form, getElementById: () => ({ textContent: "", hidden: false, addEventListener() {} }) },
     window: { settings: {
       load: () => load.promise,
       save: v => { const d = deferred(); saves.push({ values: v, ...d }); return d.promise; },

@@ -25,6 +25,8 @@ const { needsWelcome, finishWelcome } = require("./welcome");
 const { loadLinks, saveLinks } = require("./links");
 const phoneDrop = require("./phone-drop");
 const QRCode = require("qrcode");
+const petPack = require("./pet-pack");
+const petsDir = () => path.join(app.getPath("userData"), "pets");
 
 const BASE_W = 672, BASE_H = 270;
 const SCALES = { compact: 0.85, normal: 1, large: 1.2 };
@@ -41,7 +43,7 @@ app.on("second-instance", () => (welcomePending ? openWelcome() : openSettings()
 // ---- settings (userData/config.json) ----
 const { checkConfig, clock } = require("./config-check");
 const configPath = () => path.join(app.getPath("userData"), "config.json");
-const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true, lyrics: true, permissionWaitSeconds: 8, dnd: false, dndFrom: "", dndTo: "", dndSkipUntil: 0, clipboardHistory: true, volumeHud: true, focusDnd: true, universalSearch: true, weatherCity: "", weatherUnit: "C", downloadsFolder: "", size: "normal", accent: "album", idleHide: false, hideWindowsBanners: true, powerAnim: true, powerAnimStyle: "cinematic", pet: true, userName: "" };
+const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true, lyrics: true, permissionWaitSeconds: 8, dnd: false, dndFrom: "", dndTo: "", dndSkipUntil: 0, clipboardHistory: true, volumeHud: true, focusDnd: true, universalSearch: true, weatherCity: "", weatherUnit: "C", downloadsFolder: "", size: "normal", accent: "album", idleHide: false, hideWindowsBanners: true, powerAnim: true, powerAnimStyle: "cinematic", pet: true, userName: "", customPet: "" };
 let config = { ...DEFAULTS };
 // only a missing file is created; one that can't be read or parsed (a hand edit in
 // progress, a half-written save) is left alone and the current settings stay in use.
@@ -610,7 +612,17 @@ function openSettings() {
   });
   settingsWin.loadFile(path.join(__dirname, "settings", "settings.html"));
 }
-const settingsView = () => ({ ...config, hooks: bridge.installed(), login: login() });
+const settingsView = () => ({ ...config, hooks: bridge.installed(), login: login(), petName: config.customPet ? petPack.loadPack(petsDir(), config.customPet)?.name || "" : "" });
+// custom pet: pick a Codex Pets pack (.zip or pet.json) the user downloaded; it is checked and copied into userData/pets
+ipcMain.handle("settings:pickPet", async () => {
+  const r = await dialog.showOpenDialog(settingsWin, { title: "Choose a pet", properties: ["openFile"], filters: [{ name: "Pet (zip or pet.json)", extensions: ["zip", "json"] }] });
+  if (r.canceled || !r.filePaths[0]) return settingsView();
+  const pet = petPack.importPack(r.filePaths[0], petsDir()); // a bad pack throws; the window shows the message
+  config = { ...config, customPet: pet.id, pet: true };
+  saveConfig(); sendTheme();
+  return settingsView();
+});
+ipcMain.handle("settings:clearPet", () => { config = { ...config, customPet: "" }; saveConfig(); sendTheme(); return settingsView(); });
 ipcMain.handle("settings:load", () => settingsView());
 ipcMain.handle("settings:save", (_, v) => {
   // only known keys, each checked; the form can't write anything else
@@ -671,7 +683,7 @@ ipcMain.handle("welcome:finish", (_, v) => {
 // ---- look: size, accent colour, hide when idle ----
 function sendTheme() {
   if (win && !win.isDestroyed()) win.webContents.setZoomFactor(scale());
-  send("theme", { accent: /^#[0-9a-f]{6}$/i.test(config.accent) ? config.accent : "album", idleHide: !!config.idleHide, pet: config.pet !== false, powerAnim: config.powerAnim !== false, powerAnimStyle: config.powerAnimStyle === "subtle" ? "subtle" : "cinematic", name: displayName() });
+  send("theme", { accent: /^#[0-9a-f]{6}$/i.test(config.accent) ? config.accent : "album", idleHide: !!config.idleHide, pet: config.pet !== false, powerAnim: config.powerAnim !== false, powerAnimStyle: config.powerAnimStyle === "subtle" ? "subtle" : "cinematic", name: displayName(), petPack: petPack.loadPack(petsDir(), config.customPet) });
 }
 // the name the pet and the dashboard greet you by: the one from settings, else the Windows account name
 function displayName() {
