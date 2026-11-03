@@ -25,6 +25,7 @@ contextBridge.exposeInMainWorld("bridge", {
   onDownloads: on("downloads"),
   onDownloadDone: on("downloadDone"),
   copyClip: i => ipcRenderer.send("copyClip", i),
+  pinClip: i => ipcRenderer.send("pinClip", i),
   clearClips: () => ipcRenderer.send("clearClips"),
   onShelf: on("shelf"),
   // dropped File objects -> real paths (File.path was removed from Electron)

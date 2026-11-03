@@ -545,17 +545,24 @@ for (const b of Object.keys(PANELS)) $(b).onclick = () => showPanel(b);
 new MutationObserver(() => { if (!notch.classList.contains("open")) showPanel(null); })
   .observe(notch, { attributes: true, attributeFilter: ["class"] });
 
-window.bridge.onClipboard(list => {
-  $("clipEmpty").hidden = list.length > 0;
-  $("clipList").replaceChildren(...list.map((text, i) => {
+let clipItems = [];
+function drawClips() {
+  const q = $("clipSearch").value.trim().toLowerCase();
+  const shown = clipItems.map((c, i) => ({ ...c, i })).filter(c => !q || c.text.toLowerCase().includes(q));
+  $("clipEmpty").hidden = clipItems.length > 0;
+  $("clipList").replaceChildren(...shown.map(({ text, pin, i }) => {
     const li = document.createElement("li"), b = document.createElement("button");
-    b.textContent = text;
-    b.title = "Copy again";
-    b.onclick = () => { window.bridge.copyClip(i); b.textContent = "Copied"; setTimeout(() => (b.textContent = text), 900); };
+    const label = (pin ? "📌 " : "") + text;
+    b.textContent = label;
+    b.title = "Copy again · right-click to " + (pin ? "unpin" : "pin");
+    b.onclick = () => { window.bridge.copyClip(i); b.textContent = "Copied"; setTimeout(() => (b.textContent = label), 900); };
+    b.oncontextmenu = e => { e.preventDefault(); window.bridge.pinClip(i); };
     li.append(b);
     return li;
   }));
-});
+}
+window.bridge.onClipboard(list => { clipItems = list; drawClips(); });
+$("clipSearch").oninput = drawClips;
 $("clipClear").onclick = () => window.bridge.clearClips();
 
 window.bridge.onShelf(files => {

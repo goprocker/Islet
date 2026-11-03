@@ -12,6 +12,7 @@ const bridge = require("./claude-bridge");
 const lyrics = require("./lyrics");
 const weather = require("./weather");
 const pomodoro = require("./pomodoro");
+const { clipHistory } = require("./clip-history");
 const downloads = require("./downloads");
 const { readShelf } = require("./shelf-file");
 const { helperLifecycle } = require("./helper-lifecycle");
@@ -379,19 +380,26 @@ function sendDnd(force) {
 }
 ipcMain.on("toggleDnd", toggleDnd);
 
-// ---- clipboard history: last 5 copied texts, kept in memory only ----
+// ---- clipboard history: last 20 copied texts in memory, plus pinned ones kept in userData/clip-pins.json ----
 // lastClip starts unset: what was already on the clipboard at launch isn't a new copy
-let clips = [], lastClip = null;
+const clipPinsPath = () => path.join(app.getPath("userData"), "clip-pins.json");
+let clips = null, lastClip = null;
+const clipStore = () => clips || (clips = clipHistory({
+  pins: (() => { try { const p = JSON.parse(fs.readFileSync(clipPinsPath(), "utf8")); return Array.isArray(p) ? p.filter(t => typeof t === "string") : []; } catch { return []; } })(),
+  save: pins => fs.writeFile(clipPinsPath(), JSON.stringify(pins), e => e && console.warn("clip pins", e.message)),
+}));
+const sendClips = () => send("clipboard", clipStore().view());
 async function pollClipboard() {
-  if (!config.clipboardHistory) { if (clips.length) { clips = []; send("clipboard", []); } return; }
+  if (!config.clipboardHistory) { if (clipStore().size()) { clipStore().wipe(); sendClips(); } return; }
   const t = await clipboard.readText();
   if (lastClip === null || !t || t === lastClip || t.length > 20000) { lastClip = t; return; }
   lastClip = t;
-  clips = [t, ...clips.filter(c => c !== t)].slice(0, 5);
-  send("clipboard", clips.map(c => c.replace(/\s+/g, " ").slice(0, 160)));
+  clipStore().add(t);
+  sendClips();
 }
-ipcMain.on("copyClip", (_, i) => { if (clips[i] !== undefined) { lastClip = clips[i]; clipboard.writeText(clips[i]).catch(e => console.warn("clipboard", e.message)); } });
-ipcMain.on("clearClips", () => { clips = []; send("clipboard", []); });
+ipcMain.on("copyClip", (_, i) => { const t = clipStore().text(i); if (t !== undefined) { lastClip = t; clipboard.writeText(t).catch(e => console.warn("clipboard", e.message)); } });
+ipcMain.on("pinClip", (_, i) => { clipStore().togglePin(i); sendClips(); });
+ipcMain.on("clearClips", () => { clipStore().clear(); sendClips(); });
 
 // ---- file shelf: hold files here, drag them out anywhere ----
 const shelfPath = () => path.join(app.getPath("userData"), "shelf.json");
@@ -687,7 +695,7 @@ app.whenReady().then(() => {
   win.webContents.on("did-finish-load", () => {
     sendPower();
     lastClaude = ""; iconFor = null; lastMediaLine = ""; readClaude(); refreshSpotifyExtras(); send("timerLabel", timerLabel); send("timer", timerEnd); send("stopwatch", stopwatchStart); sendDnd(true); send("shelf", shelf); sendTheme(); lyricsNow.resend();
-    send("clipboard", clips.map(c => c.replace(/\s+/g, " ").slice(0, 160)));
+    sendClips();
     calendar.poll(config.calendarIcsUrl, ev => send("calendar", ev));
     startWeather();
   });
