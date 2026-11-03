@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Islet features</title>
+<meta name="description" content="Everything Islet puts in the notch: music, Claude Code and Codex, notifications, search, clipboard, dashboard, a pet cat and more.">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+<style>
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px;list-style:none;padding:0}
+.chips a{display:block;text-decoration:none;font-size:14px;padding:6px 14px;border-radius:99px;background:#fff;border:1px solid var(--line)}
+.chips a:hover{border-color:var(--deep)}
+.group{padding-top:40px;scroll-margin-top:70px}
+.ghead{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:8px}
+.ghead h2{font-size:1.1rem;letter-spacing:0}.ghead span{font-size:13px;color:var(--soft)}
+.row{display:grid;grid-template-columns:1.25fr 1fr;gap:clamp(24px,5vw,64px);align-items:center;padding:clamp(28px,5vw,56px) 0}
+.row.flip .pic{order:2}
+.pic{background:#f3e9dd;border-radius:20px;padding:clamp(16px,3vw,32px);display:grid;place-items:center;min-height:220px;min-width:0}
+.pic img{border-radius:12px;box-shadow:0 20px 40px -20px #0006}
+.txt h3{font-size:clamp(1.6rem,3vw,2.2rem);line-height:1.1;margin:10px 0 12px}
+.txt>p:not(.eyebrow){color:var(--soft)}
+.tags{display:flex;flex-wrap:wrap;gap:6px;list-style:none;padding:0;margin-top:16px}
+.tags li{font-size:13px;padding:3px 10px;border-radius:99px;background:#fff;border:1px solid var(--line)}
+.mock{width:min(360px,100%);background:#000;color:#f5f5f7;border-radius:0 0 26px 26px;padding:18px 20px 20px;font-size:14px;box-shadow:0 20px 40px -20px #0008}
+.mock b{display:block;margin-bottom:10px}
+.mock ol{list-style:none;padding:0;display:grid;gap:4px}.mock li{background:#1c1c1e;border-radius:8px;padding:5px 10px;color:#d1d1d6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mock p{background:#1c1c1e;border-radius:8px;padding:10px;color:#d1d1d6}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.tiles i{font-style:normal;font-size:11px;text-align:center;padding:14px 0;border-radius:12px;background:#1c1c1e}.tiles i.on{background:#bf8cff2e;color:#d9bcff}
+.dock{display:flex;gap:8px;justify-content:center;margin-top:14px;padding:8px;border-radius:16px;background:#ffffff0d}.dock span{width:26px;height:22px;border-radius:8px;background:#2c2c2e;position:relative}.dock span.on{background:#ffffff26}.dock span.on::after{content:"";position:absolute;bottom:-6px;left:11px;width:4px;height:4px;border-radius:50%;background:#fff}
+.mock.center{text-align:center}.mock small{color:#8e8e93}.mock strong{display:block;font:700 48px "Bricolage Grotesque",sans-serif;margin:4px 0 12px}
+.bar{height:5px;border-radius:3px;background:#2c2c2e}.bar i{display:block;width:62%;height:100%;border-radius:3px;background:#ff9f0a}
+.end{text-align:center;padding:clamp(48px,8vw,88px) 0 0}.end h2{font-size:clamp(1.8rem,4vw,2.8rem)}.end p{color:var(--soft);margin:10px 0 22px}
+.btn{display:inline-block;background:#000;color:#fff;text-decoration:none;font-weight:600;padding:12px 22px;border-radius:0 0 18px 18px}
+@media (max-width:760px){.row{grid-template-columns:1fr}.row.flip .pic{order:0}}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="./"><img src="favicon-32.png" alt="" width="22" height="22">Islet</a>
+  <nav aria-label="Site"><a href="features.html" aria-current="page">Features</a><a href="changelog.html">Changelog</a><a href="about.html">About</a><a class="get" href="downloads.html">Get Islet</a></nav>
+</div></header>
+<main class="wrap">
+  <div class="pagehead"><p class="eyebrow">The collection</p><h1>Every tool, one small pill.</h1>
+  <p>Islet puts 10 everyday things in a notch at the top of your screen. Open it when you need it, and it shrinks out of the way when you don't.</p>
+  <ul class="chips"><li><a href="#media">Media</a></li><li><a href="#agents">AI agents</a></li><li><a href="#notify">Notifications</a></li><li><a href="#tools">Tools</a></li><li><a href="#system">System</a></li></ul></div>
+<section class="group" id="media"><div class="ghead"><h2>Media</h2><span>2 tools</span></div>
+  <article class="row">
+    <div class="pic"><img src="shots/album.png" alt="Music in the Islet notch" loading="lazy"></div>
+    <div class="txt"><p class="eyebrow">Music</p><h3>Your song, at the top of the screen.</h3><p>Spotify or any player that uses Windows media controls. Album art sets the accent colour, a live wave follows the beat, and you can play, skip, seek, like and scroll for volume.</p><ul class="tags"><li>Spotify</li><li>Any media app</li><li>Synced lyrics</li></ul></div>
+  </article>
+  <article class="row flip">
+    <div class="pic"><img src="shots/hud.png" alt="Volume HUD in the Islet notch" loading="lazy"></div>
+    <div class="txt"><p class="eyebrow">Volume HUD</p><h3>Volume and brightness, the quiet way.</h3><p>Change the volume, mute or brightness and the notch shows a slim bar instead of the big Windows overlay.</p><ul class="tags"><li>Volume</li><li>Mute</li><li>Brightness</li></ul></div>
+  </article>
+</section>
+<section class="group" id="agents"><div class="ghead"><h2>AI agents</h2><span>1 tool</span></div>
+  <article class="row">
+    <div class="pic"><img src="open.png" alt="Claude Code and Codex in the Islet notch" loading="lazy"></div>
+    <div class="txt"><p class="eyebrow">Claude Code and Codex</p><h3>See what your agents are doing.</h3><p>Sessions from both agents in one column: working, needs you, or done, with their last three actions. Allow or deny Claude permission requests right from the notch.</p><ul class="tags"><li>Claude Code</li><li>Codex</li><li>Allow / Deny</li></ul></div>
+  </article>
+</section>
+<section class="group" id="notify"><div class="ghead"><h2>Notifications</h2><span>1 tool</span></div>
+  <article class="row flip">
+    <div class="pic"><img src="shots/toast.png" alt="Pop-ups in the Islet notch" loading="lazy"></div>
+    <div class="txt"><p class="eyebrow">Pop-ups</p><h3>Toasts that stay out of your way.</h3><p>Windows notifications drop out of the notch with the real app logo and the full message. Do Not Disturb can follow a schedule or your focus timer.</p><ul class="tags"><li>App logos</li><li>Do Not Disturb</li><li>Mic toast</li></ul></div>
+  </article>
+</section>
+<section class="group" id="tools"><div class="ghead"><h2>Tools</h2><span>4 tools</span></div>
+  <article class="row">
+    <div class="pic"><img src="shots/search.png" alt="Search in the Islet notch" loading="lazy"></div>
+    <div class="txt"><p class="eyebrow">Search</p><h3>Find anything with Alt+Space.</h3><p>Apps, files and folders, Wi-Fi, Bluetooth, clipboard and notes from one box. The arrow keys move, Enter opens.</p><ul class="tags"><li>Alt+Space</li><li>Files</li><li>Settings</li></ul></div>
+  </article>
+  <article class="row flip">
+    <div class="pic"><div class="mock"><b>Clipboard</b><ol><li>📌 npm run build</li><li>https://islet.loopfound.in</li><li>Meeting at 4 with design</li><li>git push origin main</li></ol></div></div>
+    <div class="txt"><p class="eyebrow">Clipboard</p><h3>Find the thing you copied earlier.</h3><p>The last 20 texts you copied, searchable, with pins for the ones you keep coming back to. Kept in memory only.</p><ul class="tags"><li>20 items</li><li>Pins</li><li>Search</li></ul></div>
+  </article>
+  <article class="row">
+    <div class="pic"><div class="mock"><b>Good evening, Gopinath</b><div class="tiles"><i class="on">Wi-Fi</i><i class="on">Bluetooth</i><i>Airplane</i><i>Saver</i></div><div class="dock"><span class="on"></span><span></span><span></span><span></span><span></span></div></div></div>
+    <div class="txt"><p class="eyebrow">Dashboard</p><h3>Quick settings and a dock.</h3><p>Wi-Fi, Bluetooth, airplane mode, energy saver and live captions as tiles, brightness and volume sliders, and a dock to every tool.</p><ul class="tags"><li>Quick settings</li><li>Dock</li><li>Greeting</li></ul></div>
+  </article>
+  <article class="row flip">
+    <div class="pic"><div class="mock"><b>Notes</b><p>Ship landing changelog<br>Buy milk<br>Call Asha back</p></div></div>
+    <div class="txt"><p class="eyebrow">Notes and shelf</p><h3>Write it down. Drop it in.</h3><p>Quick notes that save as you type, and a file shelf that holds files until you drag them out somewhere else.</p><ul class="tags"><li>Notes</li><li>Drag and drop</li></ul></div>
+  </article>
+</section>
+<section class="group" id="system"><div class="ghead"><h2>System</h2><span>2 tools</span></div>
+  <article class="row">
+    <div class="pic"><img src="shots/pill.png" alt="Pet cat in the Islet notch" loading="lazy"></div>
+    <div class="txt"><p class="eyebrow">Pet cat</p><h3>A cat that lives in the notch.</h3><p>It dances to music, works during focus, naps when things are quiet, gets sick on a low battery and says hello by name.</p><ul class="tags"><li>Moods</li><li>Says hello</li><li>Can be turned off</li></ul></div>
+  </article>
+  <article class="row flip">
+    <div class="pic"><div class="mock center"><small>Focus</small><strong>18:24</strong><div class="bar"><i></i></div></div></div>
+    <div class="txt"><p class="eyebrow">Battery and timer</p><h3>The small things, in one glance.</h3><p>A black-hole animation when the charger goes in, Pomodoro and stopwatch, weather without an API key, and your next meeting with a Join button.</p><ul class="tags"><li>Battery</li><li>Pomodoro</li><li>Weather</li><li>Calendar</li></ul></div>
+  </article>
+</section>
+  <div class="end"><h2>All of it, free.</h2><p>Open source under MIT. No account, no tracking.</p><a class="btn" href="downloads.html">Download Islet</a></div>
+</main>
+<footer class="foot"><div class="wrap">
+  <div class="cols">
+    <div><a class="brand" href="./"><img src="favicon-32.png" alt="" width="22" height="22">Islet</a><p>The notch Windows never had. Free and open source, for Windows 10 and 11.</p></div>
+    <div><h4>Product</h4><ul><li><a href="features.html">Features</a></li><li><a href="downloads.html">Download</a></li><li><a href="changelog.html">Changelog</a></li></ul></div>
+    <div><h4>Project</h4><ul><li><a href="about.html">About</a></li><li><a href="https://github.com/goprocker/Islet">GitHub</a></li><li><a href="https://www.linkedin.com/in/gopinath2638">LinkedIn</a></li></ul></div>
+    <div><h4>Legal</h4><ul><li><a href="privacy.html">Privacy</a></li><li><a href="terms.html">Terms</a></li><li><a href="https://github.com/goprocker/Islet/blob/main/LICENSE">MIT licence</a></li></ul></div>
+  </div>
+  <small>© 2026 Gopinath. Islet is not affiliated with Apple or Microsoft.</small>
+</div></footer>
+</body>
+</html>

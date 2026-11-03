@@ -1,0 +1,35 @@
+/* shared by features, changelog and about: palette, top bar and footer */
+:root{--sea:#cfdcf5;--mist:#e9eefb;--ink:#000;--deep:#1d2747;--soft:#4a5578;--line:#c9d3ea;--card:#fff;--violet:#b9a7ff;--gold:#e2b13c}
+*{box-sizing:border-box;margin:0}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--mist);color:var(--deep);font:400 17px/1.55 Figtree,system-ui,sans-serif}
+a{color:inherit}
+img{max-width:100%;height:auto}
+:focus-visible{outline:3px solid #3d55c7;outline-offset:3px}
+h1,h2,h3{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:700;color:var(--ink);letter-spacing:-.02em}
+.wrap{width:min(1080px,100% - 32px);margin-inline:auto}
+
+.top{position:sticky;top:0;z-index:10;background:#e9eefbe6;backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:20px;height:60px}
+.brand{display:flex;align-items:center;gap:8px;font:700 19px "Bricolage Grotesque",sans-serif;color:var(--ink);text-decoration:none}
+.top nav{display:flex;gap:4px;margin-left:auto;align-items:center;overflow-x:auto}
+.top nav a{text-decoration:none;font-size:15px;padding:6px 10px;border-radius:8px;color:var(--soft);white-space:nowrap}
+.top nav a:hover{background:#fff8;color:var(--ink)}
+.top nav a[aria-current=page]{color:var(--ink);font-weight:600}
+.top nav a.get{background:#000;color:#fff;margin-left:6px}
+.top nav a.get:hover{background:var(--deep)}
+@media (max-width:560px){.top nav a:not(.get):not([aria-current]){display:none}}
+
+.eyebrow{font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--soft)}
+.pagehead{padding:clamp(48px,8vw,96px) 0 clamp(28px,4vw,48px)}
+.pagehead h1{font-size:clamp(2.4rem,6vw,4.4rem);line-height:1;margin-top:12px;max-width:16ch}
+.pagehead p{max-width:56ch;margin-top:18px;color:var(--soft);font-size:1.1rem}
+
+.foot{background:#000;color:#a9a9a9;padding:56px 0 32px;margin-top:clamp(56px,9vw,104px);font-size:15px}
+.foot .cols{display:grid;grid-template-columns:2fr repeat(3,1fr);gap:32px}
+.foot h4{color:#fff;font:600 14px Figtree,sans-serif;margin-bottom:12px}
+.foot ul{list-style:none;padding:0;display:grid;gap:8px}
+.foot a{text-decoration:none}.foot a:hover{color:#fff}
+.foot .brand{color:#fff;margin-bottom:10px}
+.foot small{display:block;border-top:1px solid #222;margin-top:40px;padding-top:20px}
+@media (max-width:720px){.foot .cols{grid-template-columns:1fr 1fr}}
