@@ -38,7 +38,7 @@ app.on("second-instance", () => (welcomePending ? openWelcome() : openSettings()
 // ---- settings (userData/config.json) ----
 const { checkConfig, clock } = require("./config-check");
 const configPath = () => path.join(app.getPath("userData"), "config.json");
-const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true, lyrics: true, permissionWaitSeconds: 8, dnd: false, dndFrom: "", dndTo: "", dndSkipUntil: 0, clipboardHistory: true, volumeHud: true, focusDnd: true, universalSearch: true, weatherCity: "", weatherUnit: "C", downloadsFolder: "", size: "normal", accent: "album", idleHide: false, hideWindowsBanners: true, powerAnim: true, powerAnimStyle: "cinematic", pet: true };
+const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true, lyrics: true, permissionWaitSeconds: 8, dnd: false, dndFrom: "", dndTo: "", dndSkipUntil: 0, clipboardHistory: true, volumeHud: true, focusDnd: true, universalSearch: true, weatherCity: "", weatherUnit: "C", downloadsFolder: "", size: "normal", accent: "album", idleHide: false, hideWindowsBanners: true, powerAnim: true, powerAnimStyle: "cinematic", pet: true, userName: "" };
 let config = { ...DEFAULTS };
 // only a missing file is created; one that can't be read or parsed (a hand edit in
 // progress, a half-written save) is left alone and the current settings stay in use.
@@ -583,7 +583,7 @@ ipcMain.handle("settings:save", (_, v) => {
     size: ["compact", "normal", "large"].includes(v.size) ? v.size : "normal",
     accent: /^#[0-9a-f]{6}$/i.test(v.accent) ? v.accent : "album",
     idleHide: !!v.idleHide, hideInFullscreen: !!v.hideInFullscreen,
-    powerAnim: !!v.powerAnim, powerAnimStyle: v.powerAnimStyle === "subtle" ? "subtle" : "cinematic", pet: !!v.pet,
+    powerAnim: !!v.powerAnim, powerAnimStyle: v.powerAnimStyle === "subtle" ? "subtle" : "cinematic", pet: !!v.pet, userName: str(v.userName, 40),
     notifications: !!v.notifications, hideWindowsBanners: !!v.hideWindowsBanners, dnd: !!v.dnd, dndFrom: time(v.dndFrom), dndTo: time(v.dndTo),
     permissionWaitSeconds: Math.min(24, Math.max(0, Math.round(Number(v.permissionWaitSeconds) || 0))),
     lyrics: !!v.lyrics, spotifyClientId: str(v.spotifyClientId, 100),
@@ -633,7 +633,12 @@ ipcMain.handle("welcome:finish", (_, v) => {
 // ---- look: size, accent colour, hide when idle ----
 function sendTheme() {
   if (win && !win.isDestroyed()) win.webContents.setZoomFactor(scale());
-  send("theme", { accent: /^#[0-9a-f]{6}$/i.test(config.accent) ? config.accent : "album", idleHide: !!config.idleHide, pet: config.pet !== false, powerAnim: config.powerAnim !== false, powerAnimStyle: config.powerAnimStyle === "subtle" ? "subtle" : "cinematic" });
+  send("theme", { accent: /^#[0-9a-f]{6}$/i.test(config.accent) ? config.accent : "album", idleHide: !!config.idleHide, pet: config.pet !== false, powerAnim: config.powerAnim !== false, powerAnimStyle: config.powerAnimStyle === "subtle" ? "subtle" : "cinematic", name: displayName() });
+}
+// the name the pet and the dashboard greet you by: the one from settings, else the Windows account name
+function displayName() {
+  const n = (config.userName || os.userInfo().username || "").trim().split(/[\s._-]/)[0];
+  return n ? n[0].toUpperCase() + n.slice(1) : "";
 }
 
 // ---- Windows banners: off while Islet shows notifications itself ----

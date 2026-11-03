@@ -46,7 +46,29 @@
     }
   }
 
-  const api = { MOODS, pick, paint, SVG };
+  // what the cat says when the notch opens: a hello the first time each day, then a word about its mood.
+  // ctx: {hour 0..23, name, mood, firstToday}
+  const MOOD_LINES = { dance: "Nice song!", sleep: "zzz… let me nap", sick: "Plug me in, please!", work: "Focus time. You got this", alert: "Ooh, something new!" };
+  function line(ctx) {
+    const who = ctx.name ? `, ${ctx.name}` : "";
+    if (ctx.firstToday) {
+      const part = ctx.hour < 5 ? "Still up" : ctx.hour < 12 ? "Good morning" : ctx.hour < 17 ? "Good afternoon" : "Good evening";
+      return `${part}${who}!`;
+    }
+    return MOOD_LINES[ctx.mood] || `Hello${who}!`;
+  }
+
+  // shows text in a bubble over the pet for a few seconds
+  function say(el, text, ms = 3500) {
+    let b = el.querySelector(".say");
+    if (!b) { b = document.createElement("span"); b.className = "say"; el.appendChild(b); }
+    b.textContent = text;
+    el.classList.add("talking");
+    clearTimeout(el._sayT);
+    el._sayT = setTimeout(() => el.classList.remove("talking"), ms);
+  }
+
+  const api = { MOODS, pick, paint, SVG, line, say };
   if (typeof module !== "undefined") module.exports = api;
   else window.Pet = api;
 })();

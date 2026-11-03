@@ -11,7 +11,17 @@ let wx = null, dls = [];             // weather, downloads in progress
 let theme = { accent: "album", idleHide: false };
 
 // ---- open / close; window is click-through except over the notch ----
-function setOpen(o) { notch.classList.toggle("open", o); notch.setAttribute("aria-expanded", o); }
+function setOpen(o) { notch.classList.toggle("open", o); notch.setAttribute("aria-expanded", o); if (o) greet(); }
+// the walking cat says something when the notch opens: hello once a day, then a mood line at most once a minute
+let lastSaid = 0;
+function greet() {
+  const now = Date.now(), el = $("fullPet");
+  if (theme.pet === false || now - lastSaid < 60000) return;
+  lastSaid = now;
+  const today = new Date().toDateString(), firstToday = localStorage.getItem("petHello") !== today;
+  if (firstToday) localStorage.setItem("petHello", today);
+  window.Pet.say(el, window.Pet.line({ hour: new Date().getHours(), name: theme.name, mood: el.dataset.mood, firstToday }));
+}
 notch.addEventListener("keydown", e => {
   if (e.key === "Escape") setOpen(false);
   if (e.target === notch && (e.key === "Enter" || e.key === " ")) setOpen(!notch.classList.contains("open"));
@@ -576,10 +586,17 @@ setInterval(renderAlbum, 500);
 // ---- Do Not Disturb ----
 window.bridge.onDnd(on => {
   $("dndBtn").setAttribute("aria-pressed", on);
+  $("dockDnd").setAttribute("aria-pressed", on);
   $("dndBtn").title = on ? "Do Not Disturb is on. Click to turn off." : "Do Not Disturb: pause notification pop-ups";
   $("pillMoon").toggleAttribute("hidden", !on); // svg has no .hidden property
 });
-$("dndBtn").onclick = () => window.bridge.toggleDnd();
+$("dndBtn").onclick = $("dockDnd").onclick = () => window.bridge.toggleDnd();
+$("dockClose").onclick = () => showPanel(null);
+function drawHello() {
+  const h = new Date().getHours(), part = h < 5 ? "Still up" : h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
+  $("dashHello").textContent = theme.name ? `${part}, ${theme.name}` : part;
+  $("dashDate").textContent = new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
+}
 
 // ---- tools panels: clipboard history and file shelf (one at a time) ----
 const PANELS = { searchBtn: "searchPanel", clipBtn: "clipPanel", shelfBtn: "shelfPanel", notesBtn: "notesPanel", dashBtn: "dashPanel" };
@@ -591,6 +608,7 @@ function showPanel(btnId) {
     if (on && p === "dashPanel") refreshQuick();
   }
   notch.classList.toggle("dash", !$("dashPanel").hidden);
+  if (!$("dashPanel").hidden) drawHello();
 }
 
 // ---- quick settings: tiles and sliders read from the system when the panel opens ----

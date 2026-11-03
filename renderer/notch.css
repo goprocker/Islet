@@ -314,7 +314,7 @@ button.link:hover { color: var(--text); }
 /* dashboard: its own taller view, laid over the whole notch */
 .notch.open.dash { height: 248px; }
 #dashPanel { position: fixed; inset: 0; padding: 16px 24px 18px; gap: 12px; z-index: 20; border-radius: 0 0 26px 26px; }
-#dashPanel header b { font-size: 14px; }
+#dashPanel header b { font-size: 15px; letter-spacing: -.01em; }
 .dsub { color: var(--muted); font-size: 11px; }
 .qtiles { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
 .qtiles button { width: 100%; height: 62px; border-radius: 14px; background: #1c1c1e; color: #d1d1d6; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font: inherit; font-size: 10.5px; line-height: 1.1; text-align: center; padding: 0 4px; transition: background .15s; }
@@ -326,11 +326,17 @@ button.link:hover { color: var(--text); }
 .qslide svg { width: 18px; height: 18px; fill: #d1d1d6; flex: none; }
 .qslide input { flex: 1; accent-color: #bf8cff; height: 16px; }
 .qslide output { width: 28px; text-align: right; color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
-.dlinks { display: flex; gap: 8px; margin-top: auto; }
-.dlinks button { flex: 1; height: 32px; width: auto; border-radius: 10px; background: #1c1c1e; color: #d1d1d6; display: flex; align-items: center; justify-content: center; gap: 7px; font: inherit; font-size: 11.5px; }
-.dlinks button svg { width: 15px; height: 15px; fill: currentColor; }
-.dlinks button:hover { background: #2c2c2e; }
-.dlinks button[aria-pressed=true] { background: #bf8cff2e; color: #d9bcff; }
+/* dock: one rounded bar of icons; the open one gets a dot under it */
+.dock { display: flex; align-items: center; justify-content: center; gap: 4px; margin: auto auto 0; padding: 5px 8px; border-radius: 18px; background: #ffffff0d; box-shadow: inset 0 0 0 1px #ffffff14; }
+.dock button { position: relative; width: 38px; height: 34px; border-radius: 12px; color: #a1a1a6; display: grid; place-items: center; transition: background .15s, color .15s, transform .15s; }
+.dock button svg { width: 17px; height: 17px; fill: currentColor; }
+.dock button span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.dock button:hover { background: #ffffff14; color: #f5f5f7; transform: translateY(-1px); }
+.dock button.on, .dock button[aria-pressed=true] { color: #fff; background: #ffffff1a; }
+.dock button.on::after, .dock button[aria-pressed=true]::after { content: ""; position: absolute; bottom: 3px; left: 50%; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: #fff; }
+.dock #dockDnd[aria-pressed=true] { color: #d9bcff; }
+.dock #dockDnd[aria-pressed=true]::after { background: #bf8cff; }
+.dsep { width: 1px; height: 18px; margin: 0 6px; background: #ffffff24; }
 
 /* pet: a cat in the pill; with the notch open it walks along the bottom edge */
 .pet { display: block; width: 22px; height: 18px; flex: none; color: #f5f5f7; }
@@ -376,3 +382,8 @@ button.link:hover { color: var(--text); }
 .walker.sleep, .walker.dance, .walker.alert, .walker.sick { animation-play-state: paused; }
 .walker.dance { animation: stroll 70s linear infinite, bop .5s ease-in-out infinite alternate; animation-play-state: paused, running; }
 @keyframes stroll { 0%, 100% { left: 16px; } 50% { left: 600px; } }
+
+/* the pet's speech bubble */
+.pet .say { position: absolute; bottom: 100%; left: -4px; margin-bottom: 5px; padding: 3px 8px; border-radius: 9px; background: #f5f5f7; color: #111; font-size: 10px; font-weight: 600; white-space: nowrap; transform: translateY(4px) scale(.9); transform-origin: 12px 100%; opacity: 0; transition: opacity .2s, transform .2s; }
+.pet .say::after { content: ""; position: absolute; top: 100%; left: 11px; border: 4px solid transparent; border-top-color: #f5f5f7; }
+.pet.talking .say { opacity: 1; transform: none; }

@@ -41,3 +41,11 @@ test("paint sets one mood class and leaves the DOM alone when it is unchanged", 
   assert.deepStrictEqual([...classes], ["sleep"]);
   assert.ok(MOODS.includes(el.dataset.mood));
 });
+
+test("the first open of the day greets by time and name, then the cat talks about its mood", () => {
+  const { line } = require("../renderer/pet");
+  assert.strictEqual(line({ hour: 9, name: "Gopinath", mood: "idle", firstToday: true }), "Good morning, Gopinath!");
+  assert.strictEqual(line({ hour: 20, name: "", mood: "idle", firstToday: true }), "Good evening!");
+  assert.strictEqual(line({ hour: 20, name: "Asha", mood: "dance", firstToday: false }), "Nice song!");
+  assert.strictEqual(line({ hour: 20, name: "Asha", mood: "idle", firstToday: false }), "Hello, Asha!");
+});
