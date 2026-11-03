@@ -59,7 +59,9 @@ function peek(ms) {
 const HIDDEN_BACKLOG = 5;
 const toasts = [];
 let toastBusy = false;
+let lastToastAt = 0, quietSince = 0;
 function toast(t) {
+  if (!t.hud) lastToastAt = Date.now();
   if (t.hud) {
     // the HUD follows the key presses: queued ones are stale, and a HUD already on screen is redrawn in place
     for (let i = toasts.length - 1; i >= 0; i--) if (toasts[i].hud) toasts.splice(i, 1);
@@ -474,7 +476,16 @@ function render() {
     || notch.classList.contains("charging") || notch.classList.contains("bh") || $("pillPriv").childElementCount || !$("pillMoon").hasAttribute("hidden");
   notch.classList.toggle("quiet", !busy); // plain black pill, just the dot
   notch.classList.toggle("idle", theme.idleHide && !busy);
+  updatePet(now, busy);
   fitPill();
+}
+// the pet: its mood follows music, the focus timer, pop-ups, a low battery, and how long nothing has happened
+function updatePet(now, busy) {
+  const pets = [$("pillPet"), $("fullPet")];
+  for (const p of pets) p.hidden = theme.pet === false;
+  if (theme.pet === false) return;
+  if (busy) quietSince = 0; else if (!quietSince) quietSince = now;
+  window.Pet.paint(pets, window.Pet.pick({ now, battery, toastAt: lastToastAt, timerEnd, timerLabel, playing: !!track?.playing, quietSince }));
 }
 // closed pill: as wide as what it shows, no empty black on either side
 function fitPill() {

@@ -9,6 +9,7 @@
 <body>
 <div class="notch" id="notch" tabindex="0" role="button" aria-expanded="false" aria-label="Now playing. Hover to expand">
   <div class="pill">
+    <span class="pet" id="pillPet" hidden></span>
     <img class="art" alt="">
     <span class="priv" id="pillPriv"></span>
     <svg class="moon" id="pillMoon" viewBox="0 0 24 24" aria-label="Do Not Disturb on" hidden><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
@@ -17,6 +18,8 @@
     <canvas id="mini" width="40" height="14"></canvas>
     <span class="batt" id="pillBatt" hidden></span>
   </div>
+
+  <span class="pet walker" id="fullPet" hidden></span>
 
   <div class="toastv" role="status" aria-live="polite">
     <span class="badge" id="tBadge"></span>
@@ -136,6 +139,7 @@
 </div>
 <script src="blackhole.js"></script>
 <script src="sliders.js"></script>
+<script src="pet.js"></script>
 <script src="notch.js"></script>
 </body>
 </html>
