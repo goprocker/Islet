@@ -571,13 +571,13 @@ window.bridge.onDnd(on => {
 $("dndBtn").onclick = () => window.bridge.toggleDnd();
 
 // ---- tools panels: clipboard history and file shelf (one at a time) ----
-const PANELS = { searchBtn: "searchPanel", clipBtn: "clipPanel", shelfBtn: "shelfPanel", notesBtn: "notesPanel", quickBtn: "quickPanel" };
+const PANELS = { searchBtn: "searchPanel", clipBtn: "clipPanel", shelfBtn: "shelfPanel", notesBtn: "notesPanel", dashBtn: "dashPanel" };
 function showPanel(btnId) {
   for (const [b, p] of Object.entries(PANELS)) {
     const on = b === btnId && $(p).hidden;
     $(p).hidden = !on;
     $(b).setAttribute("aria-pressed", on);
-    if (on && p === "quickPanel") refreshQuick();
+    if (on && p === "dashPanel") refreshQuick();
   }
 }
 

@@ -76,7 +76,7 @@
         <header><b>Notes</b><button class="link" id="notesClear">Clear</button></header>
         <textarea id="notesText" placeholder="Jot something down" spellcheck="false" aria-label="Quick notes"></textarea>
       </section>
-      <section class="panel" id="quickPanel" hidden aria-label="Quick settings">
+      <section class="panel" id="dashPanel" hidden aria-label="Dashboard">
         <div class="qtiles" id="qTiles">
           <button data-q="wifi" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M12 18.5a1.6 1.6 0 1 1 0 3.2 1.6 1.6 0 0 1 0-3.2zM4.9 11.9a10 10 0 0 1 14.2 0l-1.5 1.5a7.9 7.9 0 0 0-11.2 0zM1.4 8.4a15 15 0 0 1 21.2 0l-1.5 1.5a12.9 12.9 0 0 0-18.2 0zm7 7a6.1 6.1 0 0 1 7.2 0l-1.5 1.5a4 4 0 0 0-4.2 0z"/></svg><span>Wi-Fi</span></button>
           <button data-q="bluetooth" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M11 2h1l6 6-4.3 4 4.3 4-6 6h-1v-7.6L6.7 18 5.3 16.6 10.4 12 5.3 7.4 6.7 6 11 9.6zm2 3.4v4.2l2.1-2.1zm0 9v4.2l2.1-2.1z"/></svg><span>Bluetooth</span></button>
@@ -87,6 +87,12 @@
         </div>
         <label class="qslide"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10zM11 1h2v3h-2zm0 19h2v3h-2zM1 11h3v2H1zm19 0h3v2h-3z"/></svg><input type="range" id="qBright" min="0" max="100" aria-label="Brightness"></label>
         <label class="qslide"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9zM16 8.5a5 5 0 0 1 0 7z"/></svg><input type="range" id="qVol" min="0" max="100" aria-label="Volume"></label>
+        <div class="dlinks">
+          <button id="searchBtn" aria-pressed="false" title="Search (Alt+Space)"><svg viewBox="0 0 24 24"><path d="M10.5 3a7.5 7.5 0 0 1 5.9 12.1l4.3 4.3-1.4 1.4-4.3-4.3A7.5 7.5 0 1 1 10.5 3zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11z"/></svg><span>Search</span></button>
+          <button id="clipBtn" aria-pressed="false" title="Clipboard history"><svg viewBox="0 0 24 24"><path d="M9 2h6a1 1 0 0 1 1 1v1h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2V3a1 1 0 0 1 1-1zm1 2v1h4V4zM6 6v14h12V6h-2v1H8V6zm2 4h8v2H8zm0 4h6v2H8z"/></svg><span>Clipboard</span></button>
+          <button id="shelfBtn" aria-pressed="false" title="File shelf"><svg viewBox="0 0 24 24"><path d="M3 5a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zm2 0v14h14V7h-8.8l-2-2z"/></svg><span>Shelf</span></button>
+          <button id="notesBtn" aria-pressed="false" title="Quick notes"><svg viewBox="0 0 24 24"><path d="M5 3h14a2 2 0 0 1 2 2v10l-6 6H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm0 2v14h8v-4a2 2 0 0 1 2-2h4V5zm10 12.8V17h.8z"/></svg><span>Notes</span></button>
+        </div>
       </section>
       <div class="albumv" id="albumv" hidden>
         <img class="art bg" alt="">
@@ -123,11 +129,7 @@
     </section>
     <nav class="tools" aria-label="Islet tools">
       <button id="dndBtn" aria-pressed="false" title="Do Not Disturb: pause notification pop-ups"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></button>
-      <button id="searchBtn" aria-pressed="false" title="Search (Alt+Space)"><svg viewBox="0 0 24 24"><path d="M10.5 3a7.5 7.5 0 0 1 5.9 12.1l4.3 4.3-1.4 1.4-4.3-4.3A7.5 7.5 0 1 1 10.5 3zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11z"/></svg></button>
-      <button id="clipBtn" aria-pressed="false" title="Clipboard history"><svg viewBox="0 0 24 24"><path d="M9 2h6a1 1 0 0 1 1 1v1h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2V3a1 1 0 0 1 1-1zm1 2v1h4V4zM6 6v14h12V6h-2v1H8V6zm2 4h8v2H8zm0 4h6v2H8z"/></svg></button>
-      <button id="shelfBtn" aria-pressed="false" title="File shelf"><svg viewBox="0 0 24 24"><path d="M3 5a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zm2 0v14h14V7h-8.8l-2-2z"/></svg></button>
-      <button id="notesBtn" aria-pressed="false" title="Quick notes"><svg viewBox="0 0 24 24"><path d="M5 3h14a2 2 0 0 1 2 2v10l-6 6H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm0 2v14h8v-4a2 2 0 0 1 2-2h4V5zm10 12.8V17h.8z"/></svg></button>
-      <button id="quickBtn" aria-pressed="false" title="Quick settings"><svg viewBox="0 0 24 24"><path d="M4 6h9v2H4zm11 0h5v2h-5zM13 4h2v6h-2zM4 16h5v2H4zm7 0h9v2h-9zM9 14h2v6H9z"/></svg></button>
+      <button id="dashBtn" aria-pressed="false" title="Dashboard"><svg viewBox="0 0 24 24"><path d="M4 4h7v7H4zm9 0h7v7h-7zM4 13h7v7H4zm9 0h7v7h-7z"/></svg></button>
     </nav>
   </div>
 </div>
