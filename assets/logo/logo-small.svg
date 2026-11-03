@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="Islet">
+  <rect width="1024" height="1024" rx="230" fill="#cfdcf5"/>
+  <rect x="72" y="292" width="880" height="440" rx="220" fill="#000000"/>
+  <circle cx="290" cy="512" r="120" fill="#b9a7ff"/>
+  <rect x="520" y="392" width="110" height="240" rx="55" fill="#e2b13c"/>
+  <rect x="710" y="442" width="110" height="140" rx="55" fill="#e2b13c"/>
+</svg>
