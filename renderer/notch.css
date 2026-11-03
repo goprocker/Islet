@@ -493,3 +493,12 @@ button.link:hover { color: var(--text); }
 /* a custom pet from a Codex Pets sprite sheet (192x208 frames) */
 .pet.custom { width: 24px; height: 26px; background-repeat: no-repeat; image-rendering: pixelated; }
 .pill .pet.custom { margin: -2px 2px 0 0; }
+
+/* scrollbars: thin and dark inside the notch, no arrow buttons */
+.notch ::-webkit-scrollbar { width: 6px; height: 6px; }
+.notch ::-webkit-scrollbar-track { background: transparent; }
+.notch ::-webkit-scrollbar-thumb { background: #ffffff26; border-radius: 3px; }
+.notch ::-webkit-scrollbar-thumb:hover { background: #ffffff4d; }
+.notch ::-webkit-scrollbar-button { display: none; height: 0; }
+.notch ::-webkit-scrollbar-corner { background: transparent; }
+.panel ol, .panel ul { scrollbar-gutter: stable; padding-right: 2px; }

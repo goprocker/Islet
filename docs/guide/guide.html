@@ -1,0 +1,718 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Islet Guide</title>
+<style>
+@page { size: A4; margin: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Segoe UI", system-ui, sans-serif; color: #1c1c1e; font-size: 10.5pt; line-height: 1.45; background: #fff; }
+.page { width: 210mm; height: 297mm; padding: 22mm 18mm 16mm; position: relative; page-break-after: always; overflow: hidden; }
+.page:last-child { page-break-after: auto; }
+.page::before { content: ""; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 14mm; height: 3.6mm; background: #000; border-radius: 0 0 2.2mm 2.2mm; }
+.page::after { content: "•"; position: absolute; top: -.4mm; left: 50%; transform: translateX(-50%); color: #fff; font-size: 5pt; }
+.foot { position: absolute; bottom: 9mm; left: 18mm; right: 18mm; display: flex; justify-content: space-between; font-size: 7.5pt; color: #6e6e73; }
+.kick { color: #5b5bd6; font-weight: 600; font-size: 8.5pt; letter-spacing: .02em; margin-top: 6mm; }
+h1 { font-size: 26pt; font-weight: 800; line-height: 1.15; margin: 1mm 0 2mm; }
+h2 { font-size: 13pt; font-weight: 700; margin: 6mm 0 2.5mm; }
+.lead { font-size: 12pt; color: #6e6e73; margin-bottom: 5mm; }
+p { margin-bottom: 2mm; }
+ul { padding-left: 4mm; } li { margin-bottom: .8mm; }
+table { width: 100%; border-collapse: collapse; font-size: 9pt; }
+th { text-align: left; font-weight: 500; color: #6e6e73; font-size: 8pt; padding: 2mm; border-bottom: 1.2px solid #000; }
+td { padding: 2mm; border-bottom: 1px solid #e5e5ea; vertical-align: top; }
+tr:nth-child(even) td { background: #f5f5f7; }
+td:first-child { font-weight: 600; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5mm; }
+.card { background: #f3f3f5; padding: 4mm 4mm 3mm; }
+.card h3 { font-size: 10.5pt; font-weight: 600; margin-bottom: 1mm; }
+.card ul { font-size: 8.8pt; }
+.d { display: inline-block; width: 2mm; height: 2mm; border-radius: 50%; margin-right: 2mm; vertical-align: middle; }
+pre { background: #0b0b0e; color: #eee; font: 8.5pt Consolas, monospace; padding: 5mm; white-space: pre-wrap; margin: 2mm 0 3mm; }
+.new { display: inline-block; background: #5b5bd6; color: #fff; font-size: 6.5pt; font-weight: 700; padding: .2mm 1.4mm; border-radius: 1mm; margin-left: 1.5mm; vertical-align: middle; }
+/* cover */
+.cover .kick { margin-top: 95mm; }
+.cover h1 { font-size: 64pt; margin: 2mm 0 4mm; }
+.cover .sub { font-size: 17pt; font-weight: 300; margin-bottom: 7mm; }
+.meta { position: absolute; left: 18mm; right: 18mm; top: 225mm; border-top: 1px solid #e5e5ea; padding-top: 6mm; display: grid; grid-template-columns: repeat(4, 1fr); }
+.meta small { display: block; font-size: 7.5pt; color: #6e6e73; font-weight: 600; }
+.meta b { font-size: 11.5pt; }
+.cover::before { width: 52mm; height: 16mm; border-radius: 0 0 6mm 6mm; }
+.cover::after { content: ""; }
+.toc div { display: flex; gap: 10mm; padding: 2mm; border-bottom: 1px solid #e5e5ea; font-size: 11.5pt; }
+.toc b { color: #5b5bd6; width: 8mm; }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); background: #f3f3f5; padding: 5mm; margin-top: 10mm; }
+.stats b { font-size: 24pt; font-weight: 800; display: block; }
+.stats small { color: #6e6e73; font-size: 8pt; }
+/* states */
+.states { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4mm 3mm; }
+.st { text-align: center; font-size: 8pt; color: #6e6e73; }
+.st b { display: block; color: #1c1c1e; font-size: 9.5pt; margin: 2.5mm 0 .6mm; }
+.scr { background: #e8e8ed; height: 19mm; position: relative; border-top: 1.2mm solid #d1d1d6; overflow: hidden; }
+.pill { position: absolute; top: 0; left: 50%; transform: translateX(-50%); background: #000; border-radius: 0 0 3mm 3mm; height: 8mm; display: flex; align-items: center; justify-content: center; gap: 2mm; color: #fff; font-size: 6pt; }
+.art { width: 4mm; height: 4mm; border-radius: 1mm; background: #8a5a2b; }
+.wave { color: #f0c040; letter-spacing: -.3mm; font-weight: 700; }
+.bh { background: radial-gradient(circle at 50% 55%, #000 0 14%, #ffcf7a 16%, #c06a10 24%, #000 34%); }
+.shots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4mm; text-align: center; font-size: 8pt; color: #6e6e73; }
+.shots img { width: 100%; height: 20mm; object-fit: contain; }
+.wide img { width: 100%; }
+</style><style>.pill b{color:#fff}</style><style>
+.flow { counter-reset: step; list-style: none; padding: 0; font-size: 9.6pt; }
+.flow li { counter-increment: step; position: relative; padding-left: 7mm; margin-bottom: 1.1mm; }
+.flow li::before { content: counter(step); position: absolute; left: 0; top: .3mm; width: 4.6mm; height: 4.6mm; border-radius: 50%; background: #5b5bd6; color: #fff; font-size: 7pt; font-weight: 700; text-align: center; line-height: 4.6mm; }
+section:nth-of-type(n+16) code { font: 8.6pt Consolas, monospace; background: #f0f0f3; padding: 0 .8mm; border-radius: .6mm; }
+section:nth-of-type(n+16) td code { background: transparent; padding: 0; }
+.say { background: #eeeefb; border-left: 1mm solid #5b5bd6; padding: 3mm 4mm; margin: 2mm 0 3mm; font-size: 9.8pt; }
+.qa > div { padding: 1.7mm 0; border-bottom: 1px solid #e5e5ea; break-inside: avoid; }
+.qa b { display: block; font-size: 9.8pt; margin-bottom: .5mm; }
+.qa p { margin: 0; font-size: 9.2pt; line-height: 1.38; color: #333336; }
+.small { font-size: 9.2pt; }
+pre.t { padding: 3mm 4mm; margin: 1.5mm 0 1.5mm; font-size: 8pt; }
+.toc2 { display: grid; grid-template-columns: 1fr 1fr; column-gap: 8mm; }
+</style></head><body>
+
+<section class="page cover">
+  <div class="kick">PROJECT GUIDE</div>
+  <h1>Islet</h1>
+  <div class="sub">A Dynamic-Island-style notch for Windows 11</div>
+  <p style="color:#6e6e73">Music, Claude Code and Codex activity, notifications, battery and more,<br>in one small black pill at the top of your screen.</p>
+  <div class="meta">
+    <div><small>MADE BY</small><b>Gopinath</b></div>
+    <div><small>VERSION</small><b>2.2.0</b></div>
+    <div><small>PLATFORM</small><b>Windows 10 / 11</b></div>
+    <div><small>BUILT WITH</small><b>Electron 45</b></div>
+  </div>
+  <div class="foot"><span>© 2026 Gopinath. All rights reserved.</span><span>Updated 4 Nov 2026 · islet.loopfound.in · github.com/goprocker/Islet</span></div>
+</section>
+
+<section class="page">
+  <div class="kick">CONTENTS</div>
+  <h1>Inside this guide</h1>
+  <div class="toc toc2" style="grid-auto-flow:column;grid-template-rows:repeat(11,auto)">
+    <div><b>01</b>Why Islet exists</div><div><b>02</b>Every feature</div><div><b>03</b>How it looks: every state</div>
+    <div><b>04</b>Tech stack</div><div><b>05</b>Architecture</div><div><b>06</b>How each part works</div>
+    <div><b>07</b>Repository map</div><div><b>08</b>Install and run</div><div><b>09</b>Using Islet</div>
+    <div><b>10</b>Claude Code and Codex</div><div><b>11</b>Settings</div><div><b>12</b>Build, test, debug</div>
+    <div><b>13</b>Privacy, troubleshooting, uninstall</div><div><b>14</b>What's new in 2.0 and 2.2</div>
+    <div><b>15</b>Islet in plain English</div><div><b>16</b>Words you need</div><div><b>17</b>Follow the data</div>
+    <div><b>18</b>Read the code yourself</div><div><b>19</b>Engineering ideas it shows</div><div><b>20</b>Hard problems and limits</div>
+    <div><b>21</b>Interview questions and answers</div><div><b>22</b>Cheat sheet and practice</div>
+  </div>
+  <div class="stats">
+    <div><b>8</b><small>data sources</small></div><div><b>20</b><small>settings</small></div>
+    <div><b>13</b><small>notch states</small></div><div><b>291</b><small>passing tests</small></div>
+  </div>
+  <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<section class="page">
+  <div class="kick">SECTION 01</div>
+  <h1>Why Islet exists</h1>
+  <div class="lead">Phones and Macs keep live status in one place at the top of the screen. Windows spreads it across the taskbar, the tray, a corner of banners and hidden terminal windows. Islet pulls it into one pill.</div>
+  <div class="grid2">
+    <div class="card"><h3>One glance</h3>See what is playing, what your AI coding agent is doing, and new messages without switching windows.</div>
+    <div class="card"><h3>Act in place</h3>Skip songs, seek, change volume, and Allow or Deny Claude Code permission requests from the notch.</div>
+    <div class="card"><h3>Out of the way</h3>Click-through except over the notch, hides in fullscreen apps, and goes to a single dot when idle.</div>
+    <div class="card"><h3>Local and light</h3>No account, no cloud, no tracking, and no unsigned helper exe. Runs from source with Smart App Control on.</div>
+  </div>
+  <h2>The real thing</h2>
+  <div class="wide"><img src="../tools/open.png"></div>
+  <p style="font-size:8pt;color:#6e6e73;margin-top:2mm">Open notch: agent sessions on the left, Spotify in the middle, time and battery on the right, tools at the edge. The real notch page with sample data.</p>
+  <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<section class="page">
+  <div class="kick">SECTION 02</div>
+  <h1>Every feature</h1>
+  <div class="lead">Grouped by area. Everything below ships in this repository today.</div>
+  <div class="grid2">
+    <div class="card"><h3><span class="d" style="background:#34c759"></span>Music</h3><ul>
+      <li>Spotify, or any player using Windows media controls (YouTube in a browser, VLC, ...)</li>
+      <li>Album art, title, artist; accent colour taken from the art; art clears when a track has none</li>
+      <li>Previous / play-pause / next; click the bar to seek</li>
+      <li>Scroll over the music side to change Spotify's own volume</li>
+      <li>Like the song (Spotify's Alt+Shift+B shortcut)</li>
+      <li>Live wave from Spotify's audio only (24 FFT bands); stops drawing once the bars settle</li>
+      <li>Timed lyrics (lrclib.net) under the seek bar</li>
+      <li>Enlarged album view over a blurred backdrop</li>
+      <li>Song-change peek; optional Spotify Web API (Premium)</li></ul></div>
+    <div class="card"><h3><span class="d" style="background:#c7c3ff"></span>Claude Code and Codex</h3><ul>
+      <li>Sessions from both agents in one column, newest first (up to five; waiting sessions are always kept)</li>
+      <li>Status per session: working, needs you, done</li>
+      <li>Last 3 actions (tools, edited files, replies; your prompts for Codex)</li>
+      <li>Allow / Deny Claude Code permission requests from the notch</li>
+      <li>Session chips to switch project; Codex chips have a blue dot</li>
+      <li>Hooks install on first run, with a backup; unticking removes only Islet's handlers</li>
+      <li>Falls back to reading transcripts when hooks are off</li></ul></div>
+    <div class="card"><h3><span class="d" style="background:#5b5bd6"></span>Notifications</h3><ul>
+      <li>Every Windows toast except Spotify's becomes a notch pop-up <span class="new">NEW</span> with the full message: 400 px wide, grows up to about 7 lines</li>
+      <li>Display time grows with message length (4.5 s + 40 ms per character, max 12 s)</li>
+      <li>Real app logos; click to open the app; hover to keep it</li>
+      <li>Windows' own banners off while running, restored on quit <span class="new">NEW</span> even after a crash</li>
+      <li><span class="new">NEW</span> On the lock screen Windows' banners come back, so messages still show there</li>
+      <li><span class="new">NEW</span> Hidden pop-ups wait, then show (latest 5)</li>
+      <li>Do Not Disturb, with an optional daily schedule</li></ul></div>
+    <div class="card"><h3><span class="d" style="background:#ff9f0a"></span>Battery and system</h3><ul>
+      <li>Battery level and charging state</li>
+      <li><span class="new">NEW</span> Black hole animation when the charger goes in (~2.8 s, "CHARGING INITIATED") or out (~1.8 s, "RUNNING ON BATTERY"); Cinematic or Subtle style</li>
+      <li>Charging: pulsing green edge glow and a streak on the bottom edge (paused while the black hole plays)</li>
+      <li>One-time low-battery warning</li>
+      <li>Mic, camera and screen-capture dots while in use</li>
+      <li>Clock and date column; hides behind fullscreen apps</li></ul></div>
+    <div class="card"><h3><span class="d" style="background:#64a8ff"></span>Info</h3><ul>
+      <li>Weather by city (Open-Meteo, no key), C or F</li>
+      <li>Next calendar event from a private ICS link; cancelled events, EXDATEs and moved occurrences handled <span class="new">NEW</span> follows each event's time zone</li>
+      <li>Browser download progress and a finished pop-up</li>
+      <li>Timer from the tray, shown as a chip</li></ul></div>
+    <div class="card"><h3><span class="d" style="background:#636366"></span>Tools and window</h3><ul>
+      <li>Clipboard history: last 5 texts, memory only</li>
+      <li>File shelf: drop files in, drag them out (no duplicates)</li>
+      <li>Hover to open, click elsewhere to close</li>
+      <li>Ctrl+Alt+N: pill, open, hidden; Ctrl+Alt+M: next monitor</li>
+      <li><span class="new">NEW</span> Alt+F4 can't close the notch by mistake; use tray &gt; Quit</li>
+      <li>Settings window, tray menu, start with Windows, single instance</li></ul></div>
+  </div>
+  <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<section class="page">
+  <div class="kick">SECTION 03</div>
+  <h1>How it looks: every state</h1>
+  <div class="lead">The notch is always black and hangs from the top edge of the screen. It changes size and content with what is going on.</div>
+  <h2>Closed pill</h2>
+  <div class="states">
+    <div class="st"><div class="scr"><div class="pill" style="width:22mm"><span class="dot">●</span></div></div><b>Quiet</b>Nothing playing, not charging, agent idle: one dot.</div>
+    <div class="st"><div class="scr"><div class="pill" style="width:35mm"><span class="art"></span><span style="color:#c7c3ff">●</span><span class="wave">ılıılı</span></div></div><b>Playing</b>Album art, Claude dot (lit when active), live wave.</div>
+    <div class="st"><div class="scr"><div class="pill" style="width:35mm;box-shadow:inset 0 0 0 .5mm #7dffa0"><span class="art"></span><span class="wave">ılıılı</span><span style="color:#7dffa0">▭</span></div></div><b>Charging</b>Green edge glow pulses; a light streak runs along the bottom.</div>
+    <div class="st"><div class="scr"><div class="pill" style="width:42mm"><span class="art"></span><span style="color:#f0c040">Timer 4:32</span><span class="wave">ılı</span></div></div><b>Timer / meeting / download</b>A chip shows the most urgent item.</div>
+    <div class="st"><div class="scr"><div class="pill" style="width:28mm"><span style="color:#ff9f0a">●</span></div></div><b>Agent needs you</b>Amber pulsing dot while a permission waits.</div>
+    <div class="st"><div class="scr"><div class="pill" style="width:35mm"><span class="art"></span><span style="color:#ff9f0a">●</span><span style="color:#34c759">●</span><span style="color:#ff453a">●</span><span class="wave">ılıılı</span></div></div><b>Mic / camera / screen in use</b>Orange, green and red dots after the art.</div>
+    <div class="st"><div class="scr"><div class="pill" style="width:28mm">☾ <span style="color:#48484a">●</span></div></div><b>Do Not Disturb</b>Moon icon; notification pop-ups aren't shown.</div>
+    <div class="st"><div class="scr"><div class="pill" style="width:24mm;height:2mm"></div></div><b>Idle line</b>Optional (idleHide): a thin 7 px line.</div>
+    <div class="st"><div class="scr"></div><b>Hidden</b>Ctrl+Alt+N or a fullscreen app: nothing on screen.</div>
+  </div>
+  <h2>Pop-ups and open</h2>
+  <div class="states">
+    <div class="st"><div class="scr" style="height:24mm"><div class="pill" style="width:52mm;height:16mm;justify-content:flex-start;padding-left:3mm;text-align:left"><span style="background:#25d366;width:6mm;height:6mm;border-radius:1.5mm;display:inline-flex;align-items:center;justify-content:center;font-weight:700">W</span><span>WhatsApp<br><b style="font-size:7pt">Arun</b><br>Full message, wrapped</span></div></div><b>Notification pop-up <span class="new">NEW</span></b>400 px wide, height grows with the text.</div>
+    <div class="st"><div class="scr" style="height:24mm"><div class="pill bh" style="width:48mm;height:12mm"></div></div><b>Black hole <span class="new">NEW</span></b>340 x 84 px, plays on charger in / out.</div>
+    <div class="st"><div class="scr" style="height:24mm"><div class="pill" style="width:42mm;height:13mm"><span class="art" style="width:6mm;height:6mm"></span><span><b>Katha Pola Thonum</b><br>Ilaiyaraaja</span></div></div><b>Song change peek</b>Opens the full notch for 2.5 s on a new song.</div>
+  </div>
+  <div class="st" style="margin-top:4mm"><div class="scr" style="height:30mm"><div class="pill" style="width:110mm;height:26mm;border-radius:0 0 6mm 6mm;font-size:6.5pt;justify-content:space-around">
+    <span style="text-align:left;color:#8e8e93"><span style="color:#c7c3ff">● islet</span><br>Claude · Working<br><span style="color:#fff">Edited notch.css</span><br>Ran npm test</span>
+    <span><span class="art" style="display:inline-block;vertical-align:middle"></span> <b>Katha Pola Thonum</b><br>▕▬▬▬▬▬▬▬╌╌╌▏<br>⏮ ⏸ ⏭</span>
+    <span style="text-align:left"><b style="font-size:10pt">4:41 PM</b><br><span style="color:#8e8e93">Thu, Oct 29<br>27% On battery</span></span></div></div>
+    <b>Open</b>Hover: 640 x 150 px. Agents, music, time and battery, tools. Click elsewhere to close. The green glow follows the edge while charging.</div>
+  <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<section class="page">
+  <h2 style="margin-top:6mm">Real screenshots</h2>
+  <div class="shots">
+    <div><img src="../pill.png">Pill</div>
+    <div><img src="../toast.png">Pop-up</div>
+    <div><img src="../album.png">Album view</div>
+  </div>
+  <p style="font-size:8pt;color:#6e6e73;margin-top:2mm">The real notch page with sample data.</p>
+  <div class="kick" style="margin-top:12mm">SECTION 04</div>
+  <h1>Tech stack</h1>
+  <div class="lead">Small and native to Windows. No UI framework, no database server, no cloud.</div>
+  <table><tr><th>Layer</th><th>Technology</th><th>Used for</th></tr>
+    <tr><td>App shell</td><td>Electron 45 (Chromium + Node.js)</td><td>Frameless, transparent, always-on-top window; tray; global hotkeys; powerMonitor; IPC</td></tr>
+    <tr><td>UI</td><td>HTML, CSS, vanilla JavaScript</td><td>The notch (renderer/) and the settings window (settings/)</td></tr>
+    <tr><td>Animation</td><td>Canvas 2D</td><td>Black hole charger animation (renderer/blackhole.js); runs only while playing</td></tr>
+    <tr><td>Main process</td><td>Node.js built into Electron (CommonJS)</td><td>Window control, config, timers, HTTP bridge, spawning helpers</td></tr>
+    <tr><td>Windows access</td><td>Windows PowerShell 5.1</td><td>Media session, privacy dots, fullscreen detection</td></tr>
+    <tr><td>Native code</td><td>C# compiled at runtime (Add-Type)</td><td>Spotify process-loopback audio capture, FFT, volume</td></tr>
+    <tr><td>Storage</td><td>node:sqlite (read-only), JSON</td><td>Notification database; %APPDATA%\islet\config.json</td></tr>
+    <tr><td>Registry</td><td>HKCU Notifications\Settings</td><td>Turning Windows' banners off and back on</td></tr>
+    <tr><td>Network</td><td>fetch()</td><td>lrclib.net, Open-Meteo, your ICS link, optional Spotify Web API</td></tr>
+    <tr><td>Agent hooks</td><td>HTTP server on 127.0.0.1:47321</td><td>Claude Code and Codex hooks post events</td></tr>
+    <tr><td>Tests</td><td>node --test</td><td>37 files, 291 tests</td></tr>
+    <tr><td>Packaging</td><td>electron-builder 26 (NSIS)</td><td>One-click per-user installer</td></tr></table>
+  <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<section class="page">
+  <h2 style="margin-top:6mm">Key decisions</h2>
+  <table><tr><th>Decision</th><th>Why</th></tr>
+    <tr><td>No UI framework</td><td>One small view. Vanilla JS starts fast and is easy to read.</td></tr>
+    <tr><td>C# inside PowerShell</td><td>Smart App Control blocks unsigned exes. Add-Type compiles inside signed powershell.exe.</td></tr>
+    <tr><td>Read the notification DB</td><td>Windows has no notification-listener API for unpackaged apps.</td></tr>
+    <tr><td>Hooks over loopback HTTP</td><td>Instant agent status; transcript timing is the fallback.</td></tr>
+    <tr><td>powerMonitor for the charger</td><td>Plug / unplug events arrive instantly, no polling.</td></tr>
+    <tr><td>Windows media controls</td><td>No Spotify login or Premium needed; works with other players too.</td></tr></table>
+  <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<section class="page">
+  <div class="kick">SECTION 05</div>
+  <h1>Architecture</h1>
+  <div class="lead">Electron's two-process model. The main process talks to Windows and the web through helpers; the notch page only sees a small, safe API.</div>
+  <table><tr><th>Layer</th><th>Parts</th></tr>
+    <tr><td>Windows + web</td><td>Media session (SMTC) · Spotify audio (process loopback) · Registry (consent, banners) · Notification DB (wpndatabase.db) · Web APIs (lyrics, weather, ICS) · Downloads folder · Claude / Codex hooks · Power events</td></tr>
+    <tr><td>Helpers</td><td>media.ps1 · spotify-audio.ps1 + .cs · system.ps1 · notifications.js + icons.js · lyrics.js, weather.js, calendar.js, spotify-web.js · downloads.js · shelf-file.js · claude-bridge.js + hooks/islet-hook.js</td></tr>
+    <tr><td>Main process</td><td>main.js: window · tray · hotkeys · powerMonitor · config.json · IPC · starts every helper</td></tr>
+    <tr><td>Bridge</td><td>preload.js (window.bridge) · settings/preload.js (settings:load / save)</td></tr>
+    <tr><td>Screen</td><td>renderer/ (index.html · notch.css · notch.js · blackhole.js) · Settings window</td></tr></table>
+  <h2>How data moves</h2>
+  <ul>
+    <li><b>In:</b> PowerShell helpers print lines, hooks POST, and the .js helpers call back. main.js decodes helper output with one UTF-8 decoder per stream (the hook and the HTTP bridge do the same), parses it and forwards with webContents.send.</li>
+    <li><b>Draw:</b> notch.js keeps the latest state and calls render() on every event and every 500 ms.</li>
+    <li><b>Out:</b> clicks and scrolls call window.bridge (ipcRenderer.send). main.js runs them: starts media.ps1 with the command, writes to spotify-audio stdin, or answers the waiting hook request.</li>
+    <li><b>Mouse:</b> the window is click-through. Entering the notch sends hover(true); main.js makes it clickable until the pointer leaves.</li>
+    <li><b>Lifetime:</b> the notch window only closes when the app quits (tray Quit or Windows shutdown). Alt+F4 is ignored so helpers never talk to a destroyed window.</li>
+  </ul>
+  <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<section class="page">
+  <div class="kick">SECTION 06</div>
+  <h1>How each part works</h1>
+  <table>
+    <tr><td>Music</td><td>media.ps1 reads the Windows media session once a second and prints JSON; toggle, next, prev, seek and like each start media.ps1 once with that command. spotify-audio captures only the Spotify process tree into 24 log-spaced bands about 30 times a second. lyrics.js caches timed lyrics per song and resends the current ones when the page reloads. Spotify Web API answers that a newer request has overtaken are dropped, so Like acts on the right track.</td></tr>
+    <tr><td>Agents</td><td>claude-bridge.js runs an HTTP server on 127.0.0.1:47321 and keeps a status per session. hooks/islet-hook.js first checks the listener with an HMAC keyed by a per-user secret in ~/.islet-hook-token, then POSTs each event; if the check fails it stays silent and the agent asks in its terminal. A PermissionRequest is held for permissionWaitSeconds; with no answer the terminal asks as usual.</td></tr>
+    <tr><td>Notifications</td><td>notifications.js polls wpndatabase.db read-only every 2 s and parses the toast XML. Banners are hidden with ShowBanner = 0; old values are written to banners.json before the registry changes and kept until the restore is verified. On lock they are put back; on unlock hidden again.</td></tr>
+    <tr><td>Battery</td><td>main.js forwards powerMonitor on-ac / on-battery / resume. The renderer ignores the first report, dedupes, debounces 200 ms, and plays blackhole.js; an opposite event cancels it. Reduced motion shows a still frame.</td></tr>
+    <tr><td>System</td><td>system.ps1 reads the CapabilityAccessManager consent store for mic, camera and screen use, and detects fullscreen windows.</td></tr>
+    <tr><td>Info</td><td>weather.js (every 15 min). calendar.js: next timed event in 24 h; jumps straight to the current repeat, skips cancelled and excluded ones. Times follow TZID, including Outlook's Windows zone names; repeats keep their clock time in the event's own zone. DAILY and WEEKLY rules with INTERVAL, COUNT, UNTIL, BYDAY and WKST are followed; a rule with anything else, like BYMONTH, shows only its first date. downloads.js: .crdownload / .part / .partial / .download, each finished file announced once.</td></tr>
+    <tr><td>Settings</td><td>Own window and preload. main.js validates every value, writes config.json via a temp file, and applies hand edits within 2 s. A broken config.json is left alone, not overwritten. A save's answer only refills fields you haven't changed since, so typing during an autosave is kept.</td></tr></table>
+  <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<section class="page">
+  <div class="kick">SECTION 07</div>
+  <h1>Repository map</h1>
+  <table><tr><th>Path</th><th>Lines</th><th>Purpose</th></tr>
+    <tr><td>main.js</td><td>653</td><td>Main process: window, tray, hotkeys, power events, config, IPC, starts every helper</td></tr>
+    <tr><td>preload.js</td><td>44</td><td>window.bridge: the only API the notch page can call</td></tr>
+    <tr><td>renderer/index.html</td><td>111</td><td>Notch markup: pill, pop-up, open view, panels</td></tr>
+    <tr><td>renderer/notch.css</td><td>291</td><td>Notch styling, states and animations</td></tr>
+    <tr><td>renderer/notch.js</td><td>572</td><td>Open / close, music, agents, battery, pop-ups, shelf, render loop</td></tr>
+    <tr><td>renderer/blackhole.js</td><td>224</td><td>Canvas black hole for charger in / out</td></tr>
+    <tr><td>settings/</td><td>177</td><td>Settings window: HTML, CSS, JS and its own preload</td></tr>
+    <tr><td>claude-bridge.js</td><td>212</td><td>Hook HTTP server; installs and removes Claude Code / Codex hooks</td></tr>
+    <tr><td>hooks/islet-hook.js</td><td>76</td><td>Run by each agent hook; checks the listener, then POSTs the event</td></tr>
+    <tr><td>hooks/hook-auth.js</td><td>26</td><td>Per-user secret and HMAC proof for the hook and listener</td></tr>
+    <tr><td>config-check.js</td><td>29</td><td>Checks known config.json fields on load</td></tr>
+    <tr><td>media.ps1</td><td>121</td><td>Windows media session reader and controller</td></tr>
+    <tr><td>spotify-audio.ps1 / .cs</td><td>325</td><td>Spotify loopback capture, FFT bands, volume</td></tr>
+    <tr><td>system.ps1</td><td>71</td><td>Mic / camera / screen dots, fullscreen detection</td></tr>
+    <tr><td>notifications.js</td><td>174</td><td>Notification database reader, banner toggle</td></tr>
+    <tr><td>icons.js</td><td>114</td><td>Real app logos</td></tr>
+    <tr><td>lyrics.js / weather.js</td><td>82 / 47</td><td>lrclib.net lyrics, Open-Meteo weather</td></tr>
+    <tr><td>calendar.js</td><td>213</td><td>Next event from an ICS link, time zones and repeats</td></tr>
+    <tr><td>downloads.js</td><td>77</td><td>Browser download progress</td></tr>
+    <tr><td>shelf-file.js</td><td>23</td><td>Reads and checks shelf.json</td></tr>
+    <tr><td>spotify-web.js</td><td>122</td><td>Optional Spotify Web API (PKCE login)</td></tr>
+    <tr><td>test/</td><td>1405</td><td>19 test files run by node --test</td></tr>
+    <tr><td>demo.html</td><td>191</td><td>Original browser design demo (not used by the app)</td></tr>
+    <tr><td>docs/ · package.json</td><td>- · 54</td><td>Screenshots · scripts, Electron version, installer config</td></tr></table>
+  <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<section class="page">
+  <div class="kick">SECTION 08</div>
+  <h1>Install and run</h1>
+  <p>You need Windows 10 1903+ or 11 and Windows PowerShell 5.1 (part of Windows). Running from source also needs Node.js 22 or 24 with npm, and Git.</p>
+  <h2>Option A: download the installer</h2>
+  <p>Get <code>Islet-Setup-&lt;version&gt;.exe</code> from <code>github.com/goprocker/Islet/releases/latest</code> and run it. It installs to %LOCALAPPDATA%\Programs\islet, adds Islet to the Start menu and starts it. Islet doesn't update itself, so to update, install the new version. Quit any <code>npm start</code> copy first, as only one Islet runs at a time.</p>
+  <p>The installer is unsigned. SmartScreen may warn about it, and Smart App Control may block it. If it's blocked, use Option B.</p>
+  <h2>Option B: run from source</h2>
+  <pre>git clone https://github.com/goprocker/Islet.git
+cd Islet
+npm install
+npm start</pre>
+  <p>Code changes apply on the next restart. Good for development.</p>
+  <h2>Build your own installer</h2>
+  <pre>npm run dist      # creates dist\Islet Setup &lt;version&gt;.exe (run from PowerShell, not Git Bash)</pre>
+  <p>Then run the setup exe. The installed copy does not follow code edits; rebuild and reinstall to update.</p>
+  <p>On first run, Islet adds itself to Start with Windows and installs the agent hooks.</p>
+  <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<section class="page">
+  <div class="kick">SECTION 09</div>
+  <h1>Using Islet</h1>
+  <table><tr><th>Action</th><th>How</th></tr>
+    <tr><td>Open</td><td>Hover the notch</td></tr>
+    <tr><td>Close</td><td>Move away, or click anywhere else</td></tr>
+    <tr><td>Cycle pill / open / hidden</td><td>Ctrl+Alt+N</td></tr>
+    <tr><td>Next monitor</td><td>Ctrl+Alt+M, or tray &gt; Show on screen</td></tr>
+    <tr><td>Volume / seek</td><td>Scroll over the music side / click the progress bar</td></tr>
+    <tr><td>Album view</td><td>Click the album art</td></tr>
+    <tr><td>Like</td><td>Heart button, shown for Spotify (sends Spotify's Alt+Shift+B)</td></tr>
+    <tr><td>Clipboard / shelf / DND</td><td>Buttons in the tools column</td></tr>
+    <tr><td>Timer · Settings</td><td>Tray &gt; Timer · Tray &gt; Settings...</td></tr>
+    <tr><td>Quit</td><td>Tray &gt; Quit (Alt+F4 does nothing on the notch)</td></tr></table>
+  <div class="kick">SECTION 10</div>
+  <h1>Claude Code and Codex</h1>
+  <div class="lead">Islet installs the hooks on first run. Tray &gt; Connect to Claude Code and Codex removes or adds them. Adding saves a backup next to each file.</div>
+  <table><tr><th>Hook event</th><th>What the notch shows</th></tr>
+    <tr><td>UserPromptSubmit, PostToolUse</td><td>Working, with the latest actions</td></tr>
+    <tr><td>PermissionRequest, permission Notification</td><td>Needs you; Claude Code requests get Allow / Deny</td></tr>
+    <tr><td>Stop, any other Notification</td><td>Done</td></tr>
+    <tr><td>SessionStart (Codex) · SessionEnd</td><td>New session · session leaves the list</td></tr></table>
+  <ul style="margin-top:3mm">
+    <li>Hooks run with node, so Node.js must be on your PATH, even with the installed app.</li>
+    <li>Hooks point at the copy that installed them. After moving it or switching, untick and tick the option.</li>
+    <li>Claude Code: ~/.claude/settings.json (backup settings.json.islet-backup).</li>
+    <li>Codex: ~/.codex/hooks.json if ~/.codex exists (backup hooks.json.islet-backup). Approve Islet's hooks once in Codex (/hooks).</li>
+    <li>Removing hooks deletes only Islet's handlers, even when they share a matcher group with your own.</li>
+    <li>permissionWaitSeconds (default 8) is how long a request waits for you in the notch. 0 turns holding off.</li>
+    <li>Codex permission requests show 'Needs you' but are answered in Codex.</li></ul>
+  <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<section class="page">
+  <div class="kick">SECTION 11</div>
+  <h1>Settings</h1>
+  <div class="lead">Stored in %APPDATA%\islet\config.json and edited from the settings window.</div>
+  <table><tr><th>Key</th><th>Default</th><th>Meaning</th></tr>
+    <tr><td>size</td><td>normal</td><td>compact, normal or large</td></tr>
+    <tr><td>accent</td><td>album</td><td>Colour from album art, or #rrggbb</td></tr>
+    <tr><td>idleHide</td><td>false</td><td>Thin line when nothing is happening</td></tr>
+    <tr><td>powerAnim <span class="new">NEW</span></td><td>true</td><td>Black hole animation when the charger goes in or out</td></tr>
+    <tr><td>powerAnimStyle <span class="new">NEW</span></td><td>cinematic</td><td>cinematic, or subtle (no particles or wave, softer glow, slower spin)</td></tr>
+    <tr><td>hideInFullscreen</td><td>true</td><td>Hide behind fullscreen apps</td></tr>
+    <tr><td>notifications</td><td>true</td><td>Show Windows notifications in the notch</td></tr>
+    <tr><td>hideWindowsBanners</td><td>true</td><td>Turn off Windows' own banners while running (back on at the lock screen)</td></tr>
+    <tr><td>dnd / dndFrom / dndTo</td><td>off</td><td>Do Not Disturb, optional daily HH:MM window</td></tr>
+    <tr><td>permissionWaitSeconds</td><td>8</td><td>Allow / Deny hold time, 0 to 24</td></tr>
+    <tr><td>lyrics</td><td>true</td><td>Fetch lyrics from lrclib.net</td></tr>
+    <tr><td>weatherCity / weatherUnit</td><td>empty / C</td><td>City name (empty turns weather off); C or F</td></tr>
+    <tr><td>calendarIcsUrl</td><td>empty</td><td>Private iCal link</td></tr>
+    <tr><td>downloadsFolder</td><td>empty</td><td>Empty means Downloads</td></tr>
+    <tr><td>clipboardHistory</td><td>true</td><td>Keep the last 5 copied texts in memory</td></tr>
+    <tr><td>displayId</td><td>null</td><td>Screen to show on (set by Ctrl+Alt+M or the tray)</td></tr>
+    <tr><td>spotifyClientId</td><td>empty</td><td>Optional Spotify Web API (Premium)</td></tr></table>
+  <p style="margin-top:3mm;font-size:9pt;color:#6e6e73">If config.json can't be read (for example during a hand edit), Islet keeps the current settings and leaves the file as it is.</p>
+  <div class="kick">SECTION 12</div>
+  <h1>Build, test, debug</h1>
+  <pre>npm test        # node --test test/*.test.js  (37 files, 291 tests)
+npm run dist    # NSIS installer, run from PowerShell
+
+# inspect the notch with Chrome DevTools
+node_modules\electron\dist\electron.exe . --remote-debugging-port=9333</pre>
+  <p>Open chrome://inspect to see the page. Handy globals: setOpen(true), render().</p>
+  <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<section class="page">
+  <div class="kick">SECTION 13</div>
+  <h1>Privacy, troubleshooting, uninstall</h1>
+  <h2>Privacy</h2>
+  <ul><li>Everything runs on your PC. Network calls only go to lrclib.net, Open-Meteo, your ICS link, and Spotify if connected.</li>
+    <li>Clipboard history never touches disk. The shelf stores file paths only.</li>
+    <li>The hook server listens on 127.0.0.1 only. The notch page has no direct Node access.</li>
+    <li>Registry changes stay under HKCU: banner flags, put back on quit, and the Start with Windows entry.</li></ul>
+  <h2>Troubleshooting</h2>
+  <table><tr><th>Problem</th><th>Fix</th></tr>
+    <tr><td>Banners still bottom-right</td><td>Start Islet normally (sandboxed shells can't write the registry). Sign out and in once if needed.</td></tr>
+    <tr><td>Banners off after a crash</td><td>Start Islet and quit from the tray, or turn the setting off.</td></tr>
+    <tr><td>Codex column empty</td><td>Approve Islet's hooks in Codex (/hooks).</td></tr>
+    <tr><td>npm run dist fails in Git Bash</td><td>Run it from PowerShell.</td></tr>
+    <tr><td>Installer blocked</td><td>Smart App Control; run from source (section 08, Option B).</td></tr>
+    <tr><td>Agent status stops updating</td><td>Check that node is on your PATH. If Islet moved, untick and tick Connect to Claude Code and Codex.</td></tr>
+    <tr><td>Installed app ignores my code changes</td><td>Rebuild with npm run dist and run the new setup exe.</td></tr>
+    <tr><td>Second launch does nothing</td><td>Only one copy runs; it opens the settings of the running one.</td></tr>
+    <tr><td>Notch won't close with Alt+F4</td><td>By design; use tray &gt; Quit.</td></tr>
+    <tr><td>Calendar event missing</td><td>Its time zone isn't recognised (skipped with a console warning). A repeat rule with parts like BYMONTH shows only its first date.</td></tr>
+    <tr><td>Shelf starts empty</td><td>shelf.json wasn't a valid list. The original is kept as shelf.json.invalid.</td></tr></table>
+  <h2>Uninstall</h2>
+  <ul><li>Tray: untick Connect to Claude Code and Codex, and Start with Windows.</li>
+    <li>Tray: Quit (puts Windows banners back).</li>
+    <li>Installed app: Windows Settings &gt; Apps &gt; Islet &gt; Uninstall. From source: delete the folder.</li>
+    <li>Delete %APPDATA%\islet.</li></ul>
+  <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<section class="page">
+  <div class="kick">SECTION 14</div>
+  <h1>What's new in 2.0</h1>
+  <div class="lead">Version 2.0 closes 14 reliability issues and collects everything added since the first guide. Nothing changes in how you use Islet, and no settings were added or renamed.</div>
+  <h2>Fixed in 2.0</h2>
+  <ul style="font-size:9.5pt">
+    <li><b>Calendar</b>: events follow their own time zone instead of the PC's; repeats keep their time across daylight saving; rules Islet doesn't fully understand no longer invent dates, so they show only their first date.</li>
+    <li><b>Notifications</b>: the banner recovery record is saved before banners are turned off; CDATA text displays correctly; pop-ups that arrive while hidden wait and resume instead of being lost.</li>
+    <li><b>Music</b>: a late Spotify reply can't make Like act on the wrong track; lyric lines with several timestamps show at every one; lyrics return after a page reload; a slow album cover can't override a fixed accent colour.</li>
+    <li><b>Settings</b>: typing during an autosave is kept, and a change made before the settings load no longer saves an empty form.</li>
+    <li><b>Shelf and downloads</b>: a damaged shelf.json no longer causes a startup error and is kept as shelf.json.invalid; downloads finishing together each announce their own file.</li>
+    <li><b>Agents</b>: emoji and other non-English text in prompts, folders and session names stay intact.</li>
+    <li><b>Tests</b>: 8 files, 43 passing → 19 files, 169 passing.</li>
+    <li><b>Added 1 Nov 2026</b>: Electron 45, config checks on load, hook and listener verification, Node 22+ from source</li>
+    <li>Launch page: islet26.netlify.app (source in landing/)</li></ul>
+  <h2>Also since the first guide</h2>
+  <ul style="font-size:9.5pt">
+    <li><b>Published release</b>: a ready-made installer on GitHub Releases, so you no longer have to build it yourself.</li>
+    <li><b>Player controls</b>: previous, next, play and pause redrawn with balanced shapes.</li>
+    <li><b>Black hole charger animation</b> with Cinematic / Subtle styles and an on/off switch (replaces the plain charging pop-ups).</li>
+    <li><b>Full notification text</b>: wider, taller pop-ups that stay longer for long messages; Windows banners return on the lock screen.</li>
+    <li><b>Alt+F4 fix</b>: the notch no longer closes and throws errors; quit from the tray.</li>
+    <li><b>Reliability fixes</b>: config.json never overwritten when broken, safe banner recovery, UTF-8 helper output, Calendar exceptions, shelf duplicates, waiting agent sessions kept, hook removal limited to Islet's own, wave loop stops when idle, charger glow vs. black hole / hide / idle conflicts.</li>
+    </ul>
+  <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+<section class="page">
+  <div class="kick">SECTION 14 · 2.2</div>
+  <h1>What's new in 2.2</h1>
+  <div class="lead">2.2 turns the Dashboard into a dock with every tool, gives the pet a voice and new moods, and lets you bring your own pet.</div>
+  <figure style="margin:0"><img src="../tools/tool-clock.png" style="width:100%;display:block;border-radius:3mm"><figcaption style="font-size:7.5pt;color:#6e6e73;margin-top:1mm">The tall view: a tool on top, the dock underneath. The dot marks the open tool.</figcaption></figure>
+  <h2>The dock</h2>
+  <p style="font-size:9.5pt">Open the notch and click the Dashboard button (four squares). Every tool opens in the tall view with the dock under it; click any icon to switch. <b>+</b> opens Settings.</p>
+  <ul style="font-size:9.5pt">
+    <li><b>Home</b>: a greeting by name, Quick Settings tiles, brightness and volume.</li>
+    <li><b>Phone drop</b>: scan a QR code on the same Wi-Fi to send files to the shelf, or take shelf files back. No app needed; it stops after 10 minutes.</li>
+    <li><b>Links</b>: saved sites, plus a search box for Google, YouTube, GitHub and Stack Overflow.</li>
+    <li><b>World clock</b>: your time and the cities you add, with the hour difference.</li>
+    <li><b>Clipboard, Notes, Shelf</b>: as before, now in the tall view.</li>
+    <li><b>Timer and focus</b>: 5, 15, 25 or 50 minutes, Pomodoro and a stopwatch.</li>
+    <li><b>Weather</b>: now, the next 6 hours and the next 5 days, with humidity and wind.</li>
+    <li><b>Units</b>, <b>System</b> (CPU, memory, disk, battery, uptime) and <b>AI coding</b> (every Claude Code and Codex session).</li>
+  </ul>
+  <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+<section class="page">
+  <div class="kick">SECTION 14 · 2.2</div>
+  <h1>The tools, up close</h1>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:5mm;margin-top:4mm">
+    <figure style="margin:0"><img src="../tools/tool-dash.png" style="width:100%;display:block;border-radius:3mm"><figcaption style="font-size:7.5pt;color:#6e6e73;margin-top:1mm">Home: greeting, Quick Settings, sliders</figcaption></figure>
+    <figure style="margin:0"><img src="../tools/tool-weather.png" style="width:100%;display:block;border-radius:3mm"><figcaption style="font-size:7.5pt;color:#6e6e73;margin-top:1mm">Weather: now, hours and days</figcaption></figure>
+    <figure style="margin:0"><img src="../tools/tool-links.png" style="width:100%;display:block;border-radius:3mm"><figcaption style="font-size:7.5pt;color:#6e6e73;margin-top:1mm">Links: saved sites and web search</figcaption></figure>
+    <figure style="margin:0"><img src="../tools/tool-units.png" style="width:100%;display:block;border-radius:3mm"><figcaption style="font-size:7.5pt;color:#6e6e73;margin-top:1mm">Units: one value in every unit</figcaption></figure>
+    <figure style="margin:0"><img src="../tools/tool-sys.png" style="width:100%;display:block;border-radius:3mm"><figcaption style="font-size:7.5pt;color:#6e6e73;margin-top:1mm">System: refreshed every second</figcaption></figure>
+    <figure style="margin:0"><img src="../tools/tool-ai.png" style="width:100%;display:block;border-radius:3mm"><figcaption style="font-size:7.5pt;color:#6e6e73;margin-top:1mm">AI coding: every agent session</figcaption></figure>
+    <figure style="margin:0"><img src="../tools/tool-timer.png" style="width:100%;display:block;border-radius:3mm"><figcaption style="font-size:7.5pt;color:#6e6e73;margin-top:1mm">Timer and focus</figcaption></figure>
+    <figure style="margin:0"><img src="../tools/tool-phone.png" style="width:100%;display:block;border-radius:3mm"><figcaption style="font-size:7.5pt;color:#6e6e73;margin-top:1mm">Phone drop: scan to connect</figcaption></figure>
+  </div>
+  <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+<section class="page">
+  <div class="kick">SECTION 14 · 2.2</div>
+  <h1>The pet</h1>
+  <div class="lead">The cat reacts to what your PC is doing, and now it talks.</div>
+  <figure style="margin:0"><img src="../tools/pet-moods.png" style="width:100%;display:block;border-radius:3mm"><figcaption style="font-size:7.5pt;color:#6e6e73;margin-top:1mm">Idle, coding, asking, planting, focus, music and sleep.</figcaption></figure>
+  <h2>When it talks</h2>
+  <p style="font-size:9.5pt">Its line appears beside it in the closed pill, which widens for 6 seconds: a hello by name when Islet starts, a line when its mood changes, and a word after 10 quiet minutes. Set <b>Your name</b> in Settings; empty uses your Windows account name.</p>
+  <h2>Moods, first match wins</h2>
+  <table><tr><th>Mood</th><th>When</th></tr>
+    <tr><td>Sick</td><td>Battery under 20% and not charging</td></tr>
+    <tr><td>Alert</td><td>A pop-up arrived in the last 4 seconds</td></tr>
+    <tr><td>Asking</td><td>A Claude Code or Codex session needs you</td></tr>
+    <tr><td>Planting</td><td>A focus session just ended; one more pair of leaves per session today, a flower on the fourth</td></tr>
+    <tr><td>Focus</td><td>A focus or Pomodoro timer is running</td></tr>
+    <tr><td>Coding</td><td>An agent session is working</td></tr>
+    <tr><td>Music</td><td>Something is playing</td></tr>
+    <tr><td>Sleep / Idle</td><td>Two quiet minutes / anything else</td></tr></table>
+  <h2>Bring your own pet</h2>
+  <p style="font-size:9.5pt">Settings → <b>Choose a pet…</b> takes a pet in the Codex Pets format (a .zip or its pet.json, from codex-pets.net). Islet checks the sprite sheet (192 × 208 frames, 1536 × 1872 or 1536 × 2288), copies it into its own folder and plays each mood from the matching row. <b>Use the cat</b> switches back.</p>
+  <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<section class="page">
+  <div class="kick">SECTION 15 · LEARN THE PROJECT</div>
+  <h1>Islet in plain English</h1>
+  <div class="lead">From here on, the guide teaches the project from zero, so you can explain it yourself.</div>
+  <h2>The one-sentence version</h2>
+  <div class="say">Islet is a small always-on-top Windows app. Some background helpers watch your PC, one manager program collects what they report, and a tiny web page draws it as a black pill at the top of the screen.</div>
+  <h2>Picture a small office</h2>
+  <table><colgroup><col style="width:22%"><col style="width:31%"><col style="width:47%"></colgroup><tr><th>In the office</th><th>In the code</th><th>Its job</th></tr><tr><td>The manager</td><td><code>main.js</code> (main process)</td><td>The only one with the keys. Can read files, change the registry and start programs. Starts everyone else and passes messages along.</td></tr><tr><td>The shop window</td><td><code>renderer/</code> (the notch page)</td><td>An ordinary web page: HTML, CSS, JavaScript. Draws what it is told. Can't touch your files or Windows by itself.</td></tr><tr><td>The service hatch</td><td><code>preload.js</code></td><td>A small opening between the two, with a fixed menu of allowed requests (<code>window.bridge</code>). Nothing else gets through.</td></tr><tr><td>Scouts</td><td><code>media.ps1</code>, <code>system.ps1</code>, <code>spotify-audio</code>, <code>notifications.js</code>…</td><td>Each watches one thing, such as the song or the mic, and reports it to the manager.</td></tr><tr><td>The doorbell</td><td><code>claude-bridge.js</code>, <code>hooks/islet-hook.js</code></td><td>Claude Code and Codex ring it when something happens, so Islet doesn't have to keep checking.</td></tr><tr><td>The rule book</td><td><code>config.json</code></td><td>Your settings. The manager reads it and re-reads it when it changes.</td></tr></table>
+  <h2>The three directions data moves</h2>
+  <ul><li><b>In:</b> a scout or doorbell tells the manager something ("the song changed").</li>
+    <li><b>Across:</b> the manager passes it through the hatch, and the page redraws.</li>
+    <li><b>Back:</b> you click Next. The page asks through the hatch, and the manager tells Windows to skip.</li></ul>
+  <p style="margin-top:2mm">Nearly every feature is this same loop. <b>Learn it once and you understand most of the 3,800 lines.</b></p>
+  <h2>Why it is split up like this</h2>
+  <ul><li><b>Safety:</b> a web page that can only ask from a fixed menu can't harm your PC, even if a song title or message contains hostile text.</li>
+    <li><b>Crash isolation:</b> if a scout dies, the manager restarts it 2 seconds later and the notch keeps running.</li>
+    <li><b>Right tool for each job:</b> web tech draws; PowerShell and C# reach what JavaScript can't.</li></ul>
+  <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<section class="page">
+  <div class="kick">SECTION 16</div>
+  <h1>Words you need</h1>
+  <div class="lead">Every term an interviewer may use, in one line each.</div>
+  <table><colgroup><col style="width:25%"><col style="width:75%"></colgroup><tr><th>Term</th><th>What it means here</th></tr><tr><td>Electron</td><td>Chromium (to draw) plus Node.js (to reach the system), packed together, so a web page can become a desktop app.</td></tr><tr><td>Main / renderer</td><td>Electron's two sides: main is the Node.js manager, renderer is the web page in a window.</td></tr><tr><td>Preload, contextBridge</td><td>A script that runs before the page and hands it a safe, hand-picked API. The page gets <code>window.bridge</code>, not Node.js.</td></tr><tr><td>IPC</td><td>Inter-process communication: messages between processes. <code>ipcRenderer.send</code> and <code>webContents.send</code> are the two directions.</td></tr><tr><td>stdin, stdout</td><td>A program's input and output text streams. Helpers print one JSON line to stdout; main reads it. Volume commands go in via stdin.</td></tr><tr><td>Polling vs events</td><td>Polling keeps asking "anything new?". Events get told. Islet polls the notification database and uses events for charger changes.</td></tr><tr><td>Hook</td><td>A command a tool runs at a set moment. Claude Code runs Islet's script when it stops, uses a tool or needs permission.</td></tr><tr><td>127.0.0.1, port</td><td>127.0.0.1 means "this same PC", so traffic never leaves the machine. A port (47321) is a numbered door on it.</td></tr><tr><td>SMTC</td><td>Windows' media controls: the service that knows what is playing, in Spotify, a browser or VLC, and can skip or seek it.</td></tr><tr><td>Process loopback</td><td>A Windows feature that captures the sound of one app only. That's why the wave ignores other apps.</td></tr><tr><td>FFT</td><td>Fast Fourier Transform: maths that turns sound samples into "how loud is each pitch". Those are the wave's bars.</td></tr><tr><td>Registry</td><td>Windows' settings database. Islet uses it to switch banners off and to see mic, camera and screen use.</td></tr><tr><td>wpndatabase.db</td><td>The SQLite file where Windows stores notifications. Islet opens it read-only.</td></tr><tr><td>requestAnimationFrame</td><td>Browser call meaning "run this before the next screen draw". Used for smooth animation.</td></tr><tr><td>Debounce</td><td>Wait for things to go quiet before reacting, so a flaky charger doesn't fire many times.</td></tr><tr><td>Race condition</td><td>A bug that depends on which of two things finishes first, such as an old reply arriving after a new one.</td></tr><tr><td>Atomic write</td><td>Write to a temp file, then rename. The real file is always the whole old version or the whole new one.</td></tr></table>
+  <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<section class="page">
+  <div class="kick">SECTION 17</div>
+  <h1>Follow the data</h1>
+  <div class="lead">Being able to trace one action end to end is what convinces an interviewer you know a project.</div>
+  <h2>A new song starts</h2>
+  <ol class="flow">
+    <li>Spotify tells Windows what it is playing. <code>media.ps1</code>, already running, asks Windows once a second.</li>
+    <li><code>Get-Player</code> chooses: Spotify if playing, else any playing app, else paused Spotify, else whatever Windows picks.</li>
+    <li>It prints one line of JSON: title, artist, position, duration, cover as base64 text, and source app.</li>
+    <li><code>startMedia()</code> in <code>main.js</code> rebuilds whole lines with <code>lines()</code>, parses them and calls <code>send("media", d)</code>.</li>
+    <li>It also asks <code>lyrics.js</code> for the words. <code>preload.js</code> delivers the media message to <code>onMedia</code> in <code>notch.js</code>.</li>
+    <li><code>notch.js</code> stores the track, picks the accent colour from the cover, opens for 2.5 s because the title changed, and calls <code>render()</code>.</li>
+    <li>Windows reports position only now and then, so <code>render()</code> estimates it: last position + time since. It runs every 500 ms.</li>
+  </ol>
+  <h2>You click Next</h2>
+  <ol class="flow">
+    <li><code>window.bridge.control("next")</code> sends an IPC message from the page.</li>
+    <li>The <code>control</code> handler in <code>main.js</code> checks the word is toggle, next or prev, and starts <code>media.ps1 next</code>.</li>
+    <li>That copy calls Windows' <code>TrySkipNextAsync</code> and exits. The watcher reports the new song, and the first story repeats.</li>
+  </ol>
+  <h2>A WhatsApp message arrives</h2>
+  <ol class="flow">
+    <li>Windows saves the toast in <code>wpndatabase.db</code>. Every 2 s <code>notifications.js</code> asks for rows newer than the last ID seen.</li>
+    <li>On its first look it only records the newest ID, so old messages don't all pop up at launch.</li>
+    <li>It pulls the text out of the toast's XML and skips Spotify, because that's already shown as music.</li>
+    <li><code>main.js</code> drops it if notifications are off or Do Not Disturb is on, works out what a click should open, and finds the real logo.</li>
+    <li><code>notch.js</code> queues it. Pop-ups show one at a time for 4.5 s + 40 ms per character, 12 s at most; hovering keeps one open.</li>
+  </ol>
+  <h2>The wave moves</h2>
+  <ol class="flow">
+    <li>The C# helper captures only Spotify's sound and keeps the latest 1,024 samples (about 23 ms) in a ring buffer.</li>
+    <li>About 30 times a second, FFT turns them into 24 bands from 40 Hz to 16 kHz, each scored 0 to 255.</li>
+    <li><code>main.js</code> forwards only the newest set every 33 ms, and <code>frame()</code> eases each bar 35% toward it, so motion looks smooth.</li>
+  </ol>
+  <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<section class="page">
+  <h2 style="margin-top:0">Claude asks permission: the most impressive flow</h2>
+  <ol class="flow">
+    <li>Claude Code wants to run a command, so it starts <code>node islet-hook.js PermissionRequest</code> and gives it the details on stdin.</li>
+    <li>The hook POSTs JSON to <code>127.0.0.1:47321/claude</code> and <b>waits for the reply</b>.</li>
+    <li><code>claude-bridge.js</code> validates the event, marks the session "waiting", starts a timer and <b>keeps the HTTP response open</b>.</li>
+    <li><code>onPermission</code> reaches the page. <code>showPerm()</code> shows the card and holds the notch open.</li>
+    <li>You click Allow. <code>answerPerm</code> sends it through the hatch to <code>bridge.answer</code>, and <code>settle</code> finally replies: <code>{"decision":"allow"}</code>.</li>
+    <li>The hook prints the decision in the format Claude Code expects and exits. Claude runs the command.</li>
+  </ol>
+  <div class="say"><b>If nobody clicks:</b> after <code>permissionWaitSeconds</code> (default 8) the reply says <code>null</code>, the hook prints nothing, and Claude asks in the terminal as usual. <b>If Islet isn't running:</b> the connection fails, the hook exits quietly, and again Claude just asks. Islet can never block your work.</div>
+  <p>Three time limits nest so the shortest wins cleanly: bridge at most <b>24 s</b>, hook gives up at <b>25 s</b>, Claude Code kills the hook at <b>30 s</b>.</p>
+  <h2>You plug in the charger</h2>
+  <ol class="flow">
+    <li><code>powerMonitor</code> fires <code>on-ac</code>, an instant Windows event with no polling. <code>main.js</code> sends <code>power</code>.</li>
+    <li><code>notch.js</code> waits 200 ms for it to settle. The first report at startup only records the state, so nothing plays at launch.</li>
+    <li><code>BlackHole.play</code> draws on a canvas for about 2.8 s, then its animation loop stops and costs nothing.</li>
+  </ol>
+  <h2>How a window can be see-through to clicks</h2>
+  <p>The window is 672 × 190 px, transparent and always on top, though you only see the black notch inside it. Normally it ignores the mouse (<code>setIgnoreMouseEvents(true, {forward:true})</code>), so clicks pass to the app below while Chromium still sees the pointer move. Entering the notch sends <code>hover(true)</code>, which makes it clickable. It opens after 120 ms and closes 400 ms after you leave, so a passing pointer causes no flicker.</p>
+  <h2>What happens at startup</h2>
+  <ol class="flow">
+    <li>Single-instance lock: if a copy already runs, this one exits and the running one opens Settings.</li>
+    <li>Load <code>config.json</code>, create the window, then start the hook server (installing hooks on first run) and the tray.</li>
+    <li>Spawn the three PowerShell helpers (<code>media.ps1</code>, <code>spotify-audio.ps1</code>, <code>system.ps1</code>).</li>
+    <li>Register power events, timers, downloads, the shelf, banners, the notification watcher, the config watcher and hotkeys.</li>
+    <li>When the page finishes loading, send it everything it needs to catch up.</li>
+  </ol>
+  <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<section class="page">
+  <div class="kick">SECTION 18</div>
+  <h1>Read the code yourself</h1>
+  <div class="lead">Don't start at line 1 of everything. This order takes about an hour, and each file builds on the last.</div>
+  <table><colgroup><col style="width:6%"><col style="width:44%"><col style="width:50%"></colgroup><tr><th>#</th><th>Read</th><th>Look for</th></tr><tr><td>1</td><td><code>preload.js</code> (44 lines)</td><td>The complete list of what the page can do. It works as a table of contents.</td></tr><tr><td>2</td><td><code>app.whenReady()</code> at the bottom of <code>main.js</code></td><td>The whole app's startup on one screen.</td></tr><tr><td>3</td><td><code>startMedia()</code> in <code>main.js</code>, then <code>media.ps1</code></td><td>The simplest full helper loop.</td></tr><tr><td>4</td><td><code>render()</code> in <code>renderer/notch.js</code></td><td>How state becomes what you see.</td></tr><tr><td>5</td><td><code>hooks/islet-hook.js</code>, then <code>claude-bridge.js</code></td><td>The Allow / Deny flow from the last page.</td></tr><tr><td>6</td><td><code>test/lyrics-follow.test.js</code></td><td>How the code is tested without a real network.</td></tr></table>
+  <h2>Four snippets worth knowing by heart</h2>
+  <p class="small" style="margin-bottom:.5mm"><b>1. Rebuilding lines from a stream</b> (<code>main.js</code>). Data arrives in random-sized chunks, so a line or even an emoji can be split in two. The decoder holds back half a character, and <code>pop()</code> keeps the unfinished line for next time.</p>
+  <pre class="t">const decoder = new StringDecoder("utf8");
+let buf = "";
+stream.on("data", d =&gt; {
+  buf += decoder.write(d);
+  const parts = buf.split("\n");
+  buf = parts.pop();
+  for (const l of parts) if (l.trim()) fn(l.trim());
+});</pre>
+  <p class="small" style="margin-bottom:.5mm"><b>2. The hatch</b> (<code>preload.js</code>). The page gets named functions, never <code>ipcRenderer</code> itself, so it can't send arbitrary messages.</p>
+  <pre class="t">contextBridge.exposeInMainWorld("bridge", {
+  control: cmd =&gt; ipcRenderer.send("control", cmd),
+  onMedia: on("media"),  // ...and the rest of the fixed menu
+});</pre>
+  <p class="small" style="margin-bottom:.5mm"><b>3. A save that can't corrupt</b> (<code>main.js</code>). If power fails during the first line, the real file is untouched. Rename swaps it in one step.</p>
+  <pre class="t">const tmp = configPath() + ".tmp";
+fs.writeFileSync(tmp, JSON.stringify(config, null, 2));
+fs.renameSync(tmp, configPath());</pre>
+  <p class="small" style="margin-bottom:.5mm"><b>4. Ignoring a reply that came too late</b> (<code>calendar.js</code>, <code>weather.js</code>). Each new request gets a number. A slow reply from an old request sees a different number and is dropped.</p>
+  <pre class="t">const gen = ++generation;
+// ...later, when the download finishes:
+if (gen === generation &amp;&amp; text !== null) onEvent(nextEvent(text));</pre>
+  <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<section class="page">
+  <div class="kick">SECTION 19</div>
+  <h1>Engineering ideas it shows</h1>
+  <div class="lead">Interviewers care less about the notch than about these ideas. Each one is real code you can point to.</div>
+  <table><colgroup><col style="width:22%"><col style="width:33%"><col style="width:45%"></colgroup><tr><th>Idea</th><th>In plain words</th><th>Where in Islet</th></tr><tr><td>Least privilege</td><td>Give each part only the power it needs.</td><td>The page only gets <code>window.bridge</code>. Windows helpers stay outside it.</td></tr><tr><td>Validate at the boundary</td><td>Trust nothing that comes from outside.</td><td><code>validEvent</code> rejects bad hook events; <code>settings:save</code> checks every value; <code>control</code> allows 3 words.</td></tr><tr><td>Safe rendering</td><td>Outside text never becomes HTML.</td><td>Titles and messages use <code>textContent</code>; link schemes are allowlisted.</td></tr><tr><td>Atomic write</td><td>Never leave half a file.</td><td><code>saveConfig</code>, <code>saveJournal</code>.</td></tr><tr><td>Write-ahead journal</td><td>Record how to undo before you change.</td><td>Old banner values reach <code>banners.json</code> before the registry changes, so a crash can be undone.</td></tr><tr><td>Fail open</td><td>If the helper fails, the main task carries on.</td><td>The hook exits quietly, and Claude asks in its terminal.</td></tr><tr><td>Fallback</td><td>Keep a second, weaker source.</td><td>Hooks give exact status; transcript timing is the guess when they're off.</td></tr><tr><td>Self-healing</td><td>Restart what dies.</td><td>Each helper restarts 2 s after it exits.</td></tr><tr><td>Debounce</td><td>Wait for it to go quiet.</td><td>Charger events: 200 ms.</td></tr><tr><td>Hysteresis</td><td>Need more evidence to change state.</td><td>Fullscreen needs 2 equal readings. Low battery warns at 20%, re-arms above 25%.</td></tr><tr><td>Dropping stale work</td><td>An old answer mustn't overwrite a new one.</td><td><code>generation</code> counters, <code>accentRequest</code>, <code>asked === key</code> in lyrics.</td></tr><tr><td>Backpressure</td><td>Don't send faster than it can be used.</td><td>Wave keeps only the newest levels, 30 times a second at most.</td></tr><tr><td>Bounded memory</td><td>Every list has a limit.</td><td>5 clips, 12 shelf files, 50 click targets, 5 hidden pop-ups, 1 MB hook body.</td></tr><tr><td>Idle costs nothing</td><td>Stop work when nothing changes.</td><td>The wave and black hole animation loops stop themselves.</td></tr><tr><td>Don't damage user files</td><td>Change only your part, and keep a backup.</td><td>Hook install backs up first and removes only Islet's handlers; a broken file is refused.</td></tr><tr><td>Testable design</td><td>Pass dependencies in, so tests can fake them.</td><td><code>follower(send, fetchLines)</code> in <code>lyrics.js</code>.</td></tr></table>
+  <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<section class="page">
+  <div class="kick">SECTION 20</div>
+  <h1>Hard problems and limits</h1>
+  <div class="lead">"Tell me about a hard bug" is likely. Tell it as: problem, cause, fix, lesson.</div>
+  <table><colgroup><col style="width:22%"><col style="width:30%"><col style="width:30%"><col style="width:18%"></colgroup><tr><th>Problem</th><th>Cause</th><th>Fix</th><th>Lesson</th></tr><tr><td>Helper exe blocked by Windows</td><td>Smart App Control blocks unsigned programs.</td><td>Compile the C# at runtime with <code>Add-Type</code> inside the signed PowerShell.</td><td>Platform limits shape design.</td></tr><tr><td>Allow / Deny card vanished instantly</td><td>Node fires <code>close</code> on the request once its body is read, so it looked as if the hook had left.</td><td>Watch <code>res.on("close")</code> with <code>!res.writableEnded</code>.</td><td>Check what an event really means.</td></tr><tr><td>Terminal prompt delayed 25 s</td><td>Claude holds its prompt while the hook waits.</td><td>Default hold cut to 8 s, set by a setting.</td><td>A feature can harm the flow around it.</td></tr><tr><td>Banners stayed off after a crash</td><td>The old values were only safe once written.</td><td>Write the journal first; restore on the next run, and delete an entry only once verified.</td><td>Plan for a crash at every step.</td></tr><tr><td>Emoji turned to garbage</td><td>Multi-byte characters were split across chunks.</td><td>One <code>StringDecoder</code> per stream.</td><td>Streams are bytes, not text.</td></tr><tr><td>Alt+F4 caused errors</td><td>It destroyed the window while helpers kept sending to it.</td><td>Refuse <code>close</code> unless really quitting.</td><td>Think about lifetimes.</td></tr><tr><td>Like hit the wrong track</td><td>A late Spotify reply described the previous song.</td><td>Drop replies that a newer request has overtaken.</td><td>Async order isn't guaranteed.</td></tr><tr><td>Album art was 0 bytes</td><td>PowerShell 5 couldn't pick the right overload on a COM object.</td><td>Call <code>AsStreamForRead</code> through reflection.</td><td>Know your runtime's limits.</td></tr></table>
+  <h2>Known limits: say these before you're asked</h2>
+  <ul class="small">
+    <li><b>The hook port has no password.</b> Any program on the PC, and possibly a web page, could POST a fake status or a fake permission card. It can't answer your real prompts, but a shared secret token would be a good next fix.</li>
+    <li><b>The notification database is undocumented.</b> A Windows update could change it. It was chosen because the official listener needs a packaged app.</li>
+    <li><b>Polling means small delays:</b> up to 2 s for a notification and about 1 s for music.</li>
+    <li><b>Electron is heavy:</b> the installer is about 121 MB, for one small pill. Each music command also starts a new PowerShell.</li>
+    <li><b>Tests cover the logic modules, not the screen or real Windows calls.</b> <code>main.js</code> needs Electron to run, so it has no direct tests, and mouse actions are checked by hand.</li>
+    <li><b>Hooks need Node.js on PATH,</b> even with the installed app. The installer is unsigned, and there are no automatic updates.</li>
+  </ul>
+  <h2>What I would do next</h2>
+  <p class="small">Add a token to the hook server. Split <code>main.js</code> into smaller modules. Keep one PowerShell open for media commands. Add end-to-end UI tests. Get a code-signing certificate and add auto-update.</p>
+  <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<section class="page">
+  <div class="kick">SECTION 21</div>
+  <h1>Interview questions and answers</h1>
+  <div class="lead">Understand these, then say them in your own words. Don't memorise them.</div>
+  <h2 style="margin-top:0">Your pitch</h2>
+  <div class="say"><b>30 seconds:</b> "Islet brings the iPhone's Dynamic Island idea to Windows. It's an Electron app that shows music, notifications, battery and AI coding agent status in one pill at the top of the screen. You can skip songs or approve a Claude Code permission request from it. The interesting part is reaching Windows features from JavaScript using PowerShell and C# helpers, while keeping the web page locked down."</div>
+  <h2>About the project</h2>
+  <div class="qa"><div><b>What problem does it solve?</b><p>Windows spreads live status across the taskbar, tray, banners and terminals. Islet puts it in one place, and you can act on it without switching windows.</p></div><div><b>Walk me through the architecture.</b><p>Three layers. PowerShell, C# and Node modules collect data. <code>main.js</code> owns the window, settings and helpers. A sandboxed web page draws. Helpers talk to main through stdout lines, and main talks to the page through IPC with a preload bridge.</p></div><div><b>Why Electron rather than a native app?</b><p>HTML and CSS make a transparent, heavily animated shape easy, and Node gives me processes, files and HTTP. The cost is size and memory: about a 121 MB installer. For this kind of UI I accepted that.</p></div><div><b>Why vanilla JavaScript with no React?</b><p>It's one small view that updates from events. A framework would add a build step and weight for little gain. <code>render()</code> simply sets the screen from state.</p></div><div><b>What was the hardest part?</b><p>Choose Allow / Deny. One HTTP request stays open while a person decides, across three time limits and three ways to end: notch click, terminal answer, or nothing. It must never block Claude.</p></div></div>
+  <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<section class="page">
+  <h2 style="margin-top:0">Electron and processes</h2>
+  <div class="qa"><div><b>Main process vs renderer?</b><p>Main is Node.js, there's one of it, and it has full system access. A renderer is a Chromium page per window. Islet has two: the notch and settings.</p></div><div><b>Why a preload script?</b><p>Giving a page Node.js means any injected script could run commands. With context isolation, preload exposes only named functions, so the page has a fixed menu.</p></div><div><b>How does the window let clicks through?</b><p><code>setIgnoreMouseEvents(true, {forward:true})</code> passes clicks to the app below but still reports mouse movement. On <code>mouseenter</code> the page tells main to turn it off.</p></div><div><b>Why spawn helpers instead of doing it all in Node?</b><p>Node can't call Windows media or audio APIs directly. PowerShell can use WinRT and compile C#, needs no install, and a helper crash can't take down the app.</p></div><div><b>What if a helper crashes?</b><p>Each has an <code>exit</code> handler that restarts it after 2 s unless the app is quitting. The delay stops a crash loop from hammering the CPU.</p></div><div><b>Why <code>app.exit(0)</code> and not <code>app.quit()</code> for a second copy?</b><p><code>quit()</code> is asynchronous, so the rest of the script could start helpers first. <code>exit</code> stops it immediately.</p></div></div>
+  <h2>Windows and audio</h2>
+  <div class="qa"><div><b>How do you read notifications with no public API?</b><p>The listener API needs a packaged app identity. So I open Windows' <code>wpndatabase.db</code> read-only with <code>node:sqlite</code> every 2 s and take rows above the last ID. It works but is undocumented, so it's a known risk.</p></div><div><b>How does the wave show only Spotify?</b><p>Windows process loopback captures one process tree. The C# helper finds the oldest Spotify process and captures it. Then: Hann window, FFT, 24 log-spaced bands, and values 0 to 255 printed as text.</p></div><div><b>Why log-spaced bands?</b><p>We hear pitch by ratios, so each octave feels equal. Equal-width bands would give almost all the bars to high notes.</p></div><div><b>Why C# compiled at runtime?</b><p>Smart App Control blocks unsigned exes. <code>Add-Type</code> compiles in memory inside <code>powershell.exe</code>, which is signed.</p></div><div><b>How do you know the camera is in use?</b><p>Windows keeps <code>LastUsedTimeStart</code> and <code>LastUsedTimeStop</code> per app under CapabilityAccessManager in the registry. Stop = 0 means still in use.</p></div><div><b>Why not the Spotify Web API?</b><p>It needs a Premium developer account, and it's Spotify-only. Windows media controls need no login and work for other players. The Web API remains optional, for like state and up next.</p></div></div>
+  <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<section class="page">
+  <h2 style="margin-top:0">Reliability and async</h2>
+  <div class="qa"><div><b>What race conditions did you meet?</b><p>Slow replies overwriting new state: old calendar links, old weather cities, an album cover overriding a fixed colour, and a Spotify reply acting on the previous track. Each request gets a number or key, and stale replies are dropped.</p></div><div><b>How do you stop a crash leaving the user's PC changed?</b><p>Banners. Old values go to <code>banners.json</code> atomically before the registry changes. On the next start they can be restored, and an entry is only removed once the registry confirms it.</p></div><div><b>What if <code>config.json</code> is broken?</b><p>Keep the current settings and leave the file alone, because it may be a hand edit in progress. Only a missing file gets created.</p></div><div><b>How do you edit a user's <code>settings.json</code> safely?</b><p>Read and validate every file before writing any, back up, and refuse a bad one. Removal filters out only handlers containing <code>islet-hook.js</code>, so other tools' hooks survive.</p></div><div><b>How is CPU kept low?</b><p>Animation loops stop when nothing moves, helpers print only on change where possible, and wave data is limited to 30 per second. Transcripts are read from the tail only.</p></div></div>
+  <h2>Security</h2>
+  <div class="qa"><div><b>What's the security model?</b><p>Page isolated from Node, fixed bridge API, server on loopback only, every external input validated, outside text set with <code>textContent</code>, and link schemes allowlisted.</p></div><div><b>What's the weakest point?</b><p>The hook server has no authentication, so any local program could fake events. They can't approve anything for real, because the answer goes back to whoever asked. I'd add a random token shared through the hook's config.</p></div><div><b>Could a malicious notification attack the app?</b><p>Its text is only ever shown as text. Clicking it opens a URL only if the scheme is on the allowlist; otherwise it opens the sending app.</p></div></div>
+  <h2>Testing and process</h2>
+  <div class="qa"><div><b>How is it tested?</b><p>291 tests in 37 files using Node's built-in <code>node --test</code>, with no extra dependencies. Mostly logic: calendar rules, time zones, lyrics, hook install, and races. Fakes replace the network and <code>http.createServer</code>.</p></div><div><b>How do you test time zones?</b><p>The calendar tests run with the host set to different zones, such as Asia/Kolkata and UTC, including daylight-saving changes.</p></div><div><b>What isn't tested?</b><p>The real screen and mouse, and the PowerShell helpers. I check those by hand, and through Chrome DevTools using <code>--remote-debugging-port=9333</code>.</p></div><div><b>Did you use AI to build this?</b><p>Answer truthfully; the commit history publicly shows Claude and Codex as co-authors. A strong answer says what you decided, how you checked the result, and which bugs you found. This guide is there so you can back that up.</p></div></div>
+  <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<section class="page">
+  <div class="kick">SECTION 22</div>
+  <h1>Cheat sheet and practice</h1>
+  <div class="lead">The numbers to remember, then the exercises that make it stick.</div>
+  <table><colgroup><col style="width:26%"><col style="width:22%"><col style="width:28%"><col style="width:24%"></colgroup><tr><th>Thing</th><th>Value</th><th>Thing</th><th>Value</th></tr><tr><td>Media check</td><td>every 1 s</td><td>Hook server</td><td>127.0.0.1:47321</td></tr><tr><td>Notification check</td><td>every 2 s</td><td>Permission hold</td><td>8 s default, 24 s max</td></tr><tr><td>Agent session check</td><td>every 2 s</td><td>Agent sessions shown</td><td>5, with last 3 actions</td></tr><tr><td>Screen redraw</td><td>every 500 ms</td><td>Session counts as recent</td><td>30 min</td></tr><tr><td>Wave data</td><td>about 30 per second</td><td>Hover open / close delay</td><td>120 ms / 400 ms</td></tr><tr><td>Download scan</td><td>every 1.5 s</td><td>Helper restart</td><td>after 2 s</td></tr><tr><td>Weather refresh</td><td>every 15 min</td><td>Window size</td><td>672 × 190 px</td></tr><tr><td>Source size</td><td>about 3,800 lines</td><td>Tests</td><td>169 in 19 files</td></tr></table>
+  <h2>Prove to yourself you get it</h2>
+  <p class="small">Close this guide and answer aloud. If you get stuck, go back to the section in brackets.</p>
+  <ul class="small">
+    <li>Why can't the notch page read a file directly? (15, 18)</li>
+    <li>Draw the path from clicking Next to the song changing. (17)</li>
+    <li>What happens to a Claude permission request if Islet is closed? (17)</li>
+    <li>What goes wrong if <code>saveConfig</code> writes straight to <code>config.json</code>? (18)</li>
+  </ul>
+  <h2>Change something: the fastest way to learn</h2>
+  <p class="small">Run <code>npm install</code> and <code>npm start</code>. Try these, one at a time. Undo each with <code>git checkout -- &lt;file&gt;</code>.</p>
+  <ol class="flow">
+    <li><b>Easy:</b> change hover-open from 120 to 1000 ms in <code>notch.js</code>. Restart, and feel why 120 was chosen.</li>
+    <li><b>Easy:</b> start with <code>--remote-debugging-port=9333</code>, open the page from chrome://inspect, and call <code>setOpen(true)</code>.</li>
+    <li><b>Medium:</b> make clipboard history keep 10 items, not 5. Find where the limit lives.</li>
+    <li><b>Medium:</b> add a test to <code>test/lyrics.test.js</code> for a line with no words. Run <code>npm test</code>.</li>
+    <li><b>Medium:</b> trace a new IPC message: add a channel in <code>preload.js</code>, send it from <code>notch.js</code>, and log it in <code>main.js</code>.</li>
+    <li><b>Hard:</b> add a shared secret token to the hook server, in the hook and the bridge, plus a test that a wrong token gets a 400. This fixes a real limit, and makes a great interview story.</li>
+  </ol>
+  <div style="background:#0b0b0e;color:#fff;padding:6mm;display:flex;gap:12mm;margin-top:6mm;font-size:8.5pt"><b style="font-size:13pt">Islet</b><span>Designed and built by <b>Gopinath</b><br>© 2026 Gopinath. All rights reserved. The source code is published under the MIT License (see LICENSE). Spotify, Windows, Claude Code and Codex are trademarks of their owners.</span></div>
+  <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<script>document.querySelectorAll(".page").forEach((p,i)=>{const n=p.querySelector(".n");if(n)n.textContent=i+1})</script></body></html>
