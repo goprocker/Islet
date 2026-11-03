@@ -4,3 +4,9 @@ dist/
 err.txt
 out.txt
 SESSION_HANDOFF.md
+
+# local media, Windows cache and Netlify build output
+*.mp3
+!landing/demo-loop.mp3
+Microsoft/
+landing/public/
