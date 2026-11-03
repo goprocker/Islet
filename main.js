@@ -68,7 +68,8 @@ function saveConfig() {
   fs.writeFileSync(tmp, JSON.stringify(config, null, 2));
   fs.renameSync(tmp, configPath());
 }
-const send = (ch, d) => win?.webContents.send(ch, d);
+// a helper line or timer can land after the window is gone during quit; sending then would throw
+const send = (ch, d) => { if (win && !win.isDestroyed() && !win.webContents.isDestroyed()) win.webContents.send(ch, d); };
 
 // ---- window, on the chosen monitor ----
 function targetDisplay() {
@@ -192,7 +193,7 @@ function startHelpers() {
 const helpers = helperLifecycle(startHelpers);
 // out of the way during games and videos (unless turned off in settings)
 function applyVisibility() {
-  if (!win) return;
+  if (!win || win.isDestroyed()) return;
   const hide = fullscreen && config.hideInFullscreen;
   if (hide && win.isVisible()) win.hide();
   else if (!hide && !win.isVisible()) win.showInactive();
@@ -631,7 +632,7 @@ ipcMain.handle("welcome:finish", (_, v) => {
 
 // ---- look: size, accent colour, hide when idle ----
 function sendTheme() {
-  win?.webContents.setZoomFactor(scale());
+  if (win && !win.isDestroyed()) win.webContents.setZoomFactor(scale());
   send("theme", { accent: /^#[0-9a-f]{6}$/i.test(config.accent) ? config.accent : "album", idleHide: !!config.idleHide, powerAnim: config.powerAnim !== false, powerAnimStyle: config.powerAnimStyle === "subtle" ? "subtle" : "cinematic" });
 }
 
