@@ -457,3 +457,8 @@ button.link:hover { color: var(--text); }
 .ai b { font-size: 12px; }
 .ai small { color: var(--muted); font-size: 10.5px; margin-left: auto; }
 .ai p { color: #a1a1a6; font-size: 11px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* the tall view: hide the normal view under the dock, and keep small round remove buttons small */
+.notch.dash .full > :not(.music), .notch.dash .music > :not(.panel) { visibility: hidden; }
+.panel li .lx { width: 18px; height: 18px; padding: 0; display: grid; place-items: center; text-align: center; color: var(--muted); }
+.panel li .lx:hover { color: #fff; background: #3a3a3c; }

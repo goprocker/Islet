@@ -690,7 +690,7 @@ window.bridge.onSearch(() => {
   $("searchInput").value = ""; searchHits = []; drawSearch();
   $("searchInput").focus();
 });
-$("searchBtn").addEventListener("click", () => { if (!$("searchPanel").hidden) { $("searchInput").value = ""; searchHits = []; drawSearch(); $("searchInput").focus(); } });
+OPENED.searchPanel = () => { $("searchInput").value = ""; searchHits = []; drawSearch(); $("searchInput").focus(); };
 window.bridge.onSearchDone(msg => toast({ hud: "search", app: "Search", svg: hudSvg('<path d="M5 12.5l4.5 4.5L19 7.5"/>'), color: "#3a3a3c", title: msg, ms: 1800 }));
 
 let clipItems = [];
