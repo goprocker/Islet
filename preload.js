@@ -12,6 +12,8 @@ contextBridge.exposeInMainWorld("bridge", {
   onSearchDone: on("searchDone"),
   search: q => ipcRenderer.invoke("search", q),
   searchRun: id => ipcRenderer.send("searchRun", id),
+  quickGet: () => ipcRenderer.invoke("quickGet"),
+  quickSet: (kind, value) => ipcRenderer.invoke("quickSet", kind, value),
   onSpotifyExtras: on("spotifyExtras"),
   onNotification: on("notification"),
   onCalendar: on("calendar"),

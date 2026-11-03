@@ -15,6 +15,7 @@ const pomodoro = require("./pomodoro");
 const { clipHistory } = require("./clip-history");
 const { loadNotes, saveNotes } = require("./notes");
 const universalSearch = require("./search");
+const quickSettings = require("./quick-settings");
 const downloads = require("./downloads");
 const volumeHud = require("./volume-hud");
 const { readShelf } = require("./shelf-file");
@@ -462,6 +463,29 @@ function toggleRadio(kind) {
     send("searchDone", r?.[kind] ? `${name} turned ${String(r[kind]).toLowerCase()}` : `No ${name} found on this PC`);
   });
 }
+// ---- quick settings panel: radio tiles, volume and brightness sliders ----
+function runScript(file, args) {
+  return new Promise(resolve => {
+    execFile("powershell.exe", [...PS, path.join(__dirname, file), ...args], { windowsHide: true, timeout: 15000 }, (err, out) => {
+      if (err) { console.warn(file, err.message); return resolve(null); }
+      try { resolve(JSON.parse(out.trim())); } catch { resolve(null); }
+    });
+  });
+}
+const quickState = async () => quickSettings.state(...await Promise.all([runScript("radios.ps1", ["get"]), runScript("quickset.ps1", ["get"])]));
+ipcMain.handle("quickGet", quickState);
+ipcMain.handle("quickSet", async (_, kind, value) => {
+  const a = quickSettings.action(kind, value);
+  if (!a) return quickState();
+  if (a.uri) { shell.openExternal(a.uri); return quickState(); }
+  if (a.kind === "wifi" || a.kind === "bluetooth") await runScript("radios.ps1", ["toggle", a.kind]);
+  else if (a.kind === "airplane") await runScript("radios.ps1", ["set", "all", a.on ? "on" : "off"]);
+  else if (a.kind === "captions") await runScript("quickset.ps1", ["captions"]);
+  else if (a.kind === "vol") await runScript("quickset.ps1", ["vol", String(a.value)]);
+  else if (a.kind === "mute") await runScript("quickset.ps1", ["mute", a.on ? "on" : "off"]);
+  else if (a.kind === "bright") await runScript("quickset.ps1", ["bright", String(a.value)]);
+  return quickState();
+});
 ipcMain.on("searchRun", (_, id) => {
   const r = typeof id === "string" ? searchResults.get(id) : null;
   if (!r) return;

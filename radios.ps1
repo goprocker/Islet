@@ -2,6 +2,7 @@
 #   radios.ps1 get                       -> {"wifi":"On","bluetooth":"Off"}  (a missing radio is left out)
 #   radios.ps1 toggle wifi|bluetooth     -> flips it and prints the same JSON
 #   radios.ps1 set wifi|bluetooth on|off
+#   radios.ps1 set all on|off            -> airplane mode: every radio; the report gains "airplane":true|false
 param([string]$Mode = "get", [string]$Kind = "", [string]$State = "")
 
 $ErrorActionPreference = "Stop"
@@ -29,10 +30,18 @@ function Pick($name) {
 function Report {
   $o = [ordered]@{}
   foreach ($n in "wifi", "bluetooth") { $r = Pick $n; if ($r) { $o[$n] = [string]$r.State } }
+  if ($radios.Count -gt 0) { $o["airplane"] = -not ($radios | Where-Object { [string]$_.State -eq "On" }) }
   $o | ConvertTo-Json -Compress
 }
 
-if ($Mode -ne "get") {
+if ($Mode -eq "set" -and $Kind -eq "all") {
+  # airplane mode: everything off; turning it off brings back Wi-Fi and Bluetooth only
+  $target = (Get-Culture).TextInfo.ToTitleCase($State.ToLower())
+  foreach ($r in $radios) {
+    if ($target -eq "On" -and [int]$r.Kind -notin 1, 2) { continue }
+    [void](Await ($r.SetStateAsync([Windows.Devices.Radios.RadioState]$target)) $AccessType)
+  }
+} elseif ($Mode -ne "get") {
   $r = Pick $Kind
   if (-not $r) { Write-Output ('{"error":"no ' + $Kind + ' radio"}'); exit 1 }
   $target = if ($Mode -eq "toggle") { if ([string]$r.State -eq "On") { "Off" } else { "On" } } else { (Get-Culture).TextInfo.ToTitleCase($State.ToLower()) }

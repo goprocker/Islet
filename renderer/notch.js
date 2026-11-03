@@ -571,13 +571,41 @@ window.bridge.onDnd(on => {
 $("dndBtn").onclick = () => window.bridge.toggleDnd();
 
 // ---- tools panels: clipboard history and file shelf (one at a time) ----
-const PANELS = { searchBtn: "searchPanel", clipBtn: "clipPanel", shelfBtn: "shelfPanel", notesBtn: "notesPanel" };
+const PANELS = { searchBtn: "searchPanel", clipBtn: "clipPanel", shelfBtn: "shelfPanel", notesBtn: "notesPanel", quickBtn: "quickPanel" };
 function showPanel(btnId) {
   for (const [b, p] of Object.entries(PANELS)) {
     const on = b === btnId && $(p).hidden;
     $(p).hidden = !on;
     $(b).setAttribute("aria-pressed", on);
+    if (on && p === "quickPanel") refreshQuick();
   }
+}
+
+// ---- quick settings: tiles and sliders read from the system when the panel opens ----
+let quickBusy = false;
+function drawQuick(s) {
+  if (!s) return;
+  for (const t of $("qTiles").querySelectorAll("[data-q]")) {
+    const v = s[t.dataset.q];
+    t.disabled = v === null;
+    if (v !== undefined) t.setAttribute("aria-pressed", String(!!v));
+  }
+  const b = $("qBright"), v = $("qVol");
+  b.disabled = s.bright === null; if (s.bright !== null && document.activeElement !== b) b.value = s.bright;
+  v.disabled = s.vol === null; if (s.vol !== null && document.activeElement !== v) v.value = Math.round(s.vol * 100);
+}
+const refreshQuick = () => window.bridge.quickGet().then(drawQuick);
+const quickDo = (kind, value) => window.bridge.quickSet(kind, value).then(drawQuick);
+$("qTiles").onclick = e => {
+  const t = e.target.closest("[data-q]");
+  if (!t || t.disabled || quickBusy) return;
+  const kind = t.dataset.q;
+  quickBusy = true;
+  quickDo(kind, kind === "airplane" ? t.getAttribute("aria-pressed") !== "true" : undefined).finally(() => { quickBusy = false; });
+};
+let quickTimer;
+for (const [id, kind, scale] of [["qBright", "bright", 1], ["qVol", "vol", 100]]) {
+  $(id).oninput = () => { clearTimeout(quickTimer); quickTimer = setTimeout(() => quickDo(kind, $(id).value / scale), 120); };
 }
 for (const b of Object.keys(PANELS)) $(b).onclick = () => showPanel(b);
 // panels close with the notch
