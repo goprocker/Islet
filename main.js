@@ -429,6 +429,11 @@ function refreshApps() {
   const menu = ["Microsoft", "Windows", "Start Menu", "Programs"];
   appIndex = universalSearch.scanStartMenu([path.join(process.env.ProgramData || "C:\\ProgramData", ...menu), path.join(app.getPath("appData"), ...menu)]);
 }
+let fileIndex = [];
+async function refreshFiles() {
+  const names = ["desktop", "documents", "downloads", "pictures", "videos", "music"];
+  fileIndex = await universalSearch.scanFiles([...new Set(names.map(n => { try { return app.getPath(n); } catch { return null; } }).filter(Boolean))]);
+}
 const oneLine = s => s.replace(/\s+/g, " ").trim().slice(0, 120);
 ipcMain.handle("search", (_, q) => {
   if (typeof q !== "string" || !q.trim()) { searchResults = new Map(); return []; }
@@ -440,7 +445,7 @@ ipcMain.handle("search", (_, q) => {
     ...(config.clipboardHistory ? clipStore().view().map((c, i) => ({ id: "clip:" + i, title: oneLine(c.text), sub: "Clipboard: copy again", kind: "clip", text: c.text })) : []),
     ...notes.map((l, i) => ({ id: "note:" + i, title: oneLine(l), sub: "Note: copy line", kind: "note", text: l })),
   ];
-  const top = universalSearch.rank(q, items, 8);
+  const top = universalSearch.withFiles(universalSearch.rank(q, items, 8), universalSearch.rank(q, fileIndex, 3, 60)); // files must contain what was typed
   searchResults = new Map(top.map(r => [r.id, r]));
   return top.map(({ id, title, sub, kind }) => ({ id, title, sub, kind }));
 });
@@ -458,7 +463,8 @@ function toggleRadio(kind) {
 ipcMain.on("searchRun", (_, id) => {
   const r = typeof id === "string" ? searchResults.get(id) : null;
   if (!r) return;
-  if (r.kind === "app") {
+  if (r.kind === "file") shell.openPath(r.path).then(err => err && console.warn("open file", err));
+  else if (r.kind === "app") {
     if (r.appId) spawn("explorer.exe", ["shell:AppsFolder" + String.fromCharCode(92) + r.appId], { detached: true, windowsHide: true }).unref();
     else shell.openPath(r.file).then(err => err && console.warn("open app", err));
   }
@@ -816,6 +822,8 @@ app.whenReady().then(() => {
   globalShortcut.register("Control+Alt+M", nextScreen);
   applySearchHotkey();
   refreshApps(); // ready before the first search
+  refreshFiles().catch(e => console.warn("files", e.message));
+  setInterval(() => refreshFiles().catch(e => console.warn("files", e.message)), 600000);
 });
 app.on("window-all-closed", e => e.preventDefault());
 app.on("before-quit", () => { app.isQuitting = true; });

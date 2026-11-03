@@ -1,7 +1,9 @@
 const test = require("node:test");
 const assert = require("node:assert");
 const path = require("path");
-const { score, rank, appsFromLinks, appsFromStartApps, COMMANDS } = require("../search");
+const fs = require("fs");
+const os = require("os");
+const { score, rank, appsFromLinks, appsFromStartApps, scanFiles, withFiles, COMMANDS } = require("../search");
 
 test("scores exact, prefix, word prefix, substring and in-order letters in that order", () => {
   const s = ["chrome", "chrome browser", "google chrome", "mychromebook", "chm"].map(t => score("chrome", t));
@@ -56,4 +58,47 @@ test("Start apps keep Store apps, drop junk and bad rows, and handle a single ap
   const apps = appsFromStartApps([{ Name: "Notepad", AppID: "Microsoft.WindowsNotepad_8wekyb3d8bbwe!App" }, { Name: "Uninstall Foo", AppID: "x" }, { Name: "notepad", AppID: "y" }, { Name: "", AppID: "z" }, null, { Name: "Calculator" }]);
   assert.deepStrictEqual(apps, [{ name: "Notepad", appId: "Microsoft.WindowsNotepad_8wekyb3d8bbwe!App" }]);
   assert.deepStrictEqual(appsFromStartApps({ Name: "Paint", AppID: "p" }), [{ name: "Paint", appId: "p" }]);
+});
+
+test("scanFiles lists files and folders, skips hidden and bulky ones, and respects depth", async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "islet-files-"));
+  try {
+    fs.mkdirSync(path.join(root, "Projects", "deep", "deeper", "deepest", "toolow"), { recursive: true });
+    fs.mkdirSync(path.join(root, "node_modules", "pkg"), { recursive: true });
+    fs.mkdirSync(path.join(root, ".git"));
+    fs.writeFileSync(path.join(root, "report.docx"), "");
+    fs.writeFileSync(path.join(root, ".secret"), "");
+    fs.writeFileSync(path.join(root, "node_modules", "pkg", "x.js"), "");
+    fs.writeFileSync(path.join(root, "Projects", "deep", "deeper", "deepest", "toolow", "gone.txt"), "");
+    const files = await scanFiles([root], { depth: 3 });
+    const names = files.map(f => f.title);
+    assert.ok(names.includes("report.docx") && names.includes("Projects") && names.includes("node_modules"));
+    assert.ok(!names.includes(".secret") && !names.includes(".git") && !names.includes("x.js"), "hidden and bulky folders are not entered");
+    assert.ok(!names.includes("gone.txt"), "deeper than depth is left out");
+    const doc = files.find(f => f.title === "report.docx");
+    assert.deepStrictEqual({ kind: doc.kind, sub: doc.sub, path: doc.path }, { kind: "file", sub: root, path: path.join(root, "report.docx") });
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
+});
+
+test("scanFiles stops at max and survives a missing folder", async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "islet-files-"));
+  try {
+    for (let i = 0; i < 10; i++) fs.writeFileSync(path.join(root, "f" + i), "");
+    assert.strictEqual((await scanFiles([root], { max: 4 })).length, 4);
+    assert.deepStrictEqual(await scanFiles([path.join(root, "nope")]), []);
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
+});
+
+test("a few file matches go after the other results and never push out more than three", () => {
+  const top = Array.from({ length: 8 }, (_, i) => ({ id: "a" + i }));
+  const files = Array.from({ length: 4 }, (_, i) => ({ id: "f" + i }));
+  assert.deepStrictEqual(withFiles(top, files).map(r => r.id), ["a0", "a1", "a2", "a3", "a4", "f0", "f1", "f2"]);
+  assert.deepStrictEqual(withFiles([{ id: "a0" }], []).map(r => r.id), ["a0"]);
+  assert.deepStrictEqual(withFiles([{ id: "a0" }], [{ id: "f0" }]).map(r => r.id), ["a0", "f0"]);
+});
+
+test("a minimum score keeps loose letter matches out", () => {
+  const items = [{ title: "swift-build-resolver.md" }, { title: "wifi-notes.txt" }, { title: "my-wifi" }];
+  assert.deepStrictEqual(rank("wifi", items, 8, 60).map(i => i.title), ["wifi-notes.txt", "my-wifi"]);
+  assert.strictEqual(rank("wifi", items).length, 3);
 });

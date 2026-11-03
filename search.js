@@ -24,13 +24,13 @@ function score(query, text) {
 
 // best items for the query: each has a title and optional keywords (other words that find it).
 // Ties keep the order given, so earlier sources win.
-function rank(query, items, limit = 8) {
+function rank(query, items, limit = 8, minScore = 0) {
   return items
     .map((item, order) => {
       const s = Math.max(score(query, item.title), ...(item.keywords || []).map(k => score(query, k) * 0.9));
       return { item, s, order };
     })
-    .filter(r => r.s > 0)
+    .filter(r => r.s > 0 && r.s >= minScore)
     .sort((a, b) => b.s - a.s || a.order - b.order)
     .slice(0, limit)
     .map(r => r.item);
@@ -78,6 +78,32 @@ function scanStartMenu(dirs, depth = 3) {
   return appsFromLinks(out);
 }
 
+// File and folder names under the given folders, for searching by name. Skips hidden folders and
+// bulky ones, goes at most `depth` folders down and stops at `max` entries so a huge disk can't stall it.
+const SKIP_DIRS = new Set(["node_modules", "appdata", "$recycle.bin", "__pycache__", "venv", "cache", "temp"]);
+async function scanFiles(dirs, { depth = 4, max = 40000 } = {}) {
+  const out = [];
+  const walk = async (dir, left) => {
+    let entries;
+    try { entries = await fs.promises.readdir(dir, { withFileTypes: true }); } catch { return; }
+    for (const e of entries) {
+      if (out.length >= max) return;
+      if (e.name.startsWith(".")) continue;
+      const full = path.join(dir, e.name);
+      out.push({ id: "file:" + full, title: e.name, sub: dir, kind: "file", path: full });
+      if (e.isDirectory() && left > 0 && !SKIP_DIRS.has(e.name.toLowerCase())) await walk(full, left - 1);
+    }
+  };
+  for (const d of dirs) await walk(d, depth);
+  return out;
+}
+
+// apps, commands and the rest first; a few file matches go after them so they never crowd those out
+function withFiles(top, files, limit = 8, fileSlots = 3) {
+  const f = files.slice(0, fileSlots);
+  return [...top.slice(0, limit - f.length), ...f];
+}
+
 // things to type: Wi-Fi and Bluetooth, and Islet's own settings
 const COMMANDS = [
   { id: "wifi-settings", title: "Wi-Fi settings", sub: "Open Windows network settings", keywords: ["wifi", "wireless", "network", "internet"], uri: "ms-settings:network-wifi" },
@@ -89,4 +115,4 @@ const COMMANDS = [
   { id: "islet-settings", title: "Islet settings", sub: "Open Islet's settings", keywords: ["preferences", "options", "notch"], islet: "settings" },
 ];
 
-module.exports = { score, rank, appsFromLinks, appsFromStartApps, scanStartMenu, COMMANDS };
+module.exports = { scanFiles, withFiles, score, rank, appsFromLinks, appsFromStartApps, scanStartMenu, COMMANDS };
