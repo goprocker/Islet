@@ -11,16 +11,21 @@ let wx = null, dls = [];             // weather, downloads in progress
 let theme = { accent: "album", idleHide: false };
 
 // ---- open / close; window is click-through except over the notch ----
-function setOpen(o) { notch.classList.toggle("open", o); notch.setAttribute("aria-expanded", o); if (o) greet(); }
-// the walking cat says something when the notch opens: hello once a day, then a mood line at most once a minute
-let lastSaid = 0;
-function greet() {
-  const now = Date.now(), el = $("fullPet");
-  if (theme.pet === false || now - lastSaid < 60000) return;
-  lastSaid = now;
-  const today = new Date().toDateString(), firstToday = localStorage.getItem("petHello") !== today;
+function setOpen(o) { notch.classList.toggle("open", o); notch.setAttribute("aria-expanded", o); }
+// the cat talks in the closed pill: a hello when Islet starts (by time of day on the first one each day),
+// a line when its mood changes, and now and then while idle; the pill widens for the text, then shrinks back
+const SAY_MS = 6000, CHAT_EVERY = 10 * 60000;
+let lastSaid = 0, saidMood = "", sayTimer;
+function petSay(mood, hello) {
+  if (theme.pet === false) return;
+  const today = new Date().toDateString(), firstToday = hello && localStorage.getItem("petHello") !== today;
   if (firstToday) localStorage.setItem("petHello", today);
-  window.Pet.say(el, window.Pet.line({ hour: new Date().getHours(), name: theme.name, mood: el.dataset.mood, firstToday }));
+  $("pillSay").textContent = window.Pet.line({ hour: new Date().getHours(), name: theme.name, mood: hello ? "" : mood, firstToday });
+  lastSaid = Date.now();
+  notch.classList.add("talking");
+  clearTimeout(sayTimer);
+  sayTimer = setTimeout(() => { notch.classList.remove("talking"); render(); }, SAY_MS);
+  render();
 }
 notch.addEventListener("keydown", e => {
   if (e.key === "Escape") setOpen(false);
@@ -483,7 +488,7 @@ function render() {
 
   // idle: nothing playing, Claude quiet, nothing to show -> a thin line (if enabled)
   const busy = track?.playing || chip || (s && (now - s.time < 60000 || s.status === "waiting"))
-    || notch.classList.contains("charging") || notch.classList.contains("bh") || $("pillPriv").childElementCount || !$("pillMoon").hasAttribute("hidden");
+    || notch.classList.contains("talking") || notch.classList.contains("charging") || notch.classList.contains("bh") || $("pillPriv").childElementCount || !$("pillMoon").hasAttribute("hidden");
   notch.classList.toggle("quiet", !busy); // plain black pill, just the dot
   notch.classList.toggle("idle", theme.idleHide && !busy);
   updatePet(now, busy);
@@ -495,7 +500,12 @@ function updatePet(now, busy) {
   for (const p of pets) p.hidden = theme.pet === false;
   if (theme.pet === false) return;
   if (busy) quietSince = 0; else if (!quietSince) quietSince = now;
-  window.Pet.paint(pets, window.Pet.pick({ now, battery, toastAt: lastToastAt, timerEnd, timerLabel, playing: !!track?.playing, quietSince }));
+  const mood = window.Pet.pick({ now, battery, toastAt: lastToastAt, timerEnd, timerLabel, playing: !!track?.playing, quietSince });
+  window.Pet.paint(pets, mood);
+  // hello once the name has arrived; then a word on each new mood (not the 4-second pop-up startle), or a chat after a quiet spell
+  if (!saidMood) { if (theme.name !== undefined) { saidMood = mood; petSay(mood, true); } }
+  else if (mood !== saidMood && mood !== "alert") { saidMood = mood; petSay(mood); }
+  else if (now - lastSaid > CHAT_EVERY && !notch.classList.contains("open")) petSay(mood);
 }
 // closed pill: as wide as what it shows, no empty black on either side
 function fitPill() {

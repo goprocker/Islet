@@ -269,7 +269,11 @@ button.link:hover { color: var(--text); }
 .notch.idle:not(.open):not(.toast):not(.bh) { width: 90px; height: 7px; border-radius: 0 0 5px 5px; }
 .notch.idle:not(.open):not(.toast):not(.bh) .pill { opacity: 0; }
 /* quiet (nothing playing, not charging, Claude idle): black pill with only the dot, centred */
-.notch.quiet .pill > :not(.dot):not(.pet) { display: none; }
+.notch.quiet .pill > :not(.dot):not(.pet):not(.petsay) { display: none; }
+/* what the cat says, beside it in the closed pill */
+.petsay { display: none; font-size: 12px; font-weight: 600; color: #f5f5f7; white-space: nowrap; animation: sayin .25s ease-out; }
+.notch.talking:not(.open) .petsay { display: block; }
+@keyframes sayin { from { opacity: 0; transform: translateX(-6px); } }
 .notch.quiet .pill { justify-content: center; }
 .notch.quiet .pill .dot { margin: 0; }
 
@@ -389,7 +393,7 @@ button.link:hover { color: var(--text); }
 @keyframes stroll { 0%, 100% { left: 16px; } 50% { left: 600px; } }
 
 /* what the pet says: plain text beside it, inside the notch */
-.pet .say { position: absolute; bottom: 2px; left: 100%; margin-left: 6px; color: #d1d1d6; font-size: 10.5px; font-weight: 600; white-space: nowrap; opacity: 0; transform: translateX(-4px); transition: opacity .2s, transform .2s; }
+.pet .say { position: absolute; bottom: 1px; left: 100%; margin-left: 6px; padding: 2px 9px; border-radius: 10px; background: #f5f5f7; color: #111; font-size: 12px; line-height: 16px; font-weight: 600; white-space: nowrap; opacity: 0; transform: translateX(-4px); transition: opacity .2s, transform .2s; }
 .pet.left .say { left: auto; right: 100%; margin: 0 6px 0 0; transform: translateX(4px); }
 .pet.talking .say { opacity: 1; transform: none; }
 

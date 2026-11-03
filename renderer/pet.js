@@ -59,7 +59,7 @@
   }
 
   // shows text beside the pet for a few seconds, on whichever side has more room in the notch
-  function say(el, text, ms = 3500) {
+  function say(el, text, ms = 6000) {
     let b = el.querySelector(".say");
     if (!b) { b = document.createElement("span"); b.className = "say"; el.appendChild(b); }
     b.textContent = text;
