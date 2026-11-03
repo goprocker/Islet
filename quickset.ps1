@@ -49,7 +49,7 @@ public static class QsKeys {
 "@
 $inv = [Globalization.CultureInfo]::InvariantCulture
 switch ($Mode) {
-  "vol" { [QsVolume]::SetVol([single][math]::Min(1, [math]::Max(0, [double]::Parse($Value, $inv)))) }
+  "vol" { [QsVolume]::SetVol([single][math]::Min(1.0, [math]::Max(0.0, [double]::Parse($Value, $inv)))) }
   "mute" { [QsVolume]::SetMute($Value -eq "on") }
   "bright" {
     $b = [byte][math]::Min(100, [math]::Max(0, [int]$Value))
