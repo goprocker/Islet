@@ -384,6 +384,29 @@ button.link:hover { color: var(--text); }
 .pet.sick .cross { display: block; }
 .pet.sick .tail { animation: none; transform: rotate(35deg); }
 .pet.sick .head { transform: translateY(1px); }
+/* coding: types on a laptop, the screen flickers */
+.pet .laptop, .pet .ask, .pet .plant { display: none; }
+.pet .lid { fill: #3a3a3c; stroke: #8e8e93; stroke-width: .5; }
+.pet .glow { stroke: var(--accent); stroke-width: .9; stroke-linecap: round; animation: typing .7s steps(2) infinite; }
+.pet .base { stroke: #8e8e93; stroke-width: 1.2; stroke-linecap: round; }
+.pet.code .laptop { display: block; }
+.pet.code .head { animation: peck .35s ease-in-out infinite alternate; }
+.pet.code .eyes { transform: translateY(.8px) scaleY(.7); animation: none; }
+@keyframes typing { 50% { opacity: .35; } }
+@keyframes peck { to { transform: translateY(.6px) rotate(2deg); } }
+/* asking: an agent waits for you */
+.pet .ask { fill: var(--warn); font-weight: 700; }
+.pet.ask .ask { display: block; animation: hop .6s ease-out infinite; }
+.pet.ask .head { transform: rotate(-10deg); }
+/* planting: a finished focus session grows a plant beside the cat, bigger with each one today */
+.pet .pot { fill: #c97b4a; }
+.pet .stem { stroke: #34c759; stroke-width: .9; fill: none; }
+.pet .leaf { fill: #34c759; display: none; }
+.pet .l1, .pet[data-plant="2"] .l2, .pet[data-plant="3"] .l2, .pet[data-plant="3"] .l3, .pet[data-plant="4"] .l2, .pet[data-plant="4"] .l3, .pet[data-plant="4"] .l4 { display: block; }
+.pet .l4 { fill: #ff9fb2; }
+.pet.plant .plant { display: block; }
+.pet.plant .head { animation: nod .8s ease-in-out infinite alternate; }
+.pill .pet.plant { margin-right: 16px; }
 .pill .pet { margin-right: 2px; }
 .notch.quiet .pill .pet { margin-right: 6px; }
 .walker { position: absolute; left: 0; bottom: 1px; z-index: 5; pointer-events: none; opacity: 0; transition: opacity .2s; animation: stroll 70s linear infinite; }

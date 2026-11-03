@@ -2,16 +2,20 @@
 // pick() turns what the notch knows into one mood; paint() puts that mood on the pet elements as a class,
 // and the CSS does the animating.
 (() => {
-  const MOODS = ["idle", "sleep", "dance", "work", "alert", "sick"];
+  const MOODS = ["idle", "sleep", "dance", "work", "alert", "sick", "code", "ask", "plant"];
   const ALERT_MS = 4000, SLEEP_AFTER_MS = 120000, LOW_BATTERY = 0.2;
 
-  // ctx: {now, battery: {level 0..1, charging}|null, toastAt, timerEnd, timerLabel, playing, quietSince}
+  // ctx: {now, battery: {level 0..1, charging}|null, toastAt, timerEnd, timerLabel, playing, quietSince,
+  //       agent: "waiting" | "working" | "", plantUntil}
   // first match wins: a sick cat stays sick even with music on
   function pick(ctx) {
     const b = ctx.battery;
     if (b && !b.charging && b.level < LOW_BATTERY) return "sick";
     if (ctx.toastAt && ctx.now - ctx.toastAt < ALERT_MS) return "alert";
+    if (ctx.agent === "waiting") return "ask";
+    if (ctx.plantUntil > ctx.now) return "plant";
     if (ctx.timerEnd > ctx.now && /focus/i.test(ctx.timerLabel || "")) return "work";
+    if (ctx.agent === "working") return "code";
     if (ctx.playing) return "dance";
     if (ctx.quietSince && ctx.now - ctx.quietSince >= SLEEP_AFTER_MS) return "sleep";
     return "idle";
@@ -33,6 +37,9 @@
     </g>
     <text class="z" x="17" y="5" font-size="6">z</text>
     <text class="bang" x="17.5" y="5" font-size="7">!</text>
+    <text class="ask" x="17.5" y="5" font-size="7">?</text>
+    <g class="laptop"><rect class="lid" x="6.5" y="12.4" width="11" height="6.6" rx="1"/><path class="glow" d="M9.5 14.6h5M9.5 16.4h3.2"/><path class="base" d="M4.5 19.4h15"/></g>
+    <g class="plant"><path class="pot" d="M25 16h6l-1 4h-4z"/><path class="stem" d="M28 16V7"/><path class="leaf l1" d="M28 14c-2 0-3-1-3-3 2 0 3 1 3 3zm0-.5c2 0 3-1 3-3-2 0-3 1-3 3z"/><path class="leaf l2" d="M28 11.5c-2 0-3-1-3-3 2 0 3 1 3 3zm0-.5c2 0 3-1 3-3-2 0-3 1-3 3z"/><path class="leaf l3" d="M28 9c-2 0-3-1-3-3 2 0 3 1 3 3zm0-.5c2 0 3-1 3-3-2 0-3 1-3 3z"/><circle class="leaf l4" cx="28" cy="5.6" r="1.4"/></g>
   </svg>`;
 
   // sets the mood class on every pet element (only touches the DOM when it changed)
@@ -48,7 +55,7 @@
 
   // what the cat says when the notch opens: a hello the first time each day, then a word about its mood.
   // ctx: {hour 0..23, name, mood, firstToday}
-  const MOOD_LINES = { dance: "Nice song!", sleep: "zzz… let me nap", sick: "Plug me in, please!", work: "Focus time. You got this", alert: "Ooh, something new!" };
+  const MOOD_LINES = { dance: "Nice song!", sleep: "zzz… let me nap", sick: "Plug me in, please!", work: "Focus time. You got this", alert: "Ooh, something new!", code: "Coding with your agent…", ask: "Your agent needs you!", plant: "Focus done. My plant grew!" };
   function line(ctx) {
     const who = ctx.name ? `, ${ctx.name}` : "";
     if (ctx.firstToday) {

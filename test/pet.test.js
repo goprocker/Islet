@@ -49,3 +49,16 @@ test("the first open of the day greets by time and name, then the cat talks abou
   assert.strictEqual(line({ hour: 20, name: "Asha", mood: "dance", firstToday: false }), "Nice song!");
   assert.strictEqual(line({ hour: 20, name: "Asha", mood: "idle", firstToday: false }), "Hello, Asha!");
 });
+
+test("agents: a working session makes it code, one that needs you makes it ask", () => {
+  assert.strictEqual(pick({ ...base, agent: "working" }), "code");
+  assert.strictEqual(pick({ ...base, agent: "working", playing: true }), "code");
+  assert.strictEqual(pick({ ...base, agent: "waiting", timerEnd: base.now + 60000, timerLabel: "Focus" }), "ask");
+  assert.strictEqual(pick({ ...base, agent: "working", timerEnd: base.now + 60000, timerLabel: "Focus" }), "work");
+});
+
+test("a finished focus session shows the plant for a while, under sick and alert", () => {
+  assert.strictEqual(pick({ ...base, plantUntil: base.now + 5000 }), "plant");
+  assert.strictEqual(pick({ ...base, plantUntil: base.now - 1 }), "idle");
+  assert.strictEqual(pick({ ...base, plantUntil: base.now + 5000, toastAt: base.now }), "alert");
+});

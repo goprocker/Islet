@@ -209,7 +209,25 @@ navigator.getBattery?.().then(b => {
 
 // ---- timer + calendar ----
 window.bridge.onTimer(end => { timerEnd = end; render(); });
-window.bridge.onTimerLabel(l => { timerLabel = l || "Timer"; });
+// a focus phase that ends (Pomodoro moves on to a break, or a focus timer runs out) grows the pet's plant
+let plantUntil = 0, plantedEnd = 0; // plantedEnd: the timer that already grew one
+const PLANT_MS = 10000;
+function growPlant() {
+  if (timerEnd === plantedEnd) return;
+  plantedEnd = timerEnd;
+  const today = new Date().toDateString();
+  let n = 0;
+  try { const p = JSON.parse(localStorage.getItem("petPlant") || "{}"); n = p.day === today ? p.n : 0; } catch {}
+  n = Math.min(n + 1, 4);
+  try { localStorage.setItem("petPlant", JSON.stringify({ day: today, n })); } catch {}
+  for (const p of [$("pillPet"), $("fullPet")]) p.dataset.plant = n;
+  plantUntil = Date.now() + PLANT_MS;
+  render();
+}
+window.bridge.onTimerLabel(l => {
+  if (/focus/i.test(timerLabel) && !/focus/i.test(l || "") && timerEnd && timerEnd <= Date.now() + 2000) growPlant();
+  timerLabel = l || "Timer";
+});
 window.bridge.onStopwatch(t => { stopwatchStart = t || 0; render(); });
 let sideLink = null; // the meeting the right-hand text would join
 $("side").onclick = () => { if (sideLink) window.bridge.joinMeeting(sideLink); };
@@ -500,7 +518,10 @@ function updatePet(now, busy) {
   for (const p of pets) p.hidden = theme.pet === false;
   if (theme.pet === false) return;
   if (busy) quietSince = 0; else if (!quietSince) quietSince = now;
-  const mood = window.Pet.pick({ now, battery, toastAt: lastToastAt, timerEnd, timerLabel, playing: !!track?.playing, quietSince });
+  if (timerEnd && timerEnd <= now && /focus/i.test(timerLabel)) growPlant(); // a focus timer ran out
+  // agents: one asking for you beats one working; a "working" session that went quiet over 2 minutes ago doesn't count
+  const agent = sessions.some(x => x.status === "waiting") ? "waiting" : sessions.some(x => x.status === "working" && now - x.time < 120000) ? "working" : "";
+  const mood = window.Pet.pick({ now, battery, toastAt: lastToastAt, timerEnd, timerLabel, playing: !!track?.playing, quietSince, agent, plantUntil });
   window.Pet.paint(pets, mood);
   // hello once the name has arrived; then a word on each new mood (not the 4-second pop-up startle), or a chat after a quiet spell
   if (!saidMood) { if (theme.name !== undefined) { saidMood = mood; petSay(mood, true); } }
