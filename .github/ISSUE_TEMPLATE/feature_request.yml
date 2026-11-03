@@ -1,20 +1,30 @@
 name: Feature request
 description: Suggest an idea for Islet
-labels: [enhancement]
+title: "feat: "
+labels: ["enhancement"]
 body:
   - type: textarea
     id: problem
     attributes:
-      label: What problem would this solve?
+      label: What do you want to do?
+      description: The problem or the moment this would help with.
     validations:
       required: true
   - type: textarea
-    id: solution
+    id: idea
     attributes:
-      label: What would you like to happen?
+      label: What would you like Islet to do?
+      description: How it should look and behave in the notch, if you have an idea.
     validations:
       required: true
   - type: textarea
     id: alternatives
     attributes:
-      label: Alternatives you've considered
+      label: Other ways you handle it today
+      description: Other apps or workarounds, if any.
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Contributing
+      options:
+        - label: I'd be willing to open a pull request for this

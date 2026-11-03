@@ -1,12 +1,17 @@
 name: Bug report
-description: Something in Islet isn't working
-labels: [bug]
+description: Something in Islet doesn't work as it should
+title: "bug: "
+labels: ["bug"]
 body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. For a security problem, don't use this form: use the [private report](https://github.com/goprocker/Islet/security/advisories/new).
   - type: textarea
-    id: what-happened
+    id: what
     attributes:
       label: What happened?
-      description: Include what you expected to happen. Add a screenshot if it helps.
+      description: What you saw, and what you expected instead.
     validations:
       required: true
   - type: textarea
@@ -14,36 +19,54 @@ body:
     attributes:
       label: Steps to reproduce
       placeholder: |
-        1. Open the notch
-        2. Click ...
+        1. Open Islet
+        2. Play a song in Spotify
+        3. ...
     validations:
       required: true
   - type: input
-    id: islet-version
+    id: version
     attributes:
       label: Islet version
-      placeholder: 2.0.0
+      description: Shown in Settings, or in the installer file name.
+      placeholder: "2.1.0"
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      description: Press Win+R, type `winver`, and copy the version and build.
+      placeholder: "Windows 11 23H2, build 22631"
     validations:
       required: true
   - type: dropdown
-    id: install-type
+    id: area
     attributes:
-      label: How do you run Islet?
+      label: Which part is affected?
       options:
-        - Installer
-        - From source
+        - Music / media player
+        - Claude Code or Codex
+        - Notifications
+        - Battery / power
+        - Volume or brightness HUD
+        - Timer / Pomodoro
+        - Clipboard, notes or shelf
+        - Calendar / weather
+        - Settings / tray
+        - Installer / startup
+        - Other
     validations:
       required: true
-  - type: input
-    id: windows-version
+  - type: dropdown
+    id: install
     attributes:
-      label: Windows version
-      placeholder: Windows 11 24H2
-    validations:
-      required: true
+      label: How did you install it?
+      options:
+        - Installer from the website or releases
+        - Ran from source (npm start)
   - type: textarea
-    id: logs
+    id: extra
     attributes:
-      label: Logs or other details
-      description: Remove tokens, calendar links and personal messages first.
-      render: text
+      label: Screenshots or logs
+      description: Drag images here. Remove personal data, such as calendar links or tokens.
