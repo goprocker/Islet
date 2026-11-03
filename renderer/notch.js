@@ -579,6 +579,7 @@ function showPanel(btnId) {
     $(b).setAttribute("aria-pressed", on);
     if (on && p === "dashPanel") refreshQuick();
   }
+  notch.classList.toggle("dash", !$("dashPanel").hidden);
 }
 
 // ---- quick settings: tiles and sliders read from the system when the panel opens ----
@@ -592,7 +593,9 @@ function drawQuick(s) {
   }
   const b = $("qBright"), v = $("qVol");
   b.disabled = s.bright === null; if (s.bright !== null && document.activeElement !== b) b.value = s.bright;
+  $("qBrightN").textContent = s.bright === null ? "" : Math.round(s.bright);
   v.disabled = s.vol === null; if (s.vol !== null && document.activeElement !== v) v.value = Math.round(s.vol * 100);
+  $("qVolN").textContent = s.vol === null ? "" : Math.round(s.vol * 100);
 }
 const refreshQuick = () => window.bridge.quickGet().then(drawQuick);
 const quickDo = (kind, value) => window.bridge.quickSet(kind, value).then(drawQuick);
@@ -605,7 +608,7 @@ $("qTiles").onclick = e => {
 };
 let quickTimer;
 for (const [id, kind, scale] of [["qBright", "bright", 1], ["qVol", "vol", 100]]) {
-  $(id).oninput = () => { clearTimeout(quickTimer); quickTimer = setTimeout(() => quickDo(kind, $(id).value / scale), 120); };
+  $(id).oninput = () => { $(id + "N").textContent = $(id).value; clearTimeout(quickTimer); quickTimer = setTimeout(() => quickDo(kind, $(id).value / scale), 120); };
 }
 for (const b of Object.keys(PANELS)) $(b).onclick = () => showPanel(b);
 // panels close with the notch
