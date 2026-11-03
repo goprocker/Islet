@@ -25,6 +25,8 @@ contextBridge.exposeInMainWorld("bridge", {
   onDownloads: on("downloads"),
   onDownloadDone: on("downloadDone"),
   copyClip: i => ipcRenderer.send("copyClip", i),
+  onNotes: on("notes"),
+  saveNotes: t => ipcRenderer.send("saveNotes", t),
   pinClip: i => ipcRenderer.send("pinClip", i),
   clearClips: () => ipcRenderer.send("clearClips"),
   onShelf: on("shelf"),

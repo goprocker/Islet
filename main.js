@@ -13,6 +13,7 @@ const lyrics = require("./lyrics");
 const weather = require("./weather");
 const pomodoro = require("./pomodoro");
 const { clipHistory } = require("./clip-history");
+const { loadNotes, saveNotes } = require("./notes");
 const downloads = require("./downloads");
 const { readShelf } = require("./shelf-file");
 const { helperLifecycle } = require("./helper-lifecycle");
@@ -399,6 +400,7 @@ async function pollClipboard() {
 }
 ipcMain.on("copyClip", (_, i) => { const t = clipStore().text(i); if (t !== undefined) { lastClip = t; clipboard.writeText(t).catch(e => console.warn("clipboard", e.message)); } });
 ipcMain.on("pinClip", (_, i) => { clipStore().togglePin(i); sendClips(); });
+ipcMain.on("saveNotes", (_, text) => saveNotes(app.getPath("userData"), text));
 ipcMain.on("clearClips", () => { clipStore().clear(); sendClips(); });
 
 // ---- file shelf: hold files here, drag them out anywhere ----
@@ -696,6 +698,7 @@ app.whenReady().then(() => {
     sendPower();
     lastClaude = ""; iconFor = null; lastMediaLine = ""; readClaude(); refreshSpotifyExtras(); send("timerLabel", timerLabel); send("timer", timerEnd); send("stopwatch", stopwatchStart); sendDnd(true); send("shelf", shelf); sendTheme(); lyricsNow.resend();
     sendClips();
+    send("notes", loadNotes(app.getPath("userData")));
     calendar.poll(config.calendarIcsUrl, ev => send("calendar", ev));
     startWeather();
   });

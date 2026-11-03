@@ -532,7 +532,7 @@ window.bridge.onDnd(on => {
 $("dndBtn").onclick = () => window.bridge.toggleDnd();
 
 // ---- tools panels: clipboard history and file shelf (one at a time) ----
-const PANELS = { clipBtn: "clipPanel", shelfBtn: "shelfPanel" };
+const PANELS = { clipBtn: "clipPanel", shelfBtn: "shelfPanel", notesBtn: "notesPanel" };
 function showPanel(btnId) {
   for (const [b, p] of Object.entries(PANELS)) {
     const on = b === btnId && $(p).hidden;
@@ -564,6 +564,12 @@ function drawClips() {
 window.bridge.onClipboard(list => { clipItems = list; drawClips(); });
 $("clipSearch").oninput = drawClips;
 $("clipClear").onclick = () => window.bridge.clearClips();
+
+// ---- notes: saved half a second after typing stops ----
+let notesSave;
+window.bridge.onNotes(t => { if (document.activeElement !== $("notesText")) $("notesText").value = t; });
+$("notesText").oninput = () => { clearTimeout(notesSave); notesSave = setTimeout(() => window.bridge.saveNotes($("notesText").value), 500); };
+$("notesClear").onclick = () => { $("notesText").value = ""; window.bridge.saveNotes(""); };
 
 window.bridge.onShelf(files => {
   $("shelfEmpty").hidden = files.length > 0;
