@@ -1,5 +1,5 @@
 const { app, BrowserWindow, globalShortcut, ipcMain, screen, Tray, Menu, nativeImage, shell, clipboard, dialog, powerMonitor } = require("electron");
-const { spawn, spawnSync } = require("child_process");
+const { spawn, spawnSync, execFile } = require("child_process");
 const { StringDecoder } = require("string_decoder");
 const fs = require("fs");
 const path = require("path");
@@ -14,6 +14,7 @@ const weather = require("./weather");
 const pomodoro = require("./pomodoro");
 const { clipHistory } = require("./clip-history");
 const { loadNotes, saveNotes } = require("./notes");
+const universalSearch = require("./search");
 const downloads = require("./downloads");
 const volumeHud = require("./volume-hud");
 const { readShelf } = require("./shelf-file");
@@ -36,7 +37,7 @@ app.on("second-instance", () => (welcomePending ? openWelcome() : openSettings()
 // ---- settings (userData/config.json) ----
 const { checkConfig, clock } = require("./config-check");
 const configPath = () => path.join(app.getPath("userData"), "config.json");
-const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true, lyrics: true, permissionWaitSeconds: 8, dnd: false, dndFrom: "", dndTo: "", dndSkipUntil: 0, clipboardHistory: true, volumeHud: true, focusDnd: true, weatherCity: "", weatherUnit: "C", downloadsFolder: "", size: "normal", accent: "album", idleHide: false, hideWindowsBanners: true, powerAnim: true, powerAnimStyle: "cinematic" };
+const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true, lyrics: true, permissionWaitSeconds: 8, dnd: false, dndFrom: "", dndTo: "", dndSkipUntil: 0, clipboardHistory: true, volumeHud: true, focusDnd: true, universalSearch: true, weatherCity: "", weatherUnit: "C", downloadsFolder: "", size: "normal", accent: "album", idleHide: false, hideWindowsBanners: true, powerAnim: true, powerAnimStyle: "cinematic" };
 let config = { ...DEFAULTS };
 // only a missing file is created; one that can't be read or parsed (a hand edit in
 // progress, a half-written save) is left alone and the current settings stay in use.
@@ -416,6 +417,72 @@ ipcMain.on("pinClip", (_, i) => { clipStore().togglePin(i); sendClips(); });
 ipcMain.on("saveNotes", (_, text) => saveNotes(app.getPath("userData"), text));
 ipcMain.on("clearClips", () => { clipStore().clear(); sendClips(); });
 
+// ---- universal search: Alt+Space finds apps, Wi-Fi / Bluetooth, clipboard items and notes ----
+let appIndex = [], appIndexAt = 0, searchResults = new Map();
+function refreshApps() {
+  appIndexAt = Date.now();
+  // Get-StartApps lists Store apps too; the shortcut scan covers us until it answers, or if it fails
+  execFile("powershell.exe", ["-NoProfile", "-Command", "Get-StartApps | Select-Object Name,AppID | ConvertTo-Json -Compress"], { windowsHide: true, timeout: 20000, maxBuffer: 4e6 }, (err, out) => {
+    if (err) return console.warn("Get-StartApps", err.message);
+    try { const apps = universalSearch.appsFromStartApps(JSON.parse(out)); if (apps.length) appIndex = apps; } catch (e) { console.warn("Get-StartApps", e.message); }
+  });
+  const menu = ["Microsoft", "Windows", "Start Menu", "Programs"];
+  appIndex = universalSearch.scanStartMenu([path.join(process.env.ProgramData || "C:\\ProgramData", ...menu), path.join(app.getPath("appData"), ...menu)]);
+}
+const oneLine = s => s.replace(/\s+/g, " ").trim().slice(0, 120);
+ipcMain.handle("search", (_, q) => {
+  if (typeof q !== "string" || !q.trim()) { searchResults = new Map(); return []; }
+  if (Date.now() - appIndexAt > 600000) refreshApps();
+  const notes = loadNotes(app.getPath("userData")).split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const items = [
+    ...appIndex.map(a => ({ id: "app:" + (a.appId || a.file), title: a.name, sub: "App", kind: "app", file: a.file, appId: a.appId })),
+    ...universalSearch.COMMANDS.map(c => ({ ...c, kind: "command" })),
+    ...(config.clipboardHistory ? clipStore().view().map((c, i) => ({ id: "clip:" + i, title: oneLine(c.text), sub: "Clipboard: copy again", kind: "clip", text: c.text })) : []),
+    ...notes.map((l, i) => ({ id: "note:" + i, title: oneLine(l), sub: "Note: copy line", kind: "note", text: l })),
+  ];
+  const top = universalSearch.rank(q, items, 8);
+  searchResults = new Map(top.map(r => [r.id, r]));
+  return top.map(({ id, title, sub, kind }) => ({ id, title, sub, kind }));
+});
+function toggleRadio(kind) {
+  const name = kind === "wifi" ? "Wi-Fi" : "Bluetooth";
+  const p = spawn("powershell.exe", [...PS, path.join(__dirname, "radios.ps1"), "toggle", kind], { windowsHide: true });
+  let out = "";
+  p.stdout.on("data", d => { out += d; });
+  p.on("exit", () => {
+    let r = null;
+    try { r = JSON.parse(out.trim()); } catch {}
+    send("searchDone", r?.[kind] ? `${name} turned ${String(r[kind]).toLowerCase()}` : `No ${name} found on this PC`);
+  });
+}
+ipcMain.on("searchRun", (_, id) => {
+  const r = typeof id === "string" ? searchResults.get(id) : null;
+  if (!r) return;
+  if (r.kind === "app") {
+    if (r.appId) spawn("explorer.exe", ["shell:AppsFolder" + String.fromCharCode(92) + r.appId], { detached: true, windowsHide: true }).unref();
+    else shell.openPath(r.file).then(err => err && console.warn("open app", err));
+  }
+  else if (r.text !== undefined) { lastClip = r.text; clipboard.writeText(r.text).catch(e => console.warn("clipboard", e.message)); send("searchDone", "Copied"); }
+  else if (r.uri) shell.openExternal(r.uri);
+  else if (r.islet) openSettings();
+  else if (r.radio) toggleRadio(r.radio);
+});
+// the notch only takes keys when its window has focus, and is click-through until the pointer is over it
+function openSearch() {
+  if (!win) return;
+  win.setIgnoreMouseEvents(false);
+  win.show();
+  win.focus();
+  send("search");
+}
+let searchKey = false;
+function applySearchHotkey() {
+  if (config.universalSearch && !searchKey) {
+    searchKey = globalShortcut.register("Alt+Space", openSearch);
+    if (!searchKey) console.warn("Alt+Space is already taken by another app");
+  } else if (!config.universalSearch && searchKey) { globalShortcut.unregister("Alt+Space"); searchKey = false; }
+}
+
 // ---- file shelf: hold files here, drag them out anywhere ----
 const shelfPath = () => path.join(app.getPath("userData"), "shelf.json");
 let shelf = []; // [{ path, name, icon: dataURL }]
@@ -489,7 +556,7 @@ ipcMain.handle("settings:save", (_, v) => {
     lyrics: !!v.lyrics, spotifyClientId: str(v.spotifyClientId, 100),
     weatherCity: str(v.weatherCity, 100), weatherUnit: v.weatherUnit === "F" ? "F" : "C",
     calendarIcsUrl: /^(https?|webcal):\/\//i.test(str(v.calendarIcsUrl)) ? str(v.calendarIcsUrl).replace(/^webcal:/i, "https:") : "",
-    downloadsFolder: str(v.downloadsFolder, 500), clipboardHistory: !!v.clipboardHistory, volumeHud: !!v.volumeHud, focusDnd: !!v.focusDnd,
+    downloadsFolder: str(v.downloadsFolder, 500), clipboardHistory: !!v.clipboardHistory, volumeHud: !!v.volumeHud, focusDnd: !!v.focusDnd, universalSearch: !!v.universalSearch,
   };
   config = next;
   updateLyrics();
@@ -738,7 +805,7 @@ app.whenReady().then(() => {
   });
   // reload settings when the file is edited by hand
   fs.watchFile(configPath(), { interval: 2000 }, () => {
-    loadConfig(); buildMenu(); placeWindow(); applyVisibility(); sendDnd(); sendTheme(); applyBanners(); applyServices(); updateLyrics();
+    loadConfig(); buildMenu(); placeWindow(); applyVisibility(); sendDnd(); sendTheme(); applyBanners(); applyServices(); updateLyrics(); applySearchHotkey();
   });
   screen.on("display-added", () => { buildMenu(); placeWindow(); });
   screen.on("display-removed", () => { buildMenu(); placeWindow(); });
@@ -747,6 +814,8 @@ app.whenReady().then(() => {
   screen.on("display-metrics-changed", () => { buildMenu(); placeWindow(); });
   globalShortcut.register("Control+Alt+N", () => send("toggle"));
   globalShortcut.register("Control+Alt+M", nextScreen);
+  applySearchHotkey();
+  refreshApps(); // ready before the first search
 });
 app.on("window-all-closed", e => e.preventDefault());
 app.on("before-quit", () => { app.isQuitting = true; });

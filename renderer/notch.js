@@ -35,6 +35,7 @@ notch.addEventListener("mouseleave", () => {
 });
 // clicking anywhere outside takes focus from the window: shrink back to the pill
 window.addEventListener("blur", () => {
+  window.bridge.hover(hovering); // the hotkey made the window take mouse clicks; back to click-through unless the pointer is on it
   clearTimeout(hoverTimer);
   if (!perms.length) setOpen(false);
 });
@@ -564,7 +565,7 @@ window.bridge.onDnd(on => {
 $("dndBtn").onclick = () => window.bridge.toggleDnd();
 
 // ---- tools panels: clipboard history and file shelf (one at a time) ----
-const PANELS = { clipBtn: "clipPanel", shelfBtn: "shelfPanel", notesBtn: "notesPanel" };
+const PANELS = { searchBtn: "searchPanel", clipBtn: "clipPanel", shelfBtn: "shelfPanel", notesBtn: "notesPanel" };
 function showPanel(btnId) {
   for (const [b, p] of Object.entries(PANELS)) {
     const on = b === btnId && $(p).hidden;
@@ -576,6 +577,53 @@ for (const b of Object.keys(PANELS)) $(b).onclick = () => showPanel(b);
 // panels close with the notch
 new MutationObserver(() => { if (!notch.classList.contains("open")) showPanel(null); })
   .observe(notch, { attributes: true, attributeFilter: ["class"] });
+
+// ---- search: Alt+Space opens it; apps, Wi-Fi / Bluetooth, clipboard items and notes ----
+let searchHits = [], searchPick = 0, searchSeq = 0;
+function drawSearch() {
+  const typed = $("searchInput").value.trim() !== "";
+  $("searchEmpty").hidden = searchHits.length > 0;
+  $("searchEmpty").textContent = typed ? "No matches" : "Type to search. Enter opens, the arrow keys move, Esc closes.";
+  $("searchList").replaceChildren(...searchHits.map((h, i) => {
+    const li = document.createElement("li"), b = document.createElement("button");
+    b.className = i === searchPick ? "sel" : "";
+    b.setAttribute("role", "option");
+    b.setAttribute("aria-selected", i === searchPick);
+    b.append(h.title, Object.assign(document.createElement("small"), { textContent: h.sub }));
+    b.onclick = () => chooseSearch(i);
+    li.append(b);
+    return li;
+  }));
+}
+async function runSearch() {
+  const q = $("searchInput").value, seq = ++searchSeq;
+  const hits = q.trim() ? await window.bridge.search(q) : [];
+  if (seq !== searchSeq) return; // a newer keystroke is already searching
+  searchHits = hits; searchPick = 0; drawSearch();
+}
+function chooseSearch(i) {
+  const h = searchHits[i];
+  if (!h) return;
+  window.bridge.searchRun(h.id);
+  showPanel(null); setOpen(false);
+}
+$("searchInput").oninput = runSearch;
+$("searchInput").onkeydown = e => {
+  if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+    e.preventDefault();
+    if (searchHits.length) searchPick = (searchPick + (e.key === "ArrowDown" ? 1 : searchHits.length - 1)) % searchHits.length;
+    drawSearch();
+  } else if (e.key === "Enter") { e.preventDefault(); chooseSearch(searchPick); }
+};
+window.bridge.onSearch(() => {
+  notch.classList.remove("hidden");
+  setOpen(true);
+  if ($("searchPanel").hidden) showPanel("searchBtn");
+  $("searchInput").value = ""; searchHits = []; drawSearch();
+  $("searchInput").focus();
+});
+$("searchBtn").addEventListener("click", () => { if (!$("searchPanel").hidden) { $("searchInput").value = ""; searchHits = []; drawSearch(); $("searchInput").focus(); } });
+window.bridge.onSearchDone(msg => toast({ hud: "search", app: "Search", svg: hudSvg('<path d="M5 12.5l4.5 4.5L19 7.5"/>'), color: "#3a3a3c", title: msg, ms: 1800 }));
 
 let clipItems = [];
 function drawClips() {
