@@ -6,14 +6,14 @@
 
 **A Dynamic-Island-style notch for Windows 10 and 11**
 
-Music · Claude Code and Codex · notifications · battery · weather, all in one small black pill at the top of your screen.
+Music · Claude Code and Codex · notifications · battery · search · timers, all in one small black pill at the top of your screen.
 
 <a href="https://islet.loopfound.in"><img alt="Website" src="https://img.shields.io/badge/website-islet.loopfound.in-111?style=for-the-badge"></a>
 <a href="https://github.com/goprocker/Islet/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/goprocker/Islet?style=for-the-badge"></a>
 <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-blue?style=for-the-badge"></a>
 <img alt="Windows 10 / 11" src="https://img.shields.io/badge/Windows-10%20%7C%2011-0078d4?style=for-the-badge&logo=windows11&logoColor=white">
 <img alt="Electron 45" src="https://img.shields.io/badge/Electron-45-47848f?style=for-the-badge&logo=electron&logoColor=white">
-<img alt="228 tests passing" src="https://img.shields.io/badge/tests-228%20passing-34c759?style=for-the-badge">
+<img alt="262 tests passing" src="https://img.shields.io/badge/tests-262%20passing-34c759?style=for-the-badge">
 
 <br><br>
 
@@ -26,6 +26,19 @@ Music · Claude Code and Codex · notifications · battery · weather, all in on
     <td align="center"><img src="docs/pill.png" alt="Closed pill with album art, Claude dot and audio wave" width="220"><br><sub><b>Pill</b></sub></td>
     <td align="center"><img src="docs/toast.png" alt="A WhatsApp message shown as a notch pop-up" width="280"><br><sub><b>Notification</b></sub></td>
     <td align="center"><img src="docs/album.png" alt="Enlarged album art over a blurred backdrop" width="340"><br><sub><b>Album view</b></sub></td>
+  </tr>
+  <tr>
+    <td align="center" colspan="2"><img src="docs/search.png" alt="Alt+Space search showing the Wi-Fi settings and Wi-Fi switch results" width="440"><br><sub><b>Search</b> · Alt+Space</sub></td>
+    <td align="center"><img src="docs/hud.png" alt="Volume HUD: a speaker icon, Volume 62% and a level bar" width="340"><br><sub><b>Volume HUD</b></sub></td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <td align="center"><kbd>Alt</kbd>+<kbd>Space</kbd><br><sub>Search</sub></td>
+    <td align="center"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>N</kbd><br><sub>Pill / open / hidden</sub></td>
+    <td align="center"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>M</kbd><br><sub>Next monitor</sub></td>
+    <td align="center"><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd><br><sub>Like on Spotify</sub></td>
   </tr>
 </table>
 
@@ -40,6 +53,11 @@ Islet sits at the top centre of your screen. **Hover to open it, click anywhere 
 The open notch, left to right: **agent sessions** → **music** → **time and battery** → **tools**.
 
 ## ✨ What's new
+
+- 🔎 **Search with Alt+Space:** find apps (Store apps too), files and folders, Wi-Fi and Bluetooth switches, Sound and Display settings, clipboard items and notes, then press Enter.
+- 🔊 **Volume, brightness and mic HUD:** changes show in the notch with a level bar and a clean icon. A muted microphone gets its own red-tinted toast.
+- 🍅 **Pomodoro and stopwatch:** 25 / 5 / 15 minute cycles from the tray, a stopwatch beside the timer, and **Do Not Disturb turns on by itself during focus**.
+- 📋 **Clipboard v2 and notes:** 20 items, pins that survive restarts, a search box, and a quick notes panel.
 
 - 👋 **Version 2.1:** a welcome screen that asks before Islet changes anything, an installer with setup screens, authenticated agent hooks, a wave for the player on show and lighter background work.
 - 📦 **Version 2.0:** 14 reliability fixes, a ready-made [installer](https://github.com/goprocker/Islet/releases/latest) and redrawn player controls.
@@ -102,13 +120,16 @@ The open notch, left to right: **agent sessions** → **music** → **time and b
 - Weather by city (Open-Meteo, no API key)
 - The next event from a private calendar (ICS) link
 - Browser download progress
-- A timer, started from the tray
+- Timer, Pomodoro and stopwatch, started from the tray
+- Volume, brightness and microphone-mute HUD
 
 </td>
 <td valign="top">
 
 ### 🧰 Tools
-- Clipboard history: the last 5 texts, kept in memory only
+- **Search** (`Alt+Space`): apps, files, Wi-Fi and Bluetooth, clipboard, notes
+- Clipboard history: 20 texts with pins and search
+- Quick notes, saved as you type
 - File shelf: drop files in, drag them out
 - `Ctrl+Alt+N` cycles pill / open / hidden
 - `Ctrl+Alt+M` moves Islet to the next monitor
@@ -153,13 +174,15 @@ On first run, a welcome screen asks about **Start with Windows**, notifications 
 | Action | How |
 |---|---|
 | Open / close | Hover the notch / move away or click elsewhere |
+| Search | `Alt+Space`, then type; arrow keys move, Enter opens, Esc closes |
 | Cycle pill → open → hidden | `Ctrl+Alt+N` |
 | Next monitor | `Ctrl+Alt+M`, or tray → **Show on screen** |
 | Volume / seek | Scroll over the music side / click the progress bar |
 | Album view | Click the album art |
 | Like | Heart button, shown for Spotify (sends Spotify's `Alt+Shift+B`) |
-| Clipboard / shelf / DND | Buttons in the tools column |
-| Timer / settings | Tray → **Timer** / **Settings…** |
+| Search / clipboard / shelf / notes / DND | Buttons in the tools column |
+| Pin a clipboard item | Right-click it |
+| Timer, Pomodoro, stopwatch / settings | Tray → **Timer** / **Settings…** |
 | Quit | Tray → **Quit** (Alt+F4 is ignored on purpose) |
 
 ## 🤖 Claude Code and Codex
@@ -194,7 +217,7 @@ The welcome screen offers to install the hooks. Tray → **Connect to Claude Cod
 Stored in `%APPDATA%\islet\config.json` and edited from the settings window. Hand edits are picked up within 2 s. A file that can't be read is left alone, not overwritten.
 
 <details>
-<summary><b>All 20 settings</b></summary>
+<summary><b>All 23 settings</b></summary>
 
 | Key | Default | Meaning |
 |---|---|---|
@@ -213,7 +236,10 @@ Stored in `%APPDATA%\islet\config.json` and edited from the settings window. Han
 | `weatherUnit` | `C` | `C` or `F` |
 | `calendarIcsUrl` | `""` | Private iCal link |
 | `downloadsFolder` | `""` | Empty means your Downloads folder |
-| `clipboardHistory` | `true` | Keep the last 5 copied texts in memory |
+| `clipboardHistory` | `true` | Keep the last 20 copied texts (pinned ones are saved) |
+| `volumeHud` | `true` | Show volume, brightness and microphone mute changes in the notch |
+| `focusDnd` | `true` | Turn on Do Not Disturb during Pomodoro focus |
+| `universalSearch` | `true` | Alt+Space search; turn off to free the hotkey |
 | `displayId` | `null` | Screen to show on (set by `Ctrl+Alt+M` or the tray) |
 | `spotifyClientId` | `""` | Optional Spotify Web API (Premium only) |
 
@@ -223,10 +249,14 @@ Stored in `%APPDATA%\islet\config.json` and edited from the settings window. Han
 
 ```
 main.js ── window, tray, hotkeys, powerMonitor, config, IPC
- ├─ helpers.ps1           one PowerShell that runs the three watchers below
+ ├─ helpers.ps1           one PowerShell that runs the four watchers below
  ├─ media.ps1             Windows media session → JSON every second; play/seek/next
  ├─ spotify-audio.ps1/.cs process-loopback capture of Spotify → 24 FFT bands, volume
  ├─ system.ps1            mic / camera / screen use, fullscreen detection
+ ├─ volume-hud.ps1        volume, mute, microphone mute and brightness changes
+ ├─ radios.ps1            Wi-Fi and Bluetooth on / off (Windows radio API)
+ ├─ search.js             Alt+Space matching, app / file index, commands
+ ├─ pomodoro.js  clip-history.js  notes.js  volume-hud.js
  ├─ notifications.js      reads wpndatabase.db (node:sqlite, read-only); toggles banners
  ├─ icons.js              real app logos (Store manifests, shortcuts, exe icons)
  ├─ claude-bridge.js      HTTP server for Claude Code + Codex hooks; installs/removes them
@@ -250,7 +280,7 @@ main.js ── window, tray, hotkeys, powerMonitor, config, IPC
 ### 🛠️ Develop
 
 ```powershell
-npm test     # 27 test files, node --test
+npm test     # 32 test files, node --test
 node_modules\electron\dist\electron.exe . --remote-debugging-port=9333   # then chrome://inspect
 ```
 
@@ -258,7 +288,7 @@ Useful page globals: `setOpen(true)`, `render()`.
 
 ## 🔐 Privacy
 
-Everything runs on your PC. Network calls go only to GitHub (update checks in the installed app), lrclib.net (title and artist, when lyrics are on), Open-Meteo (the city name), your ICS link, and Spotify if you connect it. Clipboard history never touches disk, and the shelf stores file paths only. The hook server listens on `127.0.0.1` only.
+Everything runs on your PC. Network calls go only to GitHub (update checks in the installed app), lrclib.net (title and artist, when lyrics are on), Open-Meteo (the city name), your ICS link, and Spotify if you connect it. Unpinned clipboard history stays in memory; pinned items and your notes are saved in `%APPDATA%\islet`. The shelf stores file paths only. Search keeps file names in memory and never reads inside files. The hook server listens on `127.0.0.1` only.
 
 ## 🩺 Troubleshooting
 
