@@ -1,0 +1,22 @@
+{
+  "bpm": 120,
+  "length": 34,
+  "pill": 2,
+  "stopA": 3.5,
+  "drop": 4,
+  "music": 6,
+  "agents": 8,
+  "needsYou": 10,
+  "allow": 11,
+  "toast": 12,
+  "burst": 14,
+  "altF4": 18,
+  "keyPress": 18.5,
+  "stopB": 20,
+  "plug": 21.75,
+  "hole": 22,
+  "implode": 25.5,
+  "open": 26,
+  "windows": 28,
+  "end": 30
+}

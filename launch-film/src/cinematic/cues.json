@@ -1,0 +1,20 @@
+{
+  "bpm": 96,
+  "notificationPill": 3.0,
+  "notificationOpen": 3.8,
+  "chargeCollapse": 8.85,
+  "chargeIgnite": 9.5,
+  "chargeCount": 11.2,
+  "chargeImplode": 15.5,
+  "chargeCompact": 16.45,
+  "permissionOpen": 17.2,
+  "permissionPress": 21.3,
+  "musicDot": 22.75,
+  "musicOpen": 23.7,
+  "micCompact": 30.0,
+  "micLabel": 30.9,
+  "desktop": 34.9,
+  "finalOpen": 35.9,
+  "finalClose": 37.4,
+  "endCard": 38.1
+}
