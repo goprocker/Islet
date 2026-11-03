@@ -18,3 +18,11 @@ test("a break leads to the next focus round, wrapping after round 4", () => {
   assert.strictEqual(next({ phase: "break", round: 1 }).label, "Focus 2/4");
   assert.deepStrictEqual(next({ phase: "break", round: 4 }), { phase: "focus", round: 1, min: 25, label: "Focus 1/4" });
 });
+
+test("Do Not Disturb follows the focus phase only when the setting is on", () => {
+  const { wantsDnd } = require("../pomodoro");
+  assert.strictEqual(wantsDnd({ phase: "focus", round: 1 }, true), true);
+  assert.strictEqual(wantsDnd({ phase: "break", round: 1 }, true), false);
+  assert.strictEqual(wantsDnd({ phase: "focus", round: 1 }, false), false);
+  assert.strictEqual(wantsDnd(null, true), false);
+});

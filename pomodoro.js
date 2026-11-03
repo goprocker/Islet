@@ -12,4 +12,7 @@ function next(cur) {
   return { phase: "focus", round, min: FOCUS, label: `Focus ${round}/${ROUNDS}` };
 }
 
-module.exports = { next, FOCUS, SHORT, LONG, ROUNDS };
+// Do Not Disturb follows the focus phase, when the setting is on
+const wantsDnd = (cur, enabled) => !!enabled && !!cur && cur.phase === "focus";
+
+module.exports = { next, wantsDnd, FOCUS, SHORT, LONG, ROUNDS };

@@ -36,7 +36,7 @@ app.on("second-instance", () => (welcomePending ? openWelcome() : openSettings()
 // ---- settings (userData/config.json) ----
 const { checkConfig, clock } = require("./config-check");
 const configPath = () => path.join(app.getPath("userData"), "config.json");
-const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true, lyrics: true, permissionWaitSeconds: 8, dnd: false, dndFrom: "", dndTo: "", dndSkipUntil: 0, clipboardHistory: true, volumeHud: true, weatherCity: "", weatherUnit: "C", downloadsFolder: "", size: "normal", accent: "album", idleHide: false, hideWindowsBanners: true, powerAnim: true, powerAnimStyle: "cinematic" };
+const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true, lyrics: true, permissionWaitSeconds: 8, dnd: false, dndFrom: "", dndTo: "", dndSkipUntil: 0, clipboardHistory: true, volumeHud: true, focusDnd: true, weatherCity: "", weatherUnit: "C", downloadsFolder: "", size: "normal", accent: "album", idleHide: false, hideWindowsBanners: true, powerAnim: true, powerAnimStyle: "cinematic" };
 let config = { ...DEFAULTS };
 // only a missing file is created; one that can't be read or parsed (a hand edit in
 // progress, a half-written save) is left alone and the current settings stay in use.
@@ -374,13 +374,15 @@ function dndWindowEnd(d = new Date()) {
   if (end <= d) end.setDate(end.getDate() + 1);
   return end.getTime();
 }
+let focusDnd = false; // Pomodoro focus phase; not saved, ends with the phase
 function dndActive(d = new Date()) {
-  if (config.dnd) return true;
+  if (focusDnd || config.dnd) return true;
   const end = dndWindowEnd(d);
   return !!end && !(config.dndSkipUntil >= end); // turned off for this window by hand
 }
 // the button and tray item: turn whatever is on off (manual and today's window), or turn it on
 function toggleDnd() {
+  if (focusDnd) { focusDnd = false; sendDnd(); buildMenu(); return; } // turning it off during focus ends just the focus part
   if (dndActive()) { config.dnd = false; config.dndSkipUntil = dndWindowEnd() || config.dndSkipUntil; }
   else { config.dnd = true; config.dndSkipUntil = 0; }
   saveConfig(); sendDnd(); buildMenu();
@@ -487,7 +489,7 @@ ipcMain.handle("settings:save", (_, v) => {
     lyrics: !!v.lyrics, spotifyClientId: str(v.spotifyClientId, 100),
     weatherCity: str(v.weatherCity, 100), weatherUnit: v.weatherUnit === "F" ? "F" : "C",
     calendarIcsUrl: /^(https?|webcal):\/\//i.test(str(v.calendarIcsUrl)) ? str(v.calendarIcsUrl).replace(/^webcal:/i, "https:") : "",
-    downloadsFolder: str(v.downloadsFolder, 500), clipboardHistory: !!v.clipboardHistory, volumeHud: !!v.volumeHud,
+    downloadsFolder: str(v.downloadsFolder, 500), clipboardHistory: !!v.clipboardHistory, volumeHud: !!v.volumeHud, focusDnd: !!v.focusDnd,
   };
   config = next;
   updateLyrics();
@@ -587,6 +589,8 @@ let timerEnd = 0, timerDone, timerLabel = "Timer", pomo = null;
 function runTimer(min, label) {
   timerEnd = min ? Date.now() + min * 60000 : 0;
   timerLabel = label;
+  focusDnd = pomodoro.wantsDnd(pomo, config.focusDnd && min);
+  sendDnd();
   send("timerLabel", timerLabel); send("timer", timerEnd); buildMenu();
   clearTimeout(timerDone);
   if (!min) return;
