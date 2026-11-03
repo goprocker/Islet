@@ -5,33 +5,112 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
 <title>Download Islet</title>
+<meta name="description" content="Download Islet 2.1.0, a Dynamic-Island-style notch for Windows 10 and 11. Free and open source.">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;600&display=swap" rel="stylesheet">
 <style>
-body{margin:0;background:#e9eefb;color:#1d2747;font:400 17px/1.6 system-ui,sans-serif}
-main{width:min(720px,100% - 32px);margin:0 auto;padding:48px 0}
-h1,h2{color:#000;line-height:1.2}
-h2{margin-top:36px;font-size:22px}
+:root{--sea:#cfdcf5;--mist:#e9eefb;--ink:#000;--deep:#1d2747;--soft:#4a5578;--gold:#e2b13c;--violet:#b9a7ff;--green:#34c759}
+*{box-sizing:border-box;margin:0}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--mist);color:var(--deep);font:400 17px/1.55 Figtree,system-ui,sans-serif}
 a{color:inherit}
-.btn{display:inline-block;margin:8px 0;padding:14px 26px;border-radius:999px;background:#000;color:#fff;font-weight:600;text-decoration:none}
-.btn:hover{background:#1d2747}
-small{color:#4a5578}
+:focus-visible{outline:3px solid #3d55c7;outline-offset:3px}
+h1,h2,h3{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:700;color:var(--ink)}
+.wrap{width:min(920px,100% - 32px);margin-inline:auto}
+
+.hero{background:linear-gradient(#a9c0ee,var(--sea) 55%,var(--mist));text-align:center;padding:0 16px 72px}
+.stage{height:96px;display:flex;justify-content:center;align-items:flex-start}
+.pill{display:flex;align-items:center;justify-content:center;gap:10px;width:200px;height:36px;background:#000;border-radius:0 0 18px 18px;animation:drop .9s cubic-bezier(.3,1.3,.5,1) both}
+.pill .dot{width:9px;height:9px;border-radius:50%;background:var(--violet)}
+.pill .wave{display:flex;align-items:center;gap:3px;height:14px}
+.pill .wave i{width:3px;height:100%;background:var(--gold);border-radius:2px;animation:wv 1s ease-in-out infinite alternate}
+.pill .wave i:nth-child(2){animation-delay:-.7s}.pill .wave i:nth-child(3){animation-delay:-.35s}.pill .wave i:nth-child(4){animation-delay:-.9s}
+@keyframes wv{from{transform:scaleY(.3)}to{transform:scaleY(1)}}
+@keyframes drop{from{transform:translateY(-100%)}to{transform:none}}
+.back{position:absolute;top:14px;left:16px;font-size:15px;text-decoration:none;color:var(--deep)}
+.back:hover{text-decoration:underline}
+.hero{position:relative}
+h1{font-size:clamp(2.8rem,9vw,6rem);line-height:.95;letter-spacing:-.04em}
+.lede{font-size:clamp(1.1rem,2.2vw,1.35rem);line-height:1.4;max-width:34ch;margin:18px auto 30px}
+
+.get{display:inline-flex;align-items:center;gap:14px;background:#000;color:#fff;text-decoration:none;font:600 18px Figtree,sans-serif;padding:16px 30px 18px;border-radius:0 0 26px 26px;transition:transform .2s,background .2s}
+.get:hover{background:var(--deep);transform:translateY(3px)}
+.get svg{width:22px;height:22px;flex:none}
+.meta{margin-top:16px;font-size:15px;color:var(--soft)}
+.badges{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:22px;list-style:none;padding:0}
+.badges li{margin:0;padding:5px 13px;border:1.5px solid var(--deep);border-radius:999px;font-size:14px;font-weight:600;color:var(--deep)}
+
+section{padding:clamp(44px,7vw,80px) 0}
+h2{font-size:clamp(1.8rem,4.5vw,2.8rem);line-height:1.05;letter-spacing:-.025em;margin-bottom:28px}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px;list-style:none;padding:0;counter-reset:s}
+.steps li{counter-increment:s;background:#fff;border-radius:22px;padding:24px 22px;position:relative;margin:0}
+.steps li::before{content:counter(s);display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#000;color:#fff;font:700 16px "Bricolage Grotesque",sans-serif;margin-bottom:14px}
+.steps h3{font-size:1.2rem;margin-bottom:6px}
+.steps p{color:var(--soft);font-size:16px}
+
+.help{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
+.card{background:#000;color:#c9c9c9;border-radius:22px;padding:26px 24px}
+.card h3{color:#fff;font-size:1.25rem;margin-bottom:8px}
+.card p{font-size:16px}
+.card strong{color:#fff}
+.card a{color:#fff}
+
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:22px;margin-top:8px}
+.facts dt{color:var(--soft);font-size:15px}
+.facts dd{margin:0;font:700 1.35rem "Bricolage Grotesque",sans-serif;color:var(--ink)}
+code{font-size:14px;background:#fff;padding:2px 7px;border-radius:6px;word-break:break-all}
+
+footer{padding:36px 0 48px;text-align:center;font-size:15px;color:var(--soft)}
+@media (prefers-reduced-motion:reduce){.pill,.pill .wave i{animation:none}.get{transition:none}}
 </style>
 </head>
 <body>
-<main>
-<p><a href="/"><img src="favicon-32.png" alt="" width="20" height="20" style="vertical-align:-4px;margin-right:6px">← Back to Islet</a></p>
-<h1>Download Islet</h1>
-<p>A Dynamic-Island-style notch for Windows 10 and 11.</p>
-<p><a class="btn" href="files/Islet-Setup-2.1.0.exe" download>Download for Windows (2.1.0)</a><br><small>Islet-Setup-2.1.0.exe · 108 MB</small></p>
+<header class="hero">
+  <a class="back" href="/">← Back to Islet</a>
+  <div class="stage"><div class="pill" aria-hidden="true"><span class="dot"></span><span class="wave"><i></i><i></i><i></i><i></i></span></div></div>
+  <h1>Get Islet</h1>
+  <p class="lede">The notch Windows never had. Free, open source, and one click to install.</p>
+  <a class="get" href="files/Islet-Setup-2.1.0.exe" download>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 20h16"/></svg>
+    Download for Windows
+  </a>
+  <p class="meta">Version 2.1.0 · <code>Islet-Setup-2.1.0.exe</code> · 108 MB</p>
+  <ul class="badges"><li>Windows 10 &amp; 11</li><li>No admin rights</li><li>Free &amp; open source</li><li>Auto-updates</li></ul>
+</header>
 
-<h2>Install</h2>
-<ol>
-<li>Run the downloaded file. It adds a Start menu entry and installs to your user folder, with no admin rights needed.</li>
-<li>The installer is unsigned. If SmartScreen warns you, choose <strong>More info</strong>, then <strong>Run anyway</strong>.</li>
-<li>If <strong>Smart App Control</strong> blocks it, the installer can't run on that PC. Run Islet from source instead: <a href="https://github.com/goprocker/Islet">github.com/goprocker/Islet</a>.</li>
-</ol>
-<p>Islet checks GitHub for updates and installs them when you quit. See the <a href="privacy.html">Privacy Policy</a>.</p>
+<main class="wrap">
+  <section aria-labelledby="install">
+    <h2 id="install">Installed in three steps</h2>
+    <ol class="steps">
+      <li><h3>Download</h3><p>Grab <strong>Islet-Setup-2.1.0.exe</strong> with the button above.</p></li>
+      <li><h3>Run it</h3><p>It adds a Start menu entry and installs to your user folder. No admin rights needed.</p></li>
+      <li><h3>Meet the notch</h3><p>Islet appears at the top of your screen. Updates install themselves when you quit.</p></li>
+    </ol>
+  </section>
+
+  <section aria-labelledby="warn">
+    <h2 id="warn">If Windows warns you</h2>
+    <div class="help">
+      <div class="card"><h3>SmartScreen</h3><p>The installer is unsigned, so SmartScreen may show a warning. Choose <strong>More info</strong>, then <strong>Run anyway</strong>.</p></div>
+      <div class="card"><h3>Smart App Control</h3><p>If <strong>Smart App Control</strong> blocks it, the installer can't run on that PC. Run Islet from source instead: <a href="https://github.com/goprocker/Islet">github.com/goprocker/Islet</a>.</p></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="about">
+    <h2 id="about">The details</h2>
+    <dl class="facts">
+      <div><dt>Version</dt><dd>2.1.0</dd></div>
+      <div><dt>Size</dt><dd>108 MB</dd></div>
+      <div><dt>Platform</dt><dd>Windows 10, 11</dd></div>
+      <div><dt>License</dt><dd>MIT</dd></div>
+    </dl>
+    <p style="margin-top:28px;color:var(--soft)">Islet checks GitHub for updates and installs them when you quit. Older versions and release notes are on the <a href="https://github.com/goprocker/Islet/releases">releases page</a>.</p>
+  </section>
 </main>
+
+<footer><div class="wrap">© 2026 <a href="https://www.linkedin.com/in/gopinath2638">Gopinath on LinkedIn</a> · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></div></footer>
 </body>
 </html>

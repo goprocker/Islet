@@ -289,14 +289,14 @@ footer{background:var(--sea);padding:30px 0;font-size:15px}
     status.textContent = `${b.dataset.answer}. Claude, ${b.dataset.answer === "Allowed" ? "working" : "done"}`;
   }));
 
-  // counts down to Nov 3, 5 PM IST, then points at the release
+  // counts down to Nov 3, 5 PM IST, then points at the download page
   const launchAt = Date.parse("2026-11-03T17:00:00+05:30");
   const timer = document.getElementById("timer");
   const tick = () => {
     const left = launchAt - Date.now();
     if (left <= 0) {
       clearInterval(ticking);
-      timer.innerHTML = `<a class="cta" href="https://github.com/goprocker/Islet/releases/latest">Islet is out. Get it on GitHub</a>`;
+      timer.innerHTML = `<a class="cta" href="downloads.html">Islet is out. Download it</a>`;
       timer.removeAttribute("role");
       timer.removeAttribute("aria-label");
       document.getElementById("interest").style.display = "none";
