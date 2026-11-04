@@ -90,3 +90,20 @@ test("nothing restarts after quitting", check(({ life, started, exit, timers, ru
   assert.strictEqual(timers.size, 0);
   assert.strictEqual(running().length, 0);
 }));
+
+test("a helper that fails to launch retries once, without throwing", check(({ life, started, timers, runTimers }) => {
+  life.start();
+  started[0].exited = true;
+  started[0].emit("error", new Error("spawn ENOENT"));
+  started[0].emit("exit");
+  assert.strictEqual(timers.size, 1);
+  runTimers();
+  assert.strictEqual(started.length, 2);
+}));
+
+test("quitting after a failed launch cancels the retry", check(({ life, started, timers }) => {
+  life.start();
+  started[0].emit("error", new Error("spawn ENOENT"));
+  life.quit();
+  assert.strictEqual(timers.size, 0);
+}));

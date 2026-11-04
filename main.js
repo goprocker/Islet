@@ -150,11 +150,13 @@ function onMediaLine(l) {
   if (key !== lastTitle) { lastTitle = key; refreshSpotifyExtras(); }
   updateLyrics();
 }
+// a media command that fails to launch is logged, not an uncaught crash
+const media = (...args) => spawn("powershell.exe", [...MEDIA, ...args], { windowsHide: true }).on("error", e => console.warn("media", e.message));
 ipcMain.on("control", (_, cmd) => {
-  if (["toggle", "next", "prev"].includes(cmd)) spawn("powershell.exe", [...MEDIA, cmd], { windowsHide: true });
+  if (["toggle", "next", "prev"].includes(cmd)) media(cmd);
 });
 ipcMain.on("seek", (_, sec) => {
-  if (Number.isFinite(sec)) spawn("powershell.exe", [...MEDIA, "seek", String(Math.max(0, sec))], { windowsHide: true });
+  if (Number.isFinite(sec)) media("seek", String(Math.max(0, sec)));
 });
 
 // ---- mic / camera / screen capture in use + fullscreen apps ----
@@ -193,6 +195,7 @@ function startHelpers() {
     latest = null;
   }, 33);
   helpers.on("exit", () => clearInterval(timer));
+  helpers.on("error", () => clearInterval(timer));
   return helpers;
 }
 const helpers = helperLifecycle(startHelpers);
@@ -219,7 +222,7 @@ async function refreshSpotifyExtras() {
 }
 ipcMain.on("like", async () => {
   // Web API needs a Premium developer account; without it, use Spotify's own shortcut
-  if (!spotify.connected()) return spawn("powershell.exe", [...MEDIA, "like"], { windowsHide: true });
+  if (!spotify.connected()) return media("like");
   try { await spotify.toggleLike(); refreshSpotifyExtras(); } catch (e) { console.warn("like", e.message); }
 });
 
@@ -366,8 +369,8 @@ ipcMain.on("openNotification", (_, id) => {
   if (t.file) shell.showItemInFolder(t.file);
   else if (t.url && /^(https?|ms-[\w-]+|whatsapp|tg|slack|discord|msteams|mailto):/i.test(t.url)) shell.openExternal(t.url);
   // AUMIDs (Store apps and Start Menu apps) open through the Apps folder
-  else if (t.aumid && !/\\/.test(t.aumid)) spawn("explorer.exe", [`shell:AppsFolder\\${t.aumid}`], { detached: true });
-  else if (t.aumid) spawn(t.aumid.replace(/^\{[^}]+\}\\/, process.env.WINDIR + "\\System32\\"), [], { detached: true });
+  else if (t.aumid && !/\\/.test(t.aumid)) spawn("explorer.exe", [`shell:AppsFolder\\${t.aumid}`], { detached: true }).on("error", e => console.warn("open", e.message));
+  else if (t.aumid) spawn(t.aumid.replace(/^\{[^}]+\}\\/, process.env.WINDIR + "\\System32\\"), [], { detached: true }).on("error", e => console.warn("open", e.message));
 });
 ipcMain.on("openProject", (_, cwd) => { if (cwd && fs.existsSync(cwd)) shell.openPath(cwd); });
 
@@ -463,6 +466,7 @@ function toggleRadio(kind) {
   const p = spawn("powershell.exe", [...PS, path.join(__dirname, "radios.ps1"), "toggle", kind], { windowsHide: true });
   let out = "";
   p.stdout.on("data", d => { out += d; });
+  p.on("error", e => send("searchDone", `Couldn't change ${name}: ${e.message}`));
   p.on("exit", () => {
     let r = null;
     try { r = JSON.parse(out.trim()); } catch {}
@@ -497,7 +501,7 @@ ipcMain.on("searchRun", (_, id) => {
   if (!r) return;
   if (r.kind === "file") shell.openPath(r.path).then(err => err && console.warn("open file", err));
   else if (r.kind === "app") {
-    if (r.appId) spawn("explorer.exe", ["shell:AppsFolder" + String.fromCharCode(92) + r.appId], { detached: true, windowsHide: true }).unref();
+    if (r.appId) spawn("explorer.exe", ["shell:AppsFolder" + String.fromCharCode(92) + r.appId], { detached: true, windowsHide: true }).on("error", e => console.warn("open app", e.message)).unref();
     else shell.openPath(r.file).then(err => err && console.warn("open app", err));
   }
   else if (r.text !== undefined) { lastClip = r.text; clipboard.writeText(r.text).catch(e => console.warn("clipboard", e.message)); send("searchDone", "Copied"); }
