@@ -40,6 +40,7 @@ contextBridge.exposeInMainWorld("bridge", {
   onTheme: on("theme"),
   onDownloads: on("downloads"),
   onDownloadDone: on("downloadDone"),
+  onUpdateReady: on("updateReady"),
   copyClip: i => ipcRenderer.send("copyClip", i),
   onNotes: on("notes"),
   saveNotes: t => ipcRenderer.send("saveNotes", t),
@@ -63,4 +64,5 @@ contextBridge.exposeInMainWorld("bridge", {
   openProject: cwd => ipcRenderer.send("openProject", cwd),
   openNotification: id => ipcRenderer.send("openNotification", id),
   joinMeeting: url => ipcRenderer.send("joinMeeting", url),
+  installUpdate: () => ipcRenderer.send("installUpdate"),
 });

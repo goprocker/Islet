@@ -788,19 +788,25 @@ function startUpdates() {
   if (!app.isPackaged) return; // a source copy updates with git
   updater = require("electron-updater").autoUpdater;
   updater.logger = console;
-  updater.on("update-downloaded", info => { updateReady = info.version; buildMenu(); });
+  updater.on("update-downloaded", info => { updateReady = info.version; buildMenu(); send("updateReady", info.version); });
   updater.on("error", e => console.warn("update", e.message));
   const check = () => updater.checkForUpdates().catch(e => console.warn("update", e.message));
   check();
   setInterval(check, UPDATE_EVERY);
 }
+function installUpdate() {
+  if (!updateReady) return;
+  app.isQuitting = true;
+  updater.quitAndInstall(true, true);
+}
+ipcMain.on("installUpdate", installUpdate);
 
 // ---- tray ----
 function buildMenu() {
   const displays = screen.getAllDisplays();
   const current = targetDisplay().id;
   tray.setContextMenu(Menu.buildFromTemplate([
-    ...(updateReady ? [{ label: `Restart to update to ${updateReady}`, click: () => { app.isQuitting = true; updater.quitAndInstall(true, true); } }, { type: "separator" }] : []),
+    ...(updateReady ? [{ label: `Restart to update to ${updateReady}`, click: installUpdate }, { type: "separator" }] : []),
     { label: "Show / hide Islet  (Ctrl+Alt+N)", click: () => send("toggle") },
     {
       label: timerEnd ? "Timer (running)" : "Timer", submenu: [

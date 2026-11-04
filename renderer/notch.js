@@ -126,7 +126,8 @@ function endToast() {
   setTimeout(nextToast, 450);
 }
 $("notch").querySelector(".toastv").addEventListener("click", () => {
-  if (current?.link) window.bridge.joinMeeting(current.link);
+  if (current?.update) window.bridge.installUpdate();
+  else if (current?.link) window.bridge.joinMeeting(current.link);
   else if (current?.id) window.bridge.openNotification(current.id);
   endToast();
 });
@@ -787,6 +788,7 @@ notch.addEventListener("drop", e => {
 // ---- weather + downloads ----
 window.bridge.onWeather(w => { wx = w; render(); });
 window.bridge.onDownloads(list => { dls = list; render(); });
+window.bridge.onUpdateReady(v => toast({ update: true, app: "Islet", badge: "↑", color: "#30d158", title: `Islet ${v} is ready`, body: "Click to restart and update, or it installs when you quit.", ms: 10000 }));
 window.bridge.onDownloadDone(d => toast({ id: d.id, app: "Downloads", badge: "↓", color: "#0a84ff", title: d.name, body: "Downloaded. Click to show in folder." }));
 
 // ---- look ----
