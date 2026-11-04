@@ -1,0 +1,79 @@
+# Builds the Windows installer from a version tag, signs it through the
+# SignPath Foundation when its secrets are set, and publishes the GitHub
+# release with the three files auto-update needs (.exe, .blockmap, latest.yml).
+#
+# Release: bump package.json, commit, then `git tag v2.3.2 && git push --tags`.
+#
+# SignPath setup (after approval): add repo secret SIGNPATH_API_TOKEN and repo
+# variable SIGNPATH_ORGANIZATION_ID. Until then releases go out unsigned.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: npm test
+
+      - name: Build installer
+        run: npx electron-builder --win nsis --publish never
+
+      - name: Find installer
+        id: ver
+        shell: bash
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Upload unsigned installer
+        id: unsigned
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned
+          path: dist/Islet-Setup-${{ steps.ver.outputs.version }}.exe
+
+      - name: Sign with SignPath
+        if: env.SIGNPATH_API_TOKEN != ''
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: Islet
+          signing-policy-slug: release-signing
+          github-artifact-id: ${{ steps.unsigned.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: signed
+
+      # Signing changes the file, so the blockmap and latest.yml hashes must be redone.
+      - name: Replace installer with signed copy
+        if: env.SIGNPATH_API_TOKEN != ''
+        shell: bash
+        run: |
+          exe="Islet-Setup-${{ steps.ver.outputs.version }}.exe"
+          cp "signed/$exe" "dist/$exe"
+          node build/rehash.js "dist/$exe"
+
+      - name: Publish release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          v="${{ steps.ver.outputs.version }}"
+          exe="dist/Islet-Setup-$v.exe"
+          gh release create "v$v" "$exe" "$exe.blockmap" dist/latest.yml \
+            --title "Islet $v" --generate-notes

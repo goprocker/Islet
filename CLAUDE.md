@@ -6,7 +6,7 @@ Islet is a Dynamic-Island-style notch for Windows 10/11, built with Electron. Th
 - Commits: Conventional Commit subject plus a specific body; push straight to `main`, with no PR. Another session (co-author "Jarvis") also pushes to `main`, so `git fetch` before starting.
 - Line endings: most files are CRLF. Scripted edits must keep `\r\n`, or the replacements silently miss.
 - Installer: per machine (admin). `build/installer.nsh` adds/removes the "Islet Phone drop" firewall rule (private profile, program-based).
-- Releasing: bump `package.json`, `npx electron-builder --win`, then `gh release create vX` with `dist/Islet-Setup-X.exe`, its `.blockmap` and `latest.yml` (auto-update needs all three). Then update the version in `landing/downloads.html`, every `href="/Islet-Setup-…"` in `landing/*.html`, and both redirects in `landing/netlify.toml` (the site proxies the installer so buttons download directly).
+- Releasing: bump `package.json`, commit, then push a `vX` tag. `.github/workflows/release.yml` builds, signs through SignPath once `SIGNPATH_API_TOKEN` and `SIGNPATH_ORGANIZATION_ID` are set (`build/rehash.js` then redoes the hashes), and publishes the `.exe`, `.blockmap` and `latest.yml` (auto-update needs all three). Then update the version in `landing/downloads.html`, every `href="/Islet-Setup-…"` in `landing/*.html`, and both redirects in `landing/netlify.toml` (the site proxies the installer so buttons download directly).
 - Packaging: `package.json` `build.files` lists every module and `.ps1` file by name. Add new ones there, or the installer crashes.
 - Ask before launching a separate Electron window for screenshots: the user rejected that several times. Instead, take them from the running app over its debug port (see below).
 
