@@ -26,12 +26,13 @@ a{color:inherit}
 
 <main>
 <h1>Privacy Policy</h1>
-<p>Last updated: 2 November 2026</p>
+<p>Last updated: 4 November 2026</p>
 <p>This policy covers the Islet app for Windows and this website. Islet is made by Gopinath.</p>
 
 <h2>The Islet app</h2>
 <p>Islet has no account, no analytics and no tracking. Its data stays on your PC, and none of it is sent to us. That includes settings, notifications, agent activity, clipboard history and shelf file paths.</p>
 <p>Clipboard history is kept in memory only and never written to disk. The agent hook server listens on your PC only (127.0.0.1).</p>
+<p><strong>Phone drop:</strong> when you open it, Islet starts a temporary server on your local network so your phone can send files. The link holds a random secret, files go straight from your phone to your PC without passing through any outside server, and the server stops when you close Phone drop or after 10 minutes.</p>
 <p>The installed app checks GitHub for updates and downloads them from there. GitHub receives your IP address when it does, and this check can't be turned off. Otherwise, the app only goes online for these optional features:</p>
 <ul>
 <li><strong>Lyrics:</strong> sends the song title and artist to lrclib.net.</li>
@@ -40,6 +41,9 @@ a{color:inherit}
 <li><strong>Spotify:</strong> connects to Spotify if you choose to connect your account.</li>
 </ul>
 <p>Those services have their own privacy policies.</p>
+
+<h2>Code signing</h2>
+<p>Windows releases of Islet are code-signed through the SignPath Foundation. Signing happens when a release is built and involves no data from your PC.</p>
 
 <h2>This website</h2>
 <p><strong>"I'm interested" button:</strong> when you click it, we store a one-way hash of your IP address so each network counts once. We don't store the IP address itself or use the hash to identify you. Hashes are kept until the launch count is no longer needed.</p>
