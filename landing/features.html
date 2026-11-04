@@ -40,6 +40,7 @@
 .end{text-align:center;padding:clamp(48px,8vw,88px) 0 0}.end h2{font-size:clamp(1.8rem,4vw,2.8rem)}.end p{color:var(--soft);margin:10px 0 22px}
 .btn{display:inline-block;background:#000;color:#fff;text-decoration:none;font-weight:600;padding:12px 22px;border-radius:0 0 18px 18px}
 @media (max-width:760px){.row{grid-template-columns:1fr}.row.flip .pic{order:0}}
+@media (max-width:760px){.pic.wide{overflow-x:auto;place-items:center start;-webkit-overflow-scrolling:touch}.pic.wide img{max-width:none;width:auto;height:190px}}
 </style>
 </head>
 <body>
@@ -53,7 +54,7 @@
   <ul class="chips"><li><a href="#media">Media</a></li><li><a href="#agents">AI agents</a></li><li><a href="#notify">Notifications</a></li><li><a href="#tools">Tools</a></li><li><a href="#files">Files</a></li><li><a href="#time">Time and focus</a></li><li><a href="#desktop">Desktop</a></li><li><a href="#system">System</a></li></ul></div>
 <section class="group" id="media"><div class="ghead"><h2>Media</h2><span>2 tools</span></div>
   <article class="row">
-    <div class="pic"><img src="shots/album.png" alt="Music in the Islet notch" loading="lazy"></div>
+    <div class="pic wide" tabindex="0" role="group" aria-label="Screenshot, scrolls sideways"><img src="shots/album.png" alt="Music in the Islet notch" loading="lazy"></div>
     <div class="txt"><p class="eyebrow">Music</p><h3>Your song, at the top of the screen.</h3><p>Spotify or any player that uses Windows media controls. Album art sets the accent colour, a live wave follows the beat, and you can play, skip, seek, like and scroll for volume.</p><ul class="tags"><li>Spotify</li><li>Any media app</li><li>Synced lyrics</li></ul></div>
   </article>
   <article class="row flip">
@@ -63,13 +64,13 @@
 </section>
 <section class="group" id="agents"><div class="ghead"><h2>AI agents</h2><span>1 tool</span></div>
   <article class="row">
-    <div class="pic"><img src="open.png" alt="Claude Code and Codex in the Islet notch" loading="lazy"></div>
+    <div class="pic wide" tabindex="0" role="group" aria-label="Screenshot, scrolls sideways"><img src="open.png" alt="Claude Code and Codex in the Islet notch" loading="lazy"></div>
     <div class="txt"><p class="eyebrow">Claude Code and Codex</p><h3>See what your agents are doing.</h3><p>Sessions from both agents in one column: working, needs you, or done, with their last three actions. Allow or deny Claude permission requests right from the notch.</p><ul class="tags"><li>Claude Code</li><li>Codex</li><li>Allow / Deny</li></ul></div>
   </article>
 </section>
 <section class="group" id="notify"><div class="ghead"><h2>Notifications</h2><span>1 tool</span></div>
   <article class="row flip">
-    <div class="pic"><img src="shots/toast.png" alt="Pop-ups in the Islet notch" loading="lazy"></div>
+    <div class="pic wide" tabindex="0" role="group" aria-label="Screenshot, scrolls sideways"><img src="shots/toast.png" alt="Pop-ups in the Islet notch" loading="lazy"></div>
     <div class="txt"><p class="eyebrow">Pop-ups</p><h3>Toasts that stay out of your way.</h3><p>Windows notifications drop out of the notch with the real app logo and the full message. Do Not Disturb can follow a schedule or your focus timer.</p><ul class="tags"><li>App logos</li><li>Do Not Disturb</li><li>Mic toast</li></ul></div>
   </article>
 </section>
