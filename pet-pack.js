@@ -45,7 +45,13 @@ function readPack(dir) {
 function unpack(file) {
   if (!/\.zip$/i.test(file)) return path.dirname(file);
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "islet-pet-"));
-  execFileSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", "Expand-Archive -LiteralPath $args[0] -DestinationPath $args[1] -Force", file, dir], { windowsHide: true, timeout: 30000 });
+  // paths travel in the environment, never in the command text, so spaces and quotes are safe
+  try {
+    execFileSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", "Expand-Archive -LiteralPath $env:ISLET_ZIP -DestinationPath $env:ISLET_OUT -Force"], { windowsHide: true, timeout: 30000, stdio: "pipe", env: { ...process.env, ISLET_ZIP: file, ISLET_OUT: dir } });
+  } catch (e) {
+    fs.rmSync(dir, { recursive: true, force: true });
+    throw new Error("Couldn't unpack that zip.");
+  }
   if (fs.existsSync(path.join(dir, "pet.json"))) return dir;
   const sub = fs.readdirSync(dir, { withFileTypes: true }).find(d => d.isDirectory() && fs.existsSync(path.join(dir, d.name, "pet.json")));
   if (!sub) throw new Error("No pet.json inside that zip.");

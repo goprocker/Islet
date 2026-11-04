@@ -35,6 +35,8 @@ function freePath(dir, name) {
   return p;
 }
 
+// a stable id per shelf file, so a link keeps meaning the same file when the shelf changes
+const fileId = p => crypto.createHash("sha256").update(secret + "|" + p).digest("hex").slice(0, 16);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const page = files => `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Islet drop</title>
 <style>body{margin:0;background:#000;color:#f5f5f7;font:16px system-ui,sans-serif;padding:24px 16px}h1{font-size:22px;margin:0 0 4px}p{color:#8e8e93;margin:0 0 20px}
@@ -43,9 +45,10 @@ ul{list-style:none;padding:0;margin:24px 0 0}li a{display:block;background:#1c1c
 #s{margin-top:14px;color:#bf8cff}</style></head><body>
 <h1>Islet drop</h1><p>Send files to your PC, or take files from its shelf.</p>
 <label>Choose files to send<input id="f" type="file" multiple></label><div id="s"></div>
-${files.length ? `<ul>${files.map((f, i) => `<li><a href="f/${i}" download>${esc(f.name)}</a></li>`).join("")}</ul>` : ""}
-<script>document.getElementById("f").onchange=async e=>{const s=document.getElementById("s");for(const f of e.target.files){s.textContent="Sending "+f.name+"…";
-const r=await fetch("up?name="+encodeURIComponent(f.name),{method:"POST",body:f});s.textContent=r.ok?"Sent "+f.name:"Couldn't send "+f.name}}</script></body></html>`;
+${files.length ? `<ul>${files.map((f, i) => `<li><a href="f/${f.id}" download>${esc(f.name)}</a></li>`).join("")}</ul>` : ""}
+<script>document.getElementById("f").onchange=async e=>{const s=document.getElementById("s"),list=[...e.target.files],bad=[];let ok=0;
+for(const f of list){s.textContent="Sending "+f.name+"…";try{const r=await fetch("up?name="+encodeURIComponent(f.name),{method:"POST",body:f});if(r.ok)ok++;else bad.push(f.name)}catch{bad.push(f.name)}}
+s.textContent=bad.length?"Couldn't send "+bad.join(", ")+(ok?" ("+ok+" sent)":"")+". Pick again to retry.":(ok>1?"Sent "+ok+" files":"Sent "+list[0].name);e.target.value=""}</script></body></html>`;
 
 // start({dir, shelf: () => [{name, path}], onFile: path => void}) -> Promise<url>
 function start({ dir, shelf, onFile }) {
@@ -59,13 +62,14 @@ function start({ dir, shelf, onFile }) {
     const u = new URL(req.url, "http://x");
     const parts = u.pathname.split("/").filter(Boolean);
     if (parts[0] !== secret) { res.writeHead(404); return res.end(); }
-    const files = shelf();
+    const files = shelf().map(f => ({ ...f, id: fileId(f.path) }));
     if (req.method === "GET" && parts.length === 1) {
       res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
       return res.end(page(files));
     }
-    if (req.method === "GET" && parts[1] === "f" && files[Number(parts[2])]) {
-      const f = files[Number(parts[2])];
+    if (req.method === "GET" && parts[1] === "f" && files.some(x => x.id === parts[2])) {
+      const f = files.find(x => x.id === parts[2]);
+      if (!fs.existsSync(f.path)) { res.writeHead(404); return res.end(); }
       res.writeHead(200, { "content-disposition": `attachment; filename*=UTF-8''${encodeURIComponent(f.name)}` });
       return fs.createReadStream(f.path).on("error", () => res.destroy()).pipe(res);
     }
@@ -73,12 +77,31 @@ function start({ dir, shelf, onFile }) {
       if (Number(req.headers["content-length"]) > MAX_FILE) { res.writeHead(413); return res.end(); }
       fs.mkdirSync(dir, { recursive: true });
       const p = freePath(dir, safeName(u.searchParams.get("name")));
-      let size = 0;
-      const out = fs.createWriteStream(p);
-      req.on("data", c => { size += c.length; if (size > MAX_FILE) { req.destroy(); out.destroy(); fs.rm(p, () => {}); } });
+      const tmp = path.join(dir, `.upload-${crypto.randomBytes(6).toString("hex")}.part`);
+      let size = 0, done = false;
+      const out = fs.createWriteStream(tmp, { flags: "wx" });
+      // one idempotent exit: drop the partial file and (if still connected) answer
+      const fail = code => {
+        if (done) return;
+        done = true;
+        req.unpipe(out); out.destroy();
+        fs.rm(tmp, { force: true }, () => {});
+        if (!res.headersSent && !res.destroyed) { res.writeHead(code); res.end(); }
+      };
+      req.on("data", c => { size += c.length; if (size > MAX_FILE) { fail(413); req.destroy(); } });
+      req.on("aborted", () => fail(400));
+      req.on("error", () => fail(400));
+      req.on("close", () => { if (!req.complete) fail(400); });
       req.pipe(out);
-      out.on("finish", () => { onFile(p); res.writeHead(200); res.end("ok"); });
-      out.on("error", () => { res.writeHead(500); res.end(); });
+      out.on("finish", () => {
+        if (done) return;
+        done = true;
+        let final = p;
+        try { final = freePath(dir, path.basename(p)); fs.renameSync(tmp, final); } catch { fs.rm(tmp, { force: true }, () => {}); if (!res.destroyed) { res.writeHead(500); res.end(); } return; }
+        onFile(final);
+        if (!res.destroyed) { res.writeHead(200); res.end("ok"); }
+      });
+      out.on("error", () => fail(500));
       return;
     }
     res.writeHead(404); res.end();
