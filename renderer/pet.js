@@ -89,12 +89,15 @@
   // what the cat says when the notch opens: a hello the first time each day, then a word about its mood.
   // ctx: {hour 0..23, name, mood, firstToday}
   const MOOD_LINES = { dance: "Nice song!", sleep: "zzz… let me nap", sick: "Plug me in, please!", work: "Focus time. You got this", alert: "Ooh, something new!", code: "Coding with your agent…", ask: "Your agent needs you!", plant: "Focus done. My plant grew!" };
+  // idle chat, so a quiet spell isn't just "Hello" again and again; {who} becomes ", name"
+  const IDLE_LINES = ["Just hanging out here{who}", "Need a break? Stretch a bit!", "Drink some water{who}", "All quiet up here", "Psst… I'm still here", "Want to start a focus timer?", "Looking good today{who}!", "*yawn*"];
   function line(ctx) {
     const who = ctx.name ? `, ${ctx.name}` : "";
     if (ctx.firstToday) {
       const part = ctx.hour < 5 ? "Still up" : ctx.hour < 12 ? "Good morning" : ctx.hour < 17 ? "Good afternoon" : "Good evening";
       return `${part}${who}!`;
     }
+    if (ctx.mood === "idle") return IDLE_LINES[Math.floor((ctx.roll ?? Math.random()) * IDLE_LINES.length)].replace("{who}", who);
     return MOOD_LINES[ctx.mood] || `Hello${who}!`;
   }
 

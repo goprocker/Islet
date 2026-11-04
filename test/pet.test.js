@@ -47,7 +47,9 @@ test("the first open of the day greets by time and name, then the cat talks abou
   assert.strictEqual(line({ hour: 9, name: "Gopinath", mood: "idle", firstToday: true }), "Good morning, Gopinath!");
   assert.strictEqual(line({ hour: 20, name: "", mood: "idle", firstToday: true }), "Good evening!");
   assert.strictEqual(line({ hour: 20, name: "Asha", mood: "dance", firstToday: false }), "Nice song!");
-  assert.strictEqual(line({ hour: 20, name: "Asha", mood: "idle", firstToday: false }), "Hello, Asha!");
+  assert.strictEqual(line({ hour: 20, name: "Asha", mood: "", firstToday: false }), "Hello, Asha!");
+  assert.strictEqual(line({ hour: 20, name: "Asha", mood: "idle", firstToday: false, roll: 0 }), "Just hanging out here, Asha");
+  assert.notStrictEqual(line({ hour: 20, name: "Asha", mood: "idle", firstToday: false, roll: 0.5 }), "Hello, Asha!");
 });
 
 test("agents: a working session makes it code, one that needs you makes it ask", () => {
