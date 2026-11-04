@@ -23,5 +23,5 @@ Islet is a Dynamic-Island-style notch for Windows 10/11, built with Electron. Th
 ## Open tasks (asked by the user)
 
 1. Website screenshots: replace the mock-ups in `landing/features.html` and refresh `landing/shots/` and `open.png` with `docs/tools/*.png`.
-2. SmartScreen: only code signing fixes it (Azure Trusted Signing or a certificate). The user hasn't chosen one yet. Never try to get around SmartScreen.
+2. SmartScreen: only code signing fixes it. The user applied to the SignPath Foundation on 2026-11-04 and is waiting for their reply. When approved: add the repo secret `SIGNPATH_API_TOKEN` and variable `SIGNPATH_ORGANIZATION_ID`, check the project/policy slugs in `release.yml`, and add the SignPath line to `landing/downloads.html`. If rejected, remove the Code signing section from `landing/privacy.html`. Never try to get around SmartScreen.
 3. Optional: retake the guide screenshots after the user sets their name and plays music. The current Home screenshot says "Still up, Gopin" and its sliders show 0. The guide still says 2.2.0.
