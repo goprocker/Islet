@@ -5,6 +5,7 @@ Islet is a Dynamic-Island-style notch for Windows 10/11, built with Electron. Th
 - Run: `npm start`. Test: `npm test` (`node --test test/*.test.js`, 291 passing in 37 files on 2026-11-04).
 - Commits: Conventional Commit subject plus a specific body; push straight to `main`, with no PR. Another session (co-author "Jarvis") also pushes to `main`, so `git fetch` before starting.
 - Line endings: most files are CRLF. Scripted edits must keep `\r\n`, or the replacements silently miss.
+- Installer: per machine (admin). `build/installer.nsh` adds/removes the "Islet Phone drop" firewall rule (private profile, program-based).
 - Packaging: `package.json` `build.files` lists every module and `.ps1` file by name. Add new ones there, or the installer crashes.
 - Ask before launching a separate Electron window for screenshots: the user rejected that several times. Instead, take them from the running app over its debug port (see below).
 
@@ -20,8 +21,5 @@ Islet is a Dynamic-Island-style notch for Windows 10/11, built with Electron. Th
 ## Open tasks (asked by the user)
 
 1. Website screenshots: replace the mock-ups in `landing/features.html` and refresh `landing/shots/` and `open.png` with `docs/tools/*.png`.
-2. About page: the maker card should read "Gopinath, Co-founder & CEO, Loopfound" (`landing/about.html`, `.maker`).
-3. Installer firewall rule for Phone drop: an NSIS include in `build.nsis` with `netsh advfirewall firewall add rule … profile=private`, removed again on uninstall.
 4. SmartScreen: only code signing fixes it (Azure Trusted Signing or a certificate). The user hasn't chosen one yet. Never try to get around SmartScreen.
-5. Rebuild the 2.2.0 installer: release commit `2f7c5cd` predates crash fix `9ce41fc`.
 6. Optional: retake the guide screenshots after the user sets their name and plays music. The current Home screenshot says "Still up, Gopin" and its sliders show 0.
