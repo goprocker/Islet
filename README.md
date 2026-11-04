@@ -1,70 +1,89 @@
 <div align="center">
 
-<img src="assets/logo-apple/logo-512.png" alt="" width="120">
+<img src="assets/logo-apple/logo-512.png" alt="" width="112">
 
 # Islet
 
-**A Dynamic-Island-style notch for Windows 10 and 11**
+### The notch Windows never had.
 
-Music · Claude Code and Codex · notifications · battery · search · timers, all in one small black pill at the top of your screen.
+A Dynamic-Island-style pill at the top of your screen for **music**, **Claude Code and Codex**, **notifications**, **battery**, **search** and a dock of small tools. Free, open source, one installer.
 
-<a href="https://islet.loopfound.in"><img alt="Website" src="https://img.shields.io/badge/website-islet.loopfound.in-111?style=for-the-badge"></a>
-<a href="https://github.com/goprocker/Islet/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/goprocker/Islet?style=for-the-badge"></a>
-<a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-blue?style=for-the-badge"></a>
-<img alt="Windows 10 / 11" src="https://img.shields.io/badge/Windows-10%20%7C%2011-0078d4?style=for-the-badge&logo=windows11&logoColor=white">
-<img alt="Electron 45" src="https://img.shields.io/badge/Electron-45-47848f?style=for-the-badge&logo=electron&logoColor=white">
-<img alt="293 tests passing" src="https://img.shields.io/badge/tests-293%20passing-34c759?style=for-the-badge">
+<br>
+
+<a href="https://github.com/goprocker/Islet/releases/latest"><img alt="Download for Windows" src="https://img.shields.io/badge/%E2%AC%87%20Download%20for%20Windows-111111?style=for-the-badge&labelColor=111111"></a>
+<a href="https://islet.loopfound.in"><img alt="Website" src="https://img.shields.io/badge/website-islet.loopfound.in-6e56cf?style=for-the-badge"></a>
+<a href="Islet-Guide.pdf"><img alt="Guide PDF" src="https://img.shields.io/badge/guide-PDF-e5484d?style=for-the-badge"></a>
+
+<a href="https://github.com/goprocker/Islet/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/goprocker/Islet?style=flat-square&color=111"></a>
+<a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-blue?style=flat-square"></a>
+<img alt="Windows 10 / 11" src="https://img.shields.io/badge/Windows-10%20%7C%2011-0078d4?style=flat-square&logo=windows11&logoColor=white">
+<img alt="Electron 45" src="https://img.shields.io/badge/Electron-45-47848f?style=flat-square&logo=electron&logoColor=white">
+<img alt="295 tests passing" src="https://img.shields.io/badge/tests-295%20passing-34c759?style=flat-square">
 
 <br><br>
 
-<img src="docs/open.png" alt="Islet open: Codex and Claude sessions on the left, Spotify in the middle, time and battery on the right" width="820">
+<img src="docs/open.png" alt="Islet open: Codex and Claude sessions on the left, Spotify in the middle, time and battery on the right" width="860">
+
+<br><br>
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/pill.png" alt="Closed pill with album art, Claude dot and audio wave" width="220"><br><sub><b>Pill</b><br>quiet until it matters</sub></td>
+    <td align="center"><img src="docs/toast.png" alt="A WhatsApp message shown as a notch pop-up" width="280"><br><sub><b>Notifications</b><br>real app logos, full text</sub></td>
+    <td align="center"><img src="docs/album.png" alt="Enlarged album art over a blurred backdrop" width="340"><br><sub><b>Album view</b><br>with timed lyrics</sub></td>
+  </tr>
+  <tr>
+    <td align="center" colspan="2"><img src="docs/search.png" alt="Alt+Space search showing the Wi-Fi settings and Wi-Fi switch results" width="440"><br><sub><b>Search</b> · Alt+Space</sub></td>
+    <td align="center"><img src="docs/hud.png" alt="Volume HUD: a speaker icon, Volume 62% and a level bar" width="340"><br><sub><b>Volume HUD</b><br>brightness and mic too</sub></td>
+  </tr>
+</table>
 
 <br>
 
 <table>
   <tr>
-    <td align="center"><img src="docs/pill.png" alt="Closed pill with album art, Claude dot and audio wave" width="220"><br><sub><b>Pill</b></sub></td>
-    <td align="center"><img src="docs/toast.png" alt="A WhatsApp message shown as a notch pop-up" width="280"><br><sub><b>Notification</b></sub></td>
-    <td align="center"><img src="docs/album.png" alt="Enlarged album art over a blurred backdrop" width="340"><br><sub><b>Album view</b></sub></td>
-  </tr>
-  <tr>
-    <td align="center" colspan="2"><img src="docs/search.png" alt="Alt+Space search showing the Wi-Fi settings and Wi-Fi switch results" width="440"><br><sub><b>Search</b> · Alt+Space</sub></td>
-    <td align="center"><img src="docs/hud.png" alt="Volume HUD: a speaker icon, Volume 62% and a level bar" width="340"><br><sub><b>Volume HUD</b></sub></td>
+    <td align="center"><kbd>Alt</kbd> + <kbd>Space</kbd><br><sub>Search</sub></td>
+    <td align="center"><kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>N</kbd><br><sub>Pill / open / hidden</sub></td>
+    <td align="center"><kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>M</kbd><br><sub>Next monitor</sub></td>
+    <td align="center"><kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>B</kbd><br><sub>Like on Spotify</sub></td>
   </tr>
 </table>
 
-<table>
-  <tr>
-    <td align="center"><kbd>Alt</kbd>+<kbd>Space</kbd><br><sub>Search</sub></td>
-    <td align="center"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>N</kbd><br><sub>Pill / open / hidden</sub></td>
-    <td align="center"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>M</kbd><br><sub>Next monitor</sub></td>
-    <td align="center"><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd><br><sub>Like on Spotify</sub></td>
-  </tr>
-</table>
+<br>
 
-[**Features**](#-features) · [**Install**](#-install) · [**Usage**](#-usage) · [**Claude Code & Codex**](#-claude-code-and-codex) · [**Settings**](#%EF%B8%8F-settings) · [**How it works**](#-how-it-works) · [**📘 Full guide (PDF)**](Islet-Guide.pdf)
+[**Features**](#-features) · [**Dock and pet**](#-the-dock-and-the-pet) · [**Install**](#-install) · [**Usage**](#%EF%B8%8F-usage) · [**Claude Code & Codex**](#-claude-code-and-codex) · [**Settings**](#%EF%B8%8F-settings) · [**How it works**](#-how-it-works)
 
 </div>
 
 ---
 
-Islet sits at the top centre of your screen. **Hover to open it, click anywhere else to close it.** When nothing is happening it shrinks to a plain black pill with one dot.
+> [!TIP]
+> **Hover to open it, click anywhere else to close it.** When nothing is happening Islet shrinks to a plain black pill with one dot.
 
 The open notch, left to right: **agent sessions** → **music** → **time and battery** → **tools**.
 
 ## ✨ What's new
 
-- 🔎 **Search with Alt+Space:** find apps (Store apps too), files and folders, Wi-Fi and Bluetooth switches, Sound and Display settings, clipboard items and notes, then press Enter.
-- 🔊 **Volume, brightness and mic HUD:** changes show in the notch with a level bar and a clean icon. A muted microphone gets its own red-tinted toast.
-- 🍅 **Pomodoro and stopwatch:** 25 / 5 / 15 minute cycles from the tray, a stopwatch beside the timer, and **Do Not Disturb turns on by itself during focus**.
-- 📋 **Clipboard v2 and notes:** 20 items, pins that survive restarts, a search box, and a quick notes panel.
+| | |
+|---|---|
+| 🐾 **2.3: bring your own pet** | Load any pet in the Codex Pets format. The pet talks in the closed pill, codes along with your agent, asks when it needs you and plants a flower after focus sessions. |
+| 📱 **2.2: dock and Phone drop** | A dock with Phone drop, Links, World clock, Clipboard, Notes, Timer, Shelf, Weather, Units, System and AI coding. Scan a QR code to move files between phone and PC over Wi-Fi. |
+| 🔎 **Search** | `Alt+Space` finds apps, files, folders, Wi-Fi and Bluetooth switches, settings, clipboard items and notes. |
+| 🍅 **Focus tools** | Pomodoro and stopwatch from the tray. Do Not Disturb turns on by itself during focus. |
+| 🔊 **Volume, brightness and mic HUD** | Level bars and clean icons in the notch; a muted mic gets its own red toast. |
+| 🌌 **Black hole charger animation** | Interstellar-style, when the charger goes in or out. Cinematic, Subtle or off. |
+| 🔄 **2.1: installer and auto-update** | A proper installer, a welcome screen that asks before changing anything, authenticated agent hooks and updates from GitHub Releases. |
 
-- 👋 **Version 2.1:** a welcome screen that asks before Islet changes anything, an installer with setup screens, authenticated agent hooks, a wave for the player on show and lighter background work.
-- 📦 **Version 2.0:** 14 reliability fixes, a ready-made [installer](https://github.com/goprocker/Islet/releases/latest) and redrawn player controls.
-- 🌌 **Black hole charger animation:** an Interstellar-style black hole plays when the charger goes in (*CHARGING INITIATED*) or out (*RUNNING ON BATTERY*). You can pick Cinematic or Subtle, or turn it off.
-- 💬 **Full notification text:** pop-ups are wider, grow up to about 7 lines and stay on screen longer for long messages.
-- 🔒 **Lock screen:** Windows' own banners come back while the PC is locked, so you still see messages there.
-- 🛡️ **Sturdier:** Alt+F4 no longer kills the notch, and a broken `config.json` is never overwritten. This round also fixed calendar exceptions, shelf duplicates, banner recovery, UTF-8 output and more.
+<details>
+<summary><b>2.3.2 fixes</b></summary>
+
+- Phone drop download links keep pointing at the file you picked, even if the shelf changes (a removed file now returns 404).
+- A phone upload that is cut off no longer leaves a half-written file on the PC.
+- The phone page reports network failures per file, carries on with the rest and lets you retry.
+- Importing a pet from a `.zip` works again.
+- The downloads page no longer overlaps its header on phones.
+
+</details>
 
 ## 🚀 Features
 
@@ -137,6 +156,35 @@ The open notch, left to right: **agent sessions** → **music** → **time and b
 </td>
 </tr>
 </table>
+
+## 🐾 The dock and the pet
+
+The dock row opens a tall view with every tool, each in its own panel:
+
+| Tool | What it does |
+|---|---|
+| 📱 **Phone drop** | A temporary page on your local network: scan the QR code, send files to the shelf, take shelf files back. Stops after 10 minutes. |
+| 🔗 **Links** | Your saved links, one click away |
+| 🕒 **World clock** | Times in other cities |
+| 📋 **Clipboard** · 📝 **Notes** · 🗂️ **Shelf** | History with pins, quick notes, drag files in and out |
+| ⏱️ **Timer** | Timer, Pomodoro, stopwatch |
+| 🌤️ **Weather** | Next 6 hours and 5 days, humidity and wind |
+| 📐 **Units** · 📊 **System** · 🤖 **AI coding** | Converter, live PC stats, your agent sessions |
+
+The **pet** reacts to your PC. The first matching mood wins:
+
+| Mood | When |
+|---|---|
+| 🤒 Sick | Battery under 20% and not charging |
+| 🚨 Alert | A pop-up arrived in the last 4 seconds |
+| 🙋 Ask | A Claude Code or Codex session needs you |
+| 🌱 Plant | A focus session just ended |
+| 🎧 Work | A focus or Pomodoro timer is running |
+| 💻 Code | An agent session is working |
+| 🎵 Dance | Something is playing |
+| 😴 Sleep / idle | Two quiet minutes / anything else |
+
+Settings → **Choose a pet…** loads a pet in the Codex Pets format (a `.zip` or its `pet.json`, with a sprite sheet of 192 × 208 frames). **Use the cat** switches back.
 
 ## 📦 Install
 
@@ -280,7 +328,7 @@ main.js ── window, tray, hotkeys, powerMonitor, config, IPC
 ### 🛠️ Develop
 
 ```powershell
-npm test     # 32 test files, node --test
+npm test     # 37 test files, node --test
 node_modules\electron\dist\electron.exe . --remote-debugging-port=9333   # then chrome://inspect
 ```
 
