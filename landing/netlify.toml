@@ -4,12 +4,12 @@
 
 # the installer is served from this domain; Netlify fetches it from the GitHub release
 [[redirects]]
-  from = "/Islet-Setup-2.3.0.exe"
-  to = "https://github.com/goprocker/Islet/releases/download/v2.3.0/Islet-Setup-2.3.0.exe"
+  from = "/Islet-Setup-2.3.1.exe"
+  to = "https://github.com/goprocker/Islet/releases/download/v2.3.1/Islet-Setup-2.3.1.exe"
   status = 200
   force = true
 
 [[redirects]]
   from = "/download"
-  to = "/Islet-Setup-2.3.0.exe"
+  to = "/Islet-Setup-2.3.1.exe"
   status = 302

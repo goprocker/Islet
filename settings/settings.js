@@ -54,8 +54,9 @@ field("accentColor").addEventListener("input", () => { form.querySelector('[name
 function drawPet(s) {
   document.getElementById("petName").textContent = s.petName || "the cat";
   document.getElementById("petClear").hidden = !s.petName;
+  document.getElementById("petDoudou").hidden = s.customPet === "doudou";
 }
-for (const [id, call] of [["petPick", "pickPet"], ["petClear", "clearPet"]]) {
+for (const [id, call] of [["petDoudou", "useDoudou"], ["petPick", "pickPet"], ["petClear", "clearPet"]]) {
   document.getElementById(id).addEventListener("click", async () => {
     try { saved = await window.settings[call](); fill(saved, snapshot()); drawPet(saved); status.textContent = saved.petName ? `Pet: ${saved.petName}` : "Back to the cat."; }
     catch (e) { status.textContent = `Couldn't use that pet: ${e.message.replace(/^.*Error: /, "")}`; }

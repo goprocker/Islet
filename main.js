@@ -27,6 +27,9 @@ const phoneDrop = require("./phone-drop");
 const QRCode = require("qrcode");
 const petPack = require("./pet-pack");
 const petsDir = () => path.join(app.getPath("userData"), "pets");
+// pets that ship with Islet; one the user imported with the same id wins
+const BUILTIN_PETS = path.join(__dirname, "builtin-pets");
+const loadPet = id => id ? petPack.loadPack(fs.existsSync(path.join(petsDir(), petPack.safeId(id))) ? petsDir() : BUILTIN_PETS, id) : null;
 
 const BASE_W = 672, BASE_H = 270;
 const SCALES = { compact: 0.85, normal: 1, large: 1.2 };
@@ -616,13 +619,19 @@ function openSettings() {
   });
   settingsWin.loadFile(path.join(__dirname, "settings", "settings.html"));
 }
-const settingsView = () => ({ ...config, hooks: bridge.installed(), login: login(), petName: config.customPet ? petPack.loadPack(petsDir(), config.customPet)?.name || "" : "" });
+const settingsView = () => ({ ...config, hooks: bridge.installed(), login: login(), petName: loadPet(config.customPet)?.name || "" });
 // custom pet: pick a Codex Pets pack (.zip or pet.json) the user downloaded; it is checked and copied into userData/pets
 ipcMain.handle("settings:pickPet", async () => {
   const r = await dialog.showOpenDialog(settingsWin, { title: "Choose a pet", properties: ["openFile"], filters: [{ name: "Pet (zip or pet.json)", extensions: ["zip", "json"] }] });
   if (r.canceled || !r.filePaths[0]) return settingsView();
   const pet = petPack.importPack(r.filePaths[0], petsDir()); // a bad pack throws; the window shows the message
   config = { ...config, customPet: pet.id, pet: true };
+  saveConfig(); sendTheme();
+  return settingsView();
+});
+ipcMain.handle("settings:useBuiltinPet", (_, id) => {
+  if (!loadPet(id)) throw new Error("That pet isn't available.");
+  config = { ...config, customPet: petPack.safeId(id), pet: true };
   saveConfig(); sendTheme();
   return settingsView();
 });
@@ -687,7 +696,7 @@ ipcMain.handle("welcome:finish", (_, v) => {
 // ---- look: size, accent colour, hide when idle ----
 function sendTheme() {
   if (win && !win.isDestroyed()) win.webContents.setZoomFactor(scale());
-  send("theme", { accent: /^#[0-9a-f]{6}$/i.test(config.accent) ? config.accent : "album", idleHide: !!config.idleHide, pet: config.pet !== false, powerAnim: config.powerAnim !== false, powerAnimStyle: config.powerAnimStyle === "subtle" ? "subtle" : "cinematic", name: displayName(), petPack: petPack.loadPack(petsDir(), config.customPet) });
+  send("theme", { accent: /^#[0-9a-f]{6}$/i.test(config.accent) ? config.accent : "album", idleHide: !!config.idleHide, pet: config.pet !== false, powerAnim: config.powerAnim !== false, powerAnimStyle: config.powerAnimStyle === "subtle" ? "subtle" : "cinematic", name: displayName(), petPack: loadPet(config.customPet) });
 }
 // the name the pet and the dashboard greet you by: the one from settings, else the Windows account name
 function displayName() {

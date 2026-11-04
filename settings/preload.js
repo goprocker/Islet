@@ -5,4 +5,5 @@ contextBridge.exposeInMainWorld("settings", {
   save: values => ipcRenderer.invoke("settings:save", values),
   pickPet: () => ipcRenderer.invoke("settings:pickPet"),
   clearPet: () => ipcRenderer.invoke("settings:clearPet"),
+  useDoudou: () => ipcRenderer.invoke("settings:useBuiltinPet", "doudou"),
 });
