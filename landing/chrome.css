@@ -11,7 +11,7 @@
 .top nav a.get:hover{background:#1d2747}
 @media (max-width:560px){.top .sbar{gap:8px}.top nav{gap:0}.top nav a{font-size:14px;padding:6px 7px}.top nav a.get{margin-left:4px}}
 @media (max-width:400px){.top .brand{font-size:17px;gap:6px}.top nav a{font-size:13px;padding:6px 5px}}
-@media (max-width:340px){.top .brand{font-size:15px}.top nav a{font-size:12px;padding:6px 3px}}
+@media (max-width:340px){.top .brand{font-size:15px}.top.over .brand{font-size:0;gap:0}.top nav a{font-size:12px;padding:6px 3px}}
 /* the home page notch hangs from the top centre, so the bar steps aside there on mid-size screens */
 @media (max-width:1180px){.top.over nav a:not(.get){display:none}}
 @media (max-width:560px){.top.over .sbar{flex-wrap:wrap;height:auto;padding-top:8px;row-gap:0}.top.over nav{order:3;width:100%;margin:0;justify-content:center;padding:4px 0 6px}.top.over nav a:not(.get){display:inline-block}}
