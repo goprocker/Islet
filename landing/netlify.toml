@@ -1,3 +1,15 @@
 [build]
   command = "mkdir -p public && cp -r index.html features.html changelog.html about.html site.css chrome.css shots downloads.html privacy.html terms.html blackhole.js demo-loop.mp3 islet-film.mp4 islet-film-poster.jpg open.png favicon-32.png apple-touch-icon.png public/"
   publish = "public"
+
+# the installer is served from this domain; Netlify fetches it from the GitHub release
+[[redirects]]
+  from = "/Islet-Setup-2.3.0.exe"
+  to = "https://github.com/goprocker/Islet/releases/download/v2.3.0/Islet-Setup-2.3.0.exe"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/download"
+  to = "/Islet-Setup-2.3.0.exe"
+  status = 302
