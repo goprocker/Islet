@@ -13,7 +13,7 @@ Music · Claude Code and Codex · notifications · battery · search · timers, 
 <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-blue?style=for-the-badge"></a>
 <img alt="Windows 10 / 11" src="https://img.shields.io/badge/Windows-10%20%7C%2011-0078d4?style=for-the-badge&logo=windows11&logoColor=white">
 <img alt="Electron 45" src="https://img.shields.io/badge/Electron-45-47848f?style=for-the-badge&logo=electron&logoColor=white">
-<img alt="262 tests passing" src="https://img.shields.io/badge/tests-262%20passing-34c759?style=for-the-badge">
+<img alt="293 tests passing" src="https://img.shields.io/badge/tests-293%20passing-34c759?style=for-the-badge">
 
 <br><br>
 
@@ -144,10 +144,10 @@ The open notch, left to right: **agent sessions** → **music** → **time and b
 
 ### Download the installer
 
-Get `Islet-Setup-<version>.exe` from the [**latest release**](https://github.com/goprocker/Islet/releases/latest) and run it. It adds a Start menu entry and installs to `%LOCALAPPDATA%\Programs\islet`. From 2.1 on, Islet downloads updates from GitHub Releases by itself and installs them when you quit, or from tray → **Restart to update**.
+Get `Islet-Setup-<version>.exe` from the [**latest release**](https://github.com/goprocker/Islet/releases/latest) and run it. It installs for everyone on the PC (Windows asks for admin permission once), adds a Start menu entry and a firewall rule for Phone drop on private networks. From 2.1 on, Islet downloads updates from GitHub Releases by itself and installs them when you quit, or from tray → **Restart to update**.
 
 > [!NOTE]
-> The installer is unsigned. SmartScreen may warn about it, and **Smart App Control** may block it. If it's blocked, run from source instead.
+> The installer is unsigned for now: code signing is pending with the [SignPath Foundation](https://signpath.org). SmartScreen may warn about it, and **Smart App Control** may block it. If it's blocked, run from source instead.
 
 ### Run from source
 
@@ -288,7 +288,7 @@ Useful page globals: `setOpen(true)`, `render()`.
 
 ## 🔐 Privacy
 
-Everything runs on your PC. Network calls go only to GitHub (update checks in the installed app), lrclib.net (title and artist, when lyrics are on), Open-Meteo (the city name), your ICS link, and Spotify if you connect it. Unpinned clipboard history stays in memory; pinned items and your notes are saved in `%APPDATA%\islet`. The shelf stores file paths only. Search keeps file names in memory and never reads inside files. The hook server listens on `127.0.0.1` only.
+Everything runs on your PC. Network calls go only to GitHub (update checks in the installed app), lrclib.net (title and artist, when lyrics are on), Open-Meteo (the city name), your ICS link, and Spotify if you connect it. Unpinned clipboard history stays in memory; pinned items and your notes are saved in `%APPDATA%\islet`. The shelf stores file paths only. Search keeps file names in memory and never reads inside files. The hook server listens on `127.0.0.1` only. Phone drop runs a temporary server on your local network behind a random secret link, and stops when you close it or after 10 minutes. Full policy: [islet.loopfound.in/privacy](https://islet.loopfound.in/privacy).
 
 ## 🩺 Troubleshooting
 
@@ -318,6 +318,6 @@ Issues and pull requests are welcome. See the [contributing guide](CONTRIBUTING.
 
 ---
 
-**Islet** · Made by Gopinath · Code under [MIT](LICENSE) · Guide PDF © 2026 Gopinath, all rights reserved
+**Islet** · A product by [LoopFound](https://www.loopfound.in) · Free and open source under [MIT](LICENSE) · Guide PDF © 2026 Gopinath, all rights reserved
 
 </div>
