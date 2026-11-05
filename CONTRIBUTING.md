@@ -33,3 +33,20 @@ To build an installer, run `npm run dist` from PowerShell. It fails under Git Ba
 - Update `README.md` when you change a feature or setting.
 - Say how you tested the change, and add a screenshot if it changes what's on screen.
 - Don't commit personal data, such as tokens, calendar links or your `config.json`.
+
+## Where to start
+
+Look for issues labelled [good first issue](https://github.com/goprocker/Islet/labels/good%20first%20issue). Comment on one to claim it, and ask there if anything is unclear. Questions and ideas that aren't ready to be issues belong in [Discussions](https://github.com/goprocker/Islet/discussions).
+
+A rough map of the code:
+
+- `main.js` is the Electron main process: window, tray, IPC and the helpers it spawns. Small modules next to it (`weather.js`, `links.js`, `notes.js`, `pomodoro.js` and so on) each own one feature.
+- `renderer/` is the notch itself. `notch.js` shows the panels, `pet.js` runs the pet, and `units.js` is the unit converter.
+- `settings/` is the settings window.
+- `*.ps1` scripts read Windows state such as media, system stats and radios.
+- `builtin-pets/` holds the pets that ship with the app, and `pet-pack.js` loads custom ones.
+- `test/` has one `*.test.js` file per area. `npm test` runs them with Node's built-in test runner.
+
+New modules and scripts must be added to `build.files` in `package.json`, or the installer will crash.
+
+Only add pets and artwork you made or that are licensed for redistribution.
