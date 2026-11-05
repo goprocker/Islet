@@ -87,6 +87,7 @@ footer{padding:36px 0 48px;text-align:center;font-size:15px;color:var(--soft)}
     Download for Windows
   </a>
   <p class="meta"><span>Version 2.3.1</span> · <span><code>Islet-Setup-2.3.1.exe</code></span> · <span>108 MB</span></p>
+  <p class="meta" id="stats" hidden></p>
   <div class="pcnote" id="pcnote"><p>Islet is a Windows app. Open this page on your PC to download it, or send yourself the link.</p><button type="button" id="cplink">Copy link</button></div>
   <ul class="badges"><li>Windows 10 &amp; 11</li><li>MIT licence</li><li>Free &amp; open source</li><li>Auto-updates</li></ul>
 </header>
@@ -136,6 +137,21 @@ footer{padding:36px 0 48px;text-align:center;font-size:15px;color:var(--soft)}
 (function(){var b=document.getElementById("cplink");if(!b)return;b.addEventListener("click",function(){var u=location.href;function done(){b.textContent="Link copied";setTimeout(function(){b.textContent="Copy link"},2000)}
 if(navigator.share){navigator.share({title:"Islet for Windows",url:u}).catch(function(){})}
 else if(navigator.clipboard){navigator.clipboard.writeText(u).then(done,function(){})}})})();
+</script>
+<script>
+// public counts straight from GitHub, in the visitor's browser; a number shows only once it passes its floor, and any failure leaves the line hidden
+(async () => {
+  const FLOOR = { downloads: 50, stars: 10 };
+  try {
+    const [repo, rels] = await Promise.all(["", "/releases"].map(p => fetch("https://api.github.com/repos/goprocker/Islet" + p).then(r => r.ok ? r.json() : Promise.reject())));
+    const downloads = rels.flatMap(r => r.assets).filter(a => a.name.endsWith(".exe")).reduce((n, a) => n + a.download_count, 0);
+    const parts = [];
+    if (downloads >= FLOOR.downloads) parts.push(downloads.toLocaleString() + " downloads");
+    if (repo.stargazers_count >= FLOOR.stars) parts.push(repo.stargazers_count.toLocaleString() + " GitHub stars");
+    const el = document.getElementById("stats");
+    if (parts.length) { el.textContent = parts.join(" · "); el.hidden = false; }
+  } catch {}
+})();
 </script>
 </body>
 </html>
