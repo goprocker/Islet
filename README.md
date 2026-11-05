@@ -26,6 +26,10 @@ A Dynamic-Island-style pill at the top of your screen for **music**, **Claude Co
 
 <br><br>
 
+<img src="docs/demo.gif" alt="Islet opening from the closed pill, then showing the world clock, timer, unit converter and system tools" width="860">
+
+<br><br>
+
 <table>
   <tr>
     <td align="center"><img src="docs/pill.png" alt="Closed pill with album art, Claude dot and audio wave" width="220"><br><sub><b>Pill</b><br>quiet until it matters</sub></td>
