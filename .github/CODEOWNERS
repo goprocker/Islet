@@ -1,0 +1,8 @@
+# Every pull request asks the owner for review; sensitive files are listed so the intent is visible.
+*                       @goprocker
+/main.js                @goprocker
+/preload.js             @goprocker
+/phone-drop.js          @goprocker
+/build/                 @goprocker
+/.github/               @goprocker
+/package.json           @goprocker
