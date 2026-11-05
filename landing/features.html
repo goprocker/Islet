@@ -27,16 +27,6 @@
 .txt>p:not(.eyebrow){color:var(--soft)}
 .tags{display:flex;flex-wrap:wrap;gap:6px;list-style:none;padding:0;margin-top:16px}
 .tags li{font-size:13px;padding:3px 10px;border-radius:99px;background:#fff;border:1px solid var(--line)}
-.mock{width:min(360px,100%);background:#000;color:#f5f5f7;border-radius:0 0 26px 26px;padding:18px 20px 20px;font-size:14px;box-shadow:0 20px 40px -20px #0008}
-.mock b{display:block;margin-bottom:10px}
-.mock ol{list-style:none;padding:0;display:grid;gap:4px}.mock li{background:#1c1c1e;border-radius:8px;padding:5px 10px;color:#d1d1d6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.mock p{background:#1c1c1e;border-radius:8px;padding:10px;color:#d1d1d6}
-.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.tiles i{font-style:normal;font-size:11px;text-align:center;padding:14px 0;border-radius:12px;background:#1c1c1e}.tiles i.on{background:#bf8cff2e;color:#d9bcff}
-.dock{display:flex;gap:8px;justify-content:center;margin-top:14px;padding:8px;border-radius:16px;background:#ffffff0d}.dock span{width:26px;height:22px;border-radius:8px;background:#2c2c2e;position:relative}.dock span.on{background:#ffffff26}.dock span.on::after{content:"";position:absolute;bottom:-6px;left:11px;width:4px;height:4px;border-radius:50%;background:#fff}
-.mock.center{text-align:center}.mock small{color:#8e8e93}.mock strong{display:block;font:700 48px "Bricolage Grotesque",sans-serif;margin:4px 0 12px}
-.tiles b{display:block;font-size:15px;color:#fff;margin-top:2px}
-.qr{width:120px;height:120px;margin:0 auto 10px;border-radius:10px;background:#fff repeating-conic-gradient(#000 0 25%,#fff 0 50%) 0 0/20px 20px;border:8px solid #fff}
-.bar{height:5px;border-radius:3px;background:#2c2c2e}.bar i{display:block;width:62%;height:100%;border-radius:3px;background:#ff9f0a}
 .end{text-align:center;padding:clamp(48px,8vw,88px) 0 0}.end h2{font-size:clamp(1.8rem,4vw,2.8rem)}.end p{color:var(--soft);margin:10px 0 22px}
 .btn{display:inline-block;background:#000;color:#fff;text-decoration:none;font-weight:600;padding:12px 22px;border-radius:0 0 18px 18px}
 @media (max-width:760px){.row{grid-template-columns:1fr}.row.flip .pic{order:0}}
@@ -80,45 +70,45 @@
     <div class="txt"><p class="eyebrow">Search</p><h3>Find anything with Alt+Space.</h3><p>Apps, files and folders, Wi-Fi, Bluetooth, clipboard and notes from one box. The arrow keys move, Enter opens.</p><ul class="tags"><li>Alt+Space</li><li>Files</li><li>Settings</li></ul></div>
   </article>
   <article class="row flip">
-    <div class="pic"><div class="mock"><b>Clipboard</b><ol><li>📌 npm run build</li><li>https://islet.loopfound.in</li><li>Meeting at 4 with design</li><li>git push origin main</li></ol></div></div>
+    <div class="pic"><img src="shots/tool-clip.png" alt="Clipboard in the Islet notch" loading="lazy"></div>
     <div class="txt"><p class="eyebrow">Clipboard</p><h3>Find the thing you copied earlier.</h3><p>The last 20 texts you copied, searchable, with pins for the ones you keep coming back to. Kept in memory only.</p><ul class="tags"><li>20 items</li><li>Pins</li><li>Search</li></ul></div>
   </article>
   <article class="row">
-    <div class="pic"><div class="mock"><b>Good evening, Gopinath</b><div class="tiles"><i class="on">Wi-Fi</i><i class="on">Bluetooth</i><i>Airplane</i><i>Saver</i></div><div class="dock"><span class="on"></span><span></span><span></span><span></span><span></span></div></div></div>
+    <div class="pic"><img src="shots/tool-dash.png" alt="Dashboard in the Islet notch" loading="lazy"></div>
     <div class="txt"><p class="eyebrow">Dashboard</p><h3>Quick settings and a dock.</h3><p>Wi-Fi, Bluetooth, airplane mode, energy saver and live captions as tiles, brightness and volume sliders, and a dock to every tool.</p><ul class="tags"><li>Quick settings</li><li>Dock</li><li>Greeting</li></ul></div>
   </article>
   <article class="row flip">
-    <div class="pic"><div class="mock"><b>Notes</b><p>Ship landing changelog<br>Buy milk<br>Call Asha back</p></div></div>
+    <div class="pic"><img src="shots/tool-notes.png" alt="Notes in the Islet notch" loading="lazy"></div>
     <div class="txt"><p class="eyebrow">Notes and shelf</p><h3>Write it down. Drop it in.</h3><p>Quick notes that save as you type, and a file shelf that holds files until you drag them out somewhere else.</p><ul class="tags"><li>Notes</li><li>Drag and drop</li></ul></div>
   </article>
   <article class="row">
-    <div class="pic"><div class="mock"><b>Links</b><div class="tiles"><i>GitHub</i><i>YouTube</i><i>Gmail</i><i>Figma</i></div></div></div>
+    <div class="pic"><img src="shots/tool-links.png" alt="Links in the Islet notch" loading="lazy"></div>
     <div class="txt"><p class="eyebrow">Links</p><h3>The sites you open every day.</h3><p>Save your everyday links and open them with one click, or search Google, YouTube, GitHub and Stack Overflow straight from the notch.</p><ul class="tags"><li>Saved links</li><li>Web search</li></ul></div>
   </article>
   <article class="row flip">
-    <div class="pic"><div class="mock center"><small>Length</small><strong>10 km</strong><small>= 6.21371 mi · 10000 m · 32808.4 ft</small></div></div>
+    <div class="pic"><img src="shots/tool-units.png" alt="Units in the Islet notch" loading="lazy"></div>
     <div class="txt"><p class="eyebrow">Units</p><h3>Kilometres to miles, without a browser tab.</h3><p>Length, weight, temperature, volume, speed, data and time. Type a number and see it in every other unit at once.</p><ul class="tags"><li>7 kinds</li><li>Live results</li></ul></div>
   </article>
 </section>
 <section class="group" id="files"><div class="ghead"><h2>Files</h2><span>1 tool</span></div>
   <article class="row">
-    <div class="pic"><div class="mock center"><div class="qr"></div><small>Scan to connect</small></div></div>
+    <div class="pic"><img src="shots/tool-phone.png" alt="Phone drop QR code in the Islet notch" loading="lazy"></div>
     <div class="txt"><p class="eyebrow">Phone drop</p><h3>Phone and PC in one scan.</h3><p>Scan a QR code on the same Wi-Fi to send photos and files from your phone to the shelf, or take shelf files back. No app, no account, and it stops by itself after 10 minutes.</p><ul class="tags"><li>QR code</li><li>Same Wi-Fi</li><li>No app needed</li></ul></div>
   </article>
 </section>
 <section class="group" id="time"><div class="ghead"><h2>Time and focus</h2><span>1 tool</span></div>
   <article class="row flip">
-    <div class="pic"><div class="mock"><div class="tiles"><i>Here<br><b>21:30</b></i><i>London<br><b>16:00</b></i><i>New York<br><b>11:00</b></i><i>Tokyo<br><b>01:00</b></i></div></div></div>
+    <div class="pic"><img src="shots/tool-clock.png" alt="World clock in the Islet notch" loading="lazy"></div>
     <div class="txt"><p class="eyebrow">World clock</p><h3>Know the time where your people are.</h3><p>Your local time next to the cities you work with, with the difference in hours, so you can check before you message someone at 3 AM.</p><ul class="tags"><li>11 cities</li><li>Time difference</li></ul></div>
   </article>
 </section>
 <section class="group" id="desktop"><div class="ghead"><h2>Desktop</h2><span>2 tools</span></div>
   <article class="row">
-    <div class="pic"><div class="mock"><b>System</b><div class="tiles"><i>CPU<br><b>23%</b></i><i>Memory<br><b>62%</b></i><i>Disk<br><b>60%</b></i><i>Battery<br><b>88%</b></i></div></div></div>
+    <div class="pic"><img src="shots/tool-sys.png" alt="System stats in the Islet notch" loading="lazy"></div>
     <div class="txt"><p class="eyebrow">System</p><h3>Why is the fan so loud?</h3><p>CPU, memory, disk, battery and uptime at a glance, refreshed every second while you look.</p><ul class="tags"><li>CPU</li><li>Memory</li><li>Disk</li><li>Battery</li></ul></div>
   </article>
   <article class="row flip">
-    <div class="pic"><div class="mock"><b>AI coding</b><ol><li>● notch · Claude · Working</li><li>● landing · Codex · Done</li><li>● api · Claude · Needs you</li></ol></div></div>
+    <div class="pic"><img src="shots/tool-ai.png" alt="AI coding sessions in the Islet notch" loading="lazy"></div>
     <div class="txt"><p class="eyebrow">AI coding</p><h3>Every agent session in one list.</h3><p>All your Claude Code and Codex sessions with their status, how long ago they last moved, and their last actions. Click one to open its folder.</p><ul class="tags"><li>Claude Code</li><li>Codex</li><li>Status</li></ul></div>
   </article>
 </section>
@@ -128,7 +118,7 @@
     <div class="txt"><p class="eyebrow">Pet</p><h3>A pet that lives in the notch.</h3><p>It dances to music, codes along with your AI agent, asks when the agent needs you, naps when things are quiet and gets sick on a low battery. After a focus session it grows a plant. It talks in the closed notch and says hello by name. You can load your own in the Codex Pets format.</p><ul class="tags"><li>Moods</li><li>Talks</li><li>Custom pets</li><li>Plant</li><li>Can be turned off</li></ul></div>
   </article>
   <article class="row flip">
-    <div class="pic"><div class="mock center"><small>Focus</small><strong>18:24</strong><div class="bar"><i></i></div></div></div>
+    <div class="pic"><img src="shots/tool-timer.png" alt="Focus timer in the Islet notch" loading="lazy"></div>
     <div class="txt"><p class="eyebrow">Battery and timer</p><h3>The small things, in one glance.</h3><p>A black-hole animation when the charger goes in, Pomodoro and stopwatch, weather without an API key (the next 6 hours and 5 days, with humidity and wind), and your next meeting with a Join button.</p><ul class="tags"><li>Battery</li><li>Pomodoro</li><li>Weather</li><li>Calendar</li></ul></div>
   </article>
 </section>
