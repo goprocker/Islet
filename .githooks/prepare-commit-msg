@@ -1,0 +1,6 @@
+#!/bin/sh
+# Setting core.hooksPath here replaces a global hooks folder, so hand this hook on to it.
+# Contributors without a global folder skip this.
+global="$HOME/.git-hooks/prepare-commit-msg"
+[ -x "$global" ] || [ -f "$global" ] && exec sh "$global" "$@"
+exit 0

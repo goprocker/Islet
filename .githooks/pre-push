@@ -1,0 +1,4 @@
+#!/bin/sh
+# Runs the test suite before a push. Skip once with: git push --no-verify
+echo "pre-push: running npm test"
+npm test || { echo "pre-push: tests failed, push cancelled"; exit 1; }

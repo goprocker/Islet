@@ -23,6 +23,14 @@ npm test
 
 If you change the window, tray or Windows integrations, also run the app and check the change by hand.
 
+To run the tests automatically before every push, turn on the project hooks once:
+
+```powershell
+git config core.hooksPath .githooks
+```
+
+This is optional. `git push --no-verify` skips it for one push.
+
 To build an installer, run `npm run dist` from PowerShell. It fails under Git Bash.
 
 ## Pull requests
