@@ -34,6 +34,14 @@ To build an installer, run `npm run dist` from PowerShell. It fails under Git Ba
 - Say how you tested the change, and add a screenshot if it changes what's on screen.
 - Don't commit personal data, such as tokens, calendar links or your `config.json`.
 
+## Who owns a pull request
+
+AI-assisted changes are welcome. Every pull request needs one human owner, usually its author, who has read the final diff and can explain the problem, the approach and the edge cases. The owner is responsible for the code, tests, docs and claims in the change, including anything an AI tool wrote.
+
+A passing `npm test` or a friendly automated review doesn't replace that review. In the description, say what you checked and what you saw, and say so plainly for anything you didn't check. Never report a check you didn't run as passing.
+
+For a large or risky change, open an issue or a draft pull request first and wait for a go-ahead before you build the whole thing.
+
 ## Where to start
 
 Look for issues labelled [good first issue](https://github.com/goprocker/Islet/labels/good%20first%20issue). Comment on one to claim it, and ask there if anything is unclear. Questions and ideas that aren't ready to be issues belong in [Discussions](https://github.com/goprocker/Islet/discussions).

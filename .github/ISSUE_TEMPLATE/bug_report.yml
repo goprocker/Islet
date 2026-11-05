@@ -11,13 +11,14 @@ body:
     id: what
     attributes:
       label: What happened?
-      description: What you saw, and what you expected instead.
+      description: What you saw, and what you expected instead. It's fine to say you're not sure, and to say which parts you haven't tested.
     validations:
       required: true
   - type: textarea
     id: steps
     attributes:
       label: Steps to reproduce
+      description: If it happens only sometimes or you can't reproduce it, write what you remember and say that it's intermittent.
       placeholder: |
         1. Open Islet
         2. Play a song in Spotify
