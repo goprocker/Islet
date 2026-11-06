@@ -106,10 +106,9 @@ function start({ onStatus, onPermission, onPermissionGone, permissionWait }) {
       if (e.event !== "PermissionRequest") {
         for (const [id, p] of pending) if (p.session === e.session) settle(id, null, gone);
       }
-      // Codex shows "needs you" but is answered in its own terminal
-      if (e.event !== "PermissionRequest" || e.agent === "codex") { res.writeHead(200).end("{}"); return; }
+      if (e.event !== "PermissionRequest") { res.writeHead(200).end("{}"); return; }
       const id = nextId++;
-      // Claude Code holds its terminal prompt while we wait, so keep this short
+      // The agent holds its approval prompt while we wait, so keep this short.
       const ms = Math.min(Math.max(waitMs(), 0), 24000);
       if (!ms) { res.writeHead(200).end("{}"); return; }
       const timer = setTimeout(() => settle(id, null, gone), ms);
@@ -194,7 +193,7 @@ function install() {
       const list = withoutIslet(s.hooks[ev] || []);
       list.push({
         ...(ev === "PostToolUse" ? { matcher: "*" } : {}),
-        hooks: [{ type: "command", command: `node "${HOOK}" ${ev}${t.arg}`, timeout: ev === "PermissionRequest" && !t.arg ? 30 : 5 }],
+        hooks: [{ type: "command", command: `node "${HOOK}" ${ev}${t.arg}`, timeout: ev === "PermissionRequest" ? 30 : 5 }],
       });
       s.hooks[ev] = list;
     }

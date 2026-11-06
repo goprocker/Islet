@@ -531,10 +531,15 @@ function updatePet(now, busy) {
   else if (now - lastSaid > CHAT_EVERY && !notch.classList.contains("open")) petSay(mood);
 }
 // closed pill: as wide as what it shows, no empty black on either side
+let fittedPillWidth = 0;
 function fitPill() {
   const items = [...document.querySelector(".pill").children].filter(el => el.offsetWidth && getComputedStyle(el).visibility !== "hidden");
   const w = items.reduce((n, el) => n + el.offsetWidth, 0) + 8 * (items.length - 1) + 22; // gaps + side padding
-  notch.style.setProperty("--pill-w", `${Math.max(90, Math.ceil(w))}px`);
+  const next = Math.max(90, Math.ceil(w));
+  if (next !== fittedPillWidth) {
+    fittedPillWidth = next;
+    notch.style.setProperty("--pill-w", `${next}px`);
+  }
 }
 setInterval(render, 500);
 render();

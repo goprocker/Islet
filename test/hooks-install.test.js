@@ -72,3 +72,13 @@ test("install and uninstall keep other handlers in a group shared with Islet", (
     assert.deepStrictEqual(stop, [{ matcher: "x", hooks: [{ type: "command", command: "echo keep-me" }] }]);
   });
 });
+
+test("Codex permission hooks wait long enough for an Islet decision", () => {
+  withHome({ ".codex/config.toml": "" }, (bridge, read) => {
+    bridge.install();
+    const hooks = JSON.parse(read(".codex/hooks.json")).hooks.PermissionRequest;
+    const handler = hooks.flatMap(group => group.hooks).find(h => h.command.includes("islet-hook.js"));
+    assert.strictEqual(handler.timeout, 30);
+    assert.match(handler.command, /PermissionRequest codex$/);
+  });
+});

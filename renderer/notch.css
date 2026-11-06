@@ -21,7 +21,8 @@ body {
   position: absolute; top: 0; left: 50%; transform: translateX(-50%);
   width: var(--pill-w, 150px); height: 30px; border-radius: 0 0 14px 14px;
   background: var(--ink); overflow: hidden; cursor: default; outline: none;
-  transition: width .45s cubic-bezier(.3,1.3,.5,1), height .45s cubic-bezier(.3,1.3,.5,1), border-radius .45s, box-shadow .3s;
+  contain: layout paint;
+  transition: width .42s cubic-bezier(.22,1,.36,1), height .42s cubic-bezier(.22,1,.36,1), border-radius .32s ease, box-shadow .3s ease;
 }
 .notch.toast { width: 400px; height: var(--toast-h, 62px); border-radius: 0 0 22px 22px; }
 .notch.open { width: 640px; height: 150px; border-radius: 0 0 26px 26px; }
@@ -55,7 +56,7 @@ body {
 .live .dot { background: var(--claude); box-shadow: 0 0 6px var(--claude); }
 
 /* layers: only one is visible at a time */
-.pill, .toastv, .full { position: absolute; inset: 0; transition: opacity .2s; }
+.pill, .toastv, .full { position: absolute; inset: 0; transition: opacity .18s ease; }
 .toastv, .full { opacity: 0; pointer-events: none; }
 .toast:not(.open) .pill, .open .pill { opacity: 0; pointer-events: none; }
 .toast:not(.open) .toastv { opacity: 1; transition-delay: .12s; pointer-events: auto; cursor: pointer; }
@@ -141,6 +142,7 @@ body {
 .volume svg { width: 14px; height: 14px; fill: currentColor; }
 .track { transition: height .15s; height: 3px; border-radius: 2px; background: var(--faint); position: relative; overflow: hidden; }
 .track i { position: absolute; inset: 0 auto 0 0; background: var(--accent); }
+.notch.playing .track i { transition: width .5s linear; }
 .upnext { font-size: 10.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 34px; }
 
 .ctl { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; margin-top: auto; }
@@ -195,7 +197,7 @@ button.play svg { width: 22px; height: 22px; }
 @keyframes in { from { opacity: 0; transform: translateY(3px); } }
 
 @media (prefers-reduced-motion: reduce) {
-  .notch, .pill, .toastv, .full, button, .track { transition: none; }
+  .notch, .pill, .toastv, .full, button, .track, .track i { transition: none; }
   .dot { animation: none !important; }
   .claude li.new { animation: none; }
   .batt.plugged .bolt, .batt.plugged .lvl, .batt.charging svg { animation: none; }
@@ -250,6 +252,9 @@ button.play svg { width: 22px; height: 22px; }
 
 /* clipboard / shelf panels cover the music side */
 .panel { position: absolute; inset: -12px -7px -10px -16px; padding: 10px 12px 8px 16px; background: var(--ink); z-index: 3; display: flex; flex-direction: column; gap: 6px; min-height: 0; }
+.panel:not([hidden]) { animation: panel-in .18s cubic-bezier(.22,1,.36,1); }
+@keyframes panel-in { from { opacity: 0; transform: translateY(4px) scale(.99); } }
+@media (prefers-reduced-motion: reduce) { .panel:not([hidden]) { animation: none; } }
 .panel header { display: flex; align-items: center; justify-content: space-between; }
 .panel header b { font-size: 12.5px; }
 button.link { width: auto; height: auto; border-radius: 6px; padding: 2px 6px; color: var(--muted); font: inherit; font-size: 11px; }
@@ -410,11 +415,11 @@ button.link:hover { color: var(--text); }
 .pill .pet.plant { margin-right: 16px; }
 .pill .pet { margin-right: 2px; }
 .notch.quiet .pill .pet { margin-right: 6px; }
-.walker { position: absolute; left: 0; bottom: 1px; z-index: 5; pointer-events: none; opacity: 0; transition: opacity .2s; animation: stroll 70s linear infinite; }
+.walker { position: absolute; left: 16px; bottom: 1px; z-index: 5; pointer-events: none; opacity: 0; transition: opacity .2s; animation: stroll 70s linear infinite; }
 .open:not(.dash) .walker { opacity: 1; transition-delay: .3s; }
 .walker.sleep, .walker.dance, .walker.alert, .walker.sick { animation-play-state: paused; }
 .walker.dance { animation: stroll 70s linear infinite, bop .5s ease-in-out infinite alternate; animation-play-state: paused, running; }
-@keyframes stroll { 0%, 100% { left: 16px; } 50% { left: 600px; } }
+@keyframes stroll { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(584px); } }
 
 /* what the pet says: plain text beside it, inside the notch */
 .pet .say { position: absolute; bottom: 1px; left: 100%; margin-left: 6px; padding: 2px 9px; border-radius: 10px; background: #f5f5f7; color: #111; font-size: 12px; line-height: 16px; font-weight: 600; white-space: nowrap; opacity: 0; transform: translateX(-4px); transition: opacity .2s, transform .2s; }
