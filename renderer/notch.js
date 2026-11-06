@@ -509,6 +509,7 @@ function render() {
   const busy = track?.playing || chip || (s && (now - s.time < 60000 || s.status === "waiting"))
     || notch.classList.contains("talking") || notch.classList.contains("charging") || notch.classList.contains("bh") || $("pillPriv").childElementCount || !$("pillMoon").hasAttribute("hidden");
   notch.classList.toggle("quiet", !busy); // plain black pill, just the dot
+  notch.classList.toggle("playing", !!track?.playing); // the little equalizer shows only while music plays
   notch.classList.toggle("idle", theme.idleHide && !busy);
   updatePet(now, busy);
   fitPill();
