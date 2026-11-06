@@ -75,11 +75,11 @@ pre.t { padding: 3mm 4mm; margin: 1.5mm 0 1.5mm; font-size: 8pt; }
   <p style="color:#6e6e73">Music, Claude Code and Codex activity, notifications, battery and more,<br>in one small black pill at the top of your screen.</p>
   <div class="meta">
     <div><small>MADE BY</small><b>Gopinath</b></div>
-    <div><small>VERSION</small><b>2.2.0</b></div>
+    <div><small>VERSION</small><b>2.3.2</b></div>
     <div><small>PLATFORM</small><b>Windows 10 / 11</b></div>
     <div><small>BUILT WITH</small><b>Electron 45</b></div>
   </div>
-  <div class="foot"><span>© 2026 Gopinath. All rights reserved.</span><span>Updated 4 Nov 2026 · islet.loopfound.in · github.com/goprocker/Islet</span></div>
+  <div class="foot"><span>© 2026 Gopinath. All rights reserved.</span><span>Updated 6 Nov 2026 · islet.loopfound.in · github.com/goprocker/Islet</span></div>
 </section>
 
 <section class="page">
@@ -90,14 +90,14 @@ pre.t { padding: 3mm 4mm; margin: 1.5mm 0 1.5mm; font-size: 8pt; }
     <div><b>04</b>Tech stack</div><div><b>05</b>Architecture</div><div><b>06</b>How each part works</div>
     <div><b>07</b>Repository map</div><div><b>08</b>Install and run</div><div><b>09</b>Using Islet</div>
     <div><b>10</b>Claude Code and Codex</div><div><b>11</b>Settings</div><div><b>12</b>Build, test, debug</div>
-    <div><b>13</b>Privacy, troubleshooting, uninstall</div><div><b>14</b>What's new in 2.0 and 2.2</div>
+    <div><b>13</b>Privacy, troubleshooting, uninstall</div><div><b>14</b>What's new in 2.0, 2.2 and 2.3</div>
     <div><b>15</b>Islet in plain English</div><div><b>16</b>Words you need</div><div><b>17</b>Follow the data</div>
     <div><b>18</b>Read the code yourself</div><div><b>19</b>Engineering ideas it shows</div><div><b>20</b>Hard problems and limits</div>
     <div><b>21</b>Interview questions and answers</div><div><b>22</b>Cheat sheet and practice</div>
   </div>
   <div class="stats">
     <div><b>8</b><small>data sources</small></div><div><b>20</b><small>settings</small></div>
-    <div><b>13</b><small>notch states</small></div><div><b>291</b><small>passing tests</small></div>
+    <div><b>13</b><small>notch states</small></div><div><b>295</b><small>passing tests</small></div>
   </div>
   <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
 </section>
@@ -224,7 +224,7 @@ pre.t { padding: 3mm 4mm; margin: 1.5mm 0 1.5mm; font-size: 8pt; }
     <tr><td>Registry</td><td>HKCU Notifications\Settings</td><td>Turning Windows' banners off and back on</td></tr>
     <tr><td>Network</td><td>fetch()</td><td>lrclib.net, Open-Meteo, your ICS link, optional Spotify Web API</td></tr>
     <tr><td>Agent hooks</td><td>HTTP server on 127.0.0.1:47321</td><td>Claude Code and Codex hooks post events</td></tr>
-    <tr><td>Tests</td><td>node --test</td><td>37 files, 291 tests</td></tr>
+    <tr><td>Tests</td><td>node --test</td><td>38 files, 295 tests</td></tr>
     <tr><td>Packaging</td><td>electron-builder 26 (NSIS)</td><td>One-click per-user installer</td></tr></table>
   <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
 </section>
@@ -312,7 +312,7 @@ pre.t { padding: 3mm 4mm; margin: 1.5mm 0 1.5mm; font-size: 8pt; }
   <h1>Install and run</h1>
   <p>You need Windows 10 1903+ or 11 and Windows PowerShell 5.1 (part of Windows). Running from source also needs Node.js 22 or 24 with npm, and Git.</p>
   <h2>Option A: download the installer</h2>
-  <p>Get <code>Islet-Setup-&lt;version&gt;.exe</code> from <code>github.com/goprocker/Islet/releases/latest</code> and run it. It installs to %LOCALAPPDATA%\Programs\islet, adds Islet to the Start menu and starts it. Islet doesn't update itself, so to update, install the new version. Quit any <code>npm start</code> copy first, as only one Islet runs at a time.</p>
+  <p>Get <code>Islet-Setup-&lt;version&gt;.exe</code> from <code>github.com/goprocker/Islet/releases/latest</code> and run it. It installs for all users (it asks for admin) to Program Files\Islet, adds a private-network firewall rule for Phone drop, adds Islet to the Start menu and starts it. Islet updates itself from GitHub Releases: it downloads in the background, shows a toast in the notch, and installs on quit or from the tray. Quit any <code>npm start</code> copy first, as only one Islet runs at a time.</p>
   <p>The installer is unsigned. SmartScreen may warn about it, and Smart App Control may block it. If it's blocked, use Option B.</p>
   <h2>Option B: run from source</h2>
   <pre>git clone https://github.com/goprocker/Islet.git
@@ -385,7 +385,7 @@ npm start</pre>
   <p style="margin-top:3mm;font-size:9pt;color:#6e6e73">If config.json can't be read (for example during a hand edit), Islet keeps the current settings and leaves the file as it is.</p>
   <div class="kick">SECTION 12</div>
   <h1>Build, test, debug</h1>
-  <pre>npm test        # node --test test/*.test.js  (37 files, 291 tests)
+  <pre>npm test        # node --test test/*.test.js  (38 files, 295 tests)
 npm run dist    # NSIS installer, run from PowerShell
 
 # inspect the notch with Chrome DevTools
@@ -502,7 +502,31 @@ node_modules\electron\dist\electron.exe . --remote-debugging-port=9333</pre>
     <tr><td>Sleep / Idle</td><td>Two quiet minutes / anything else</td></tr></table>
   <figure style="margin:2mm 0 0"><img src="../tools/clawd-moods.png" style="width:100%;display:block;border-radius:3mm"><figcaption style="font-size:7.5pt;color:#6e6e73;margin-top:1mm">Clawd, a custom pet, in the pose each mood plays.</figcaption></figure>
   <h2>Bring your own pet</h2>
-  <p style="font-size:9.5pt">Settings → <b>Choose a pet…</b> takes a pet in the Codex Pets format (a .zip or its pet.json, from codex-pets.net). Islet checks the sprite sheet (192 × 208 frames, 1536 × 1872 or 1536 × 2288), copies it into its own folder and plays each mood from the matching row. <b>Use the cat</b> switches back.</p>
+  <p style="font-size:9.5pt">Settings → <b>Choose a pet…</b> takes a pet in the Codex Pets format (a .zip or its pet.json, from codex-pets.net). Islet checks the sprite sheet (192 × 208 frames, 1536 × 1872 or 1536 × 2288), copies it into its own folder and plays each mood from the matching row. <b>Use Doudou</b> picks the built-in pet, and <b>Use the cat</b> switches back.</p>
+  <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+<section class="page">
+  <div class="kick">SECTION 14 · 2.3</div>
+  <h1>What's new in 2.3</h1>
+  <div class="lead">2.3 makes Islet update itself, installs it for every user, adds a built-in pet and puts tests in front of every change.</div>
+  <h2>In the app</h2>
+  <ul style="font-size:9.5pt">
+    <li><b>Auto-update</b>: each release publishes the installer, its .blockmap and latest.yml. Islet checks GitHub Releases, downloads in the background, shows a toast in the notch, and installs on quit or from the tray.</li>
+    <li><b>Per-machine installer</b>: installs to Program Files for all users and adds the "Islet Phone drop" firewall rule (private networks only); uninstalling removes it.</li>
+    <li><b>Doudou</b> (2.3.1): a built-in pet in <code>builtin-pets/doudou</code>. Settings → <b>Use Doudou</b>.</li>
+    <li><b>The pet</b> says varied idle lines instead of "Hello" every time.</li>
+    <li><b>Phone drop</b>: links and uploads fixed, and pets can be imported straight from a .zip.</li>
+    <li><b>The pill equalizer</b> hides when nothing is playing.</li>
+  </ul>
+  <h2>Around the code</h2>
+  <ul style="font-size:9.5pt">
+    <li><b>Releases</b> are built by GitHub Actions on a <code>vX</code> tag. Signing through SignPath is ready but off: the Foundation declined for now, so the installer stays unsigned.</li>
+    <li><b>Every pull request</b> runs the tests and a packaging check; Dependabot proposes dependency updates.</li>
+    <li><b>A pre-push hook</b> (<code>.githooks/pre-push</code>) runs <code>npm test</code> before every push.</li>
+    <li><b>CONTRIBUTING.md</b> has a where-to-start section, a code map and PR rules.</li>
+    <li><b>The website</b> (islet.loopfound.in) downloads the installer directly, shows real screenshots and live download, star and fork counts.</li>
+    <li><b>Tests</b>: 291 in 37 files → 295 in 38 files.</li>
+  </ul>
   <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
 </section>
 
@@ -648,15 +672,15 @@ if (gen === generation &amp;&amp; text !== null) onEvent(nextEvent(text));</pre>
   <table><colgroup><col style="width:22%"><col style="width:30%"><col style="width:30%"><col style="width:18%"></colgroup><tr><th>Problem</th><th>Cause</th><th>Fix</th><th>Lesson</th></tr><tr><td>Helper exe blocked by Windows</td><td>Smart App Control blocks unsigned programs.</td><td>Compile the C# at runtime with <code>Add-Type</code> inside the signed PowerShell.</td><td>Platform limits shape design.</td></tr><tr><td>Allow / Deny card vanished instantly</td><td>Node fires <code>close</code> on the request once its body is read, so it looked as if the hook had left.</td><td>Watch <code>res.on("close")</code> with <code>!res.writableEnded</code>.</td><td>Check what an event really means.</td></tr><tr><td>Terminal prompt delayed 25 s</td><td>Claude holds its prompt while the hook waits.</td><td>Default hold cut to 8 s, set by a setting.</td><td>A feature can harm the flow around it.</td></tr><tr><td>Banners stayed off after a crash</td><td>The old values were only safe once written.</td><td>Write the journal first; restore on the next run, and delete an entry only once verified.</td><td>Plan for a crash at every step.</td></tr><tr><td>Emoji turned to garbage</td><td>Multi-byte characters were split across chunks.</td><td>One <code>StringDecoder</code> per stream.</td><td>Streams are bytes, not text.</td></tr><tr><td>Alt+F4 caused errors</td><td>It destroyed the window while helpers kept sending to it.</td><td>Refuse <code>close</code> unless really quitting.</td><td>Think about lifetimes.</td></tr><tr><td>Like hit the wrong track</td><td>A late Spotify reply described the previous song.</td><td>Drop replies that a newer request has overtaken.</td><td>Async order isn't guaranteed.</td></tr><tr><td>Album art was 0 bytes</td><td>PowerShell 5 couldn't pick the right overload on a COM object.</td><td>Call <code>AsStreamForRead</code> through reflection.</td><td>Know your runtime's limits.</td></tr></table>
   <h2>Known limits: say these before you're asked</h2>
   <ul class="small">
-    <li><b>The hook port has no password.</b> Any program on the PC, and possibly a web page, could POST a fake status or a fake permission card. It can't answer your real prompts, but a shared secret token would be a good next fix.</li>
+    <li><b>The hook port trusts any program that has your secret.</b> The hook and listener prove themselves with an HMAC keyed by <code>~/.islet-hook-token</code>, so web pages and other users can't fake a card, but a program running as you can read the file.</li>
     <li><b>The notification database is undocumented.</b> A Windows update could change it. It was chosen because the official listener needs a packaged app.</li>
     <li><b>Polling means small delays:</b> up to 2 s for a notification and about 1 s for music.</li>
     <li><b>Electron is heavy:</b> the installer is about 121 MB, for one small pill. Each music command also starts a new PowerShell.</li>
     <li><b>Tests cover the logic modules, not the screen or real Windows calls.</b> <code>main.js</code> needs Electron to run, so it has no direct tests, and mouse actions are checked by hand.</li>
-    <li><b>Hooks need Node.js on PATH,</b> even with the installed app. The installer is unsigned, and there are no automatic updates.</li>
+    <li><b>Hooks need Node.js on PATH,</b> even with the installed app. The installer is unsigned (the SignPath Foundation turned it down for now), so SmartScreen warns.</li>
   </ul>
   <h2>What I would do next</h2>
-  <p class="small">Add a token to the hook server. Split <code>main.js</code> into smaller modules. Keep one PowerShell open for media commands. Add end-to-end UI tests. Get a code-signing certificate and add auto-update.</p>
+  <p class="small">Split <code>main.js</code> into smaller modules. Keep one PowerShell open for media commands. Add end-to-end UI tests. Get a code-signing certificate.</p>
   <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
 </section>
 
@@ -685,7 +709,7 @@ if (gen === generation &amp;&amp; text !== null) onEvent(nextEvent(text));</pre>
   <h2>Security</h2>
   <div class="qa"><div><b>What's the security model?</b><p>Page isolated from Node, fixed bridge API, server on loopback only, every external input validated, outside text set with <code>textContent</code>, and link schemes allowlisted.</p></div><div><b>What's the weakest point?</b><p>The hook server has no authentication, so any local program could fake events. They can't approve anything for real, because the answer goes back to whoever asked. I'd add a random token shared through the hook's config.</p></div><div><b>Could a malicious notification attack the app?</b><p>Its text is only ever shown as text. Clicking it opens a URL only if the scheme is on the allowlist; otherwise it opens the sending app.</p></div></div>
   <h2>Testing and process</h2>
-  <div class="qa"><div><b>How is it tested?</b><p>291 tests in 37 files using Node's built-in <code>node --test</code>, with no extra dependencies. Mostly logic: calendar rules, time zones, lyrics, hook install, and races. Fakes replace the network and <code>http.createServer</code>.</p></div><div><b>How do you test time zones?</b><p>The calendar tests run with the host set to different zones, such as Asia/Kolkata and UTC, including daylight-saving changes.</p></div><div><b>What isn't tested?</b><p>The real screen and mouse, and the PowerShell helpers. I check those by hand, and through Chrome DevTools using <code>--remote-debugging-port=9333</code>.</p></div><div><b>Did you use AI to build this?</b><p>Answer truthfully; the commit history publicly shows Claude and Codex as co-authors. A strong answer says what you decided, how you checked the result, and which bugs you found. This guide is there so you can back that up.</p></div></div>
+  <div class="qa"><div><b>How is it tested?</b><p>295 tests in 38 files using Node's built-in <code>node --test</code>, with no extra dependencies. Mostly logic: calendar rules, time zones, lyrics, hook install, and races. Fakes replace the network and <code>http.createServer</code>.</p></div><div><b>How do you test time zones?</b><p>The calendar tests run with the host set to different zones, such as Asia/Kolkata and UTC, including daylight-saving changes.</p></div><div><b>What isn't tested?</b><p>The real screen and mouse, and the PowerShell helpers. I check those by hand, and through Chrome DevTools using <code>--remote-debugging-port=9333</code>.</p></div><div><b>Did you use AI to build this?</b><p>Answer truthfully; the commit history publicly shows Claude and Codex as co-authors. A strong answer says what you decided, how you checked the result, and which bugs you found. This guide is there so you can back that up.</p></div></div>
   <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
 </section>
 
@@ -710,7 +734,7 @@ if (gen === generation &amp;&amp; text !== null) onEvent(nextEvent(text));</pre>
     <li><b>Medium:</b> make clipboard history keep 10 items, not 5. Find where the limit lives.</li>
     <li><b>Medium:</b> add a test to <code>test/lyrics.test.js</code> for a line with no words. Run <code>npm test</code>.</li>
     <li><b>Medium:</b> trace a new IPC message: add a channel in <code>preload.js</code>, send it from <code>notch.js</code>, and log it in <code>main.js</code>.</li>
-    <li><b>Hard:</b> add a shared secret token to the hook server, in the hook and the bridge, plus a test that a wrong token gets a 400. This fixes a real limit, and makes a great interview story.</li>
+    <li><b>Hard:</b> split the update code out of <code>main.js</code> into its own module with tests, the way <code>claude-bridge.js</code> is split out.</li>
   </ol>
   <div style="background:#0b0b0e;color:#fff;padding:6mm;display:flex;gap:12mm;margin-top:6mm;font-size:8.5pt"><b style="font-size:13pt">Islet</b><span>Designed and built by <b>Gopinath</b><br>© 2026 Gopinath. All rights reserved. The source code is published under the MIT License (see LICENSE). Spotify, Windows, Claude Code and Codex are trademarks of their owners.</span></div>
   <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
