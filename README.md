@@ -110,7 +110,7 @@ The open notch, left to right: **agent sessions** → **music** → **time and b
 - Both agents in one column, newest first
 - Each session shows **working**, **needs you** or **done**
 - The last 3 actions: tools used, edited files, replies, plus your prompts for Codex
-- **Allow / Deny** Claude Code permission requests right in the notch
+- **Allow / Deny** Claude Code and Codex permission requests right in the notch
 - Click a project to open its folder
 
 </td>
@@ -247,7 +247,7 @@ The welcome screen offers to install the hooks. Tray → **Connect to Claude Cod
 | Hook event | Notch shows |
 |---|---|
 | `UserPromptSubmit`, `PostToolUse` | 🟣 Working, plus the latest actions |
-| `PermissionRequest`, permission `Notification` | 🟠 Needs you; Claude Code requests get **Allow / Deny** |
+| `PermissionRequest`, permission `Notification` | 🟠 Needs you; Claude Code and Codex requests get **Allow / Deny** |
 | `Stop`, any other `Notification` | ✅ Done |
 | `SessionStart` (Codex) | A new session |
 | `SessionEnd` | The session leaves the list |
@@ -257,8 +257,7 @@ The welcome screen offers to install the hooks. Tray → **Connect to Claude Cod
 
 - **Claude Code:** hooks go into `~/.claude/settings.json` (backup: `settings.json.islet-backup`). `hooks/islet-hook.js` POSTs each event to `127.0.0.1:47321/claude`.
 - **Codex:** if `~/.codex` exists, hooks are also added to `~/.codex/hooks.json` (backup: `hooks.json.islet-backup`). Codex asks you to trust new hooks, so approve Islet's once, through the prompt Codex shows or `/hooks`.
-- A Claude Code permission request is held for `permissionWaitSeconds` (default 8). If you don't answer in the notch, the terminal asks as usual. Set it to `0` to never hold.
-- Codex permission requests show "Needs you", but you answer them in Codex.
+- A Claude Code or Codex permission request is held for `permissionWaitSeconds` (default 8). If you don't answer in the notch, the agent asks as usual. Set it to `0` to never hold.
 - With both agents running, the status line says `Claude ·` or `Codex ·`, and Codex chips have a blue dot.
 - Without hooks, Islet guesses the status from the newest transcript in `~/.claude/projects`.
 

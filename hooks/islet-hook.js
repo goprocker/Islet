@@ -2,7 +2,7 @@
 // Claude Code / Codex hook -> Islet (local only, 127.0.0.1:47321).
 //   node islet-hook.js <EventName> [codex]   (hook input JSON arrives on stdin)
 // PermissionRequest waits up to 25 s for Allow/Deny from the notch; with no answer,
-// or when Islet isn't running, it prints nothing and Claude Code asks in the terminal.
+// or when Islet isn't running, it prints nothing and the agent asks in its own UI.
 // The port can be taken by another program, so the listener has to prove it knows the
 // per-user secret (hook-auth.js) before it gets any data, and sign any decision it gives.
 const http = require("http");
@@ -12,8 +12,7 @@ const auth = require("./hook-auth");
 const PORT = 47321;
 const event = process.argv[2] || "Unknown";
 const agent = process.argv[3] === "codex" ? "codex" : "claude";
-// only Claude Code waits for Allow / Deny from the notch
-const WAIT = event === "PermissionRequest" && agent === "claude" ? 25000 : 1500;
+const WAIT = event === "PermissionRequest" ? 25000 : 1500;
 
 let raw = "";
 process.stdin.setEncoding("utf8"); // a character split across chunks stays whole
@@ -59,7 +58,7 @@ function post(input, token, nonce) {
       let out = "";
       res.on("data", d => (out += d));
       res.on("end", () => {
-        if (event !== "PermissionRequest" || agent !== "claude") return process.exit(0);
+        if (event !== "PermissionRequest") return process.exit(0);
         let r = {};
         try { r = JSON.parse(out); } catch {}
         if ((r.decision === "allow" || r.decision === "deny") && auth.verify(token, r.decision, nonce, r.proof)) {

@@ -13,16 +13,21 @@ process.env.USERPROFILE = process.env.HOME = profile;
 test.after(() => fs.rmSync(profile, { recursive: true, force: true }));
 
 // capture the bridge's request handler instead of opening a real port
-function startBridge() {
+function startBridge(options = {}) {
   const realCreate = http.createServer;
   let handler;
   http.createServer = h => { handler = h; return Object.assign(new EventEmitter(), { listen() {} }); };
   delete require.cache[require.resolve("../claude-bridge")];
   const bridge = require("../claude-bridge");
-  const seen = [];
-  try { bridge.start({ onStatus: (s, st) => seen.push([s, st]), onPermission() {}, onPermissionGone() {} }); }
+  const seen = [], permissions = [], gone = [];
+  try { bridge.start({
+    onStatus: (s, st) => seen.push([s, st]),
+    onPermission: p => permissions.push(p),
+    onPermissionGone: id => gone.push(id),
+    permissionWait: options.permissionWait,
+  }); }
   finally { http.createServer = realCreate; }
-  return { bridge, seen, post: (body, proof) => send(handler, body, proof) };
+  return { bridge, seen, permissions, gone, post: (body, proof) => send(handler, body, proof).code, request: (body, proof) => send(handler, body, proof) };
 }
 function send(handler, body, proof) {
   const text = Buffer.concat([].concat(body).map(b => Buffer.from(b))).toString("utf8");
@@ -36,7 +41,7 @@ function send(handler, body, proof) {
   handler(req, res);
   for (const chunk of [].concat(body)) req.emit("data", chunk);
   req.emit("end");
-  return res.code;
+  return res;
 }
 
 for (const body of ["null", "[]", "42", '"x"', "{}", '{"event":"Stop"}', '{"event":"Stop","session":5}', '{"event":"Stop","session":"s","tool":{}}', '{"event":"Stop","session":"s","agent":"other"}', '{"event":"Stop","session":"s","toolInput":[1]}']) {
@@ -63,6 +68,20 @@ test("accepts a normal hook event", () => {
   assert.strictEqual(post('{"event":"Stop","session":"s1","cwd":"C:/x","toolInput":null}'), 200);
   assert.deepStrictEqual(seen, [["s1", "done"]]);
   assert.strictEqual(bridge.status.get("s1").status, "done");
+});
+
+test("Codex permission requests can be answered from Islet", () => {
+  const { bridge, seen, permissions, gone, request } = startBridge({ permissionWait: () => 1000 });
+  const res = request(JSON.stringify({ event: "PermissionRequest", agent: "codex", session: "cx1", cwd: "C:/work/app", nonce: "a".repeat(32), tool: "Bash", toolInput: { command: "npm test" } }));
+  assert.strictEqual(res.code, 0, "the hook response stays open while the notch asks");
+  assert.deepStrictEqual(seen, [["cx1", "waiting"]]);
+  assert.strictEqual(permissions.length, 1);
+  assert.strictEqual(permissions[0].detail, "npm test");
+  bridge.answer(permissions[0].id, "allow", id => gone.push(id));
+  assert.strictEqual(res.code, 200);
+  assert.strictEqual(res.writableEnded, true);
+  assert.deepStrictEqual(gone, [permissions[0].id]);
+  assert.strictEqual(bridge.status.get("cx1").status, "working");
 });
 
 test("a character split across two chunks stays whole", () => {
