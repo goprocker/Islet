@@ -31,6 +31,7 @@
     <button id="shelfBtn" data-panel="shelfPanel" aria-pressed="false" title="File shelf"><svg viewBox="0 0 24 24"><path d="M3 5a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zm2 0v14h14V7h-8.8l-2-2z"/></svg><span>File shelf</span></button>
     <button id="weatherBtn" data-panel="weatherPanel" aria-pressed="false" title="Weather"><svg viewBox="0 0 24 24"><path d="M6.5 19a4.5 4.5 0 0 1-.4-9 6 6 0 0 1 11.5 1.5A3.8 3.8 0 0 1 17.3 19zm0-2h10.8a1.8 1.8 0 0 0 0-3.6h-1.6l-.1-1.5a4 4 0 0 0-7.8-1l-.3 1H6.5a2.5 2.5 0 0 0 0 5.1z"/></svg><span>Weather</span></button>
     <button id="unitsBtn" data-panel="unitsPanel" aria-pressed="false" title="Units"><svg viewBox="0 0 24 24"><path d="M2 8h20v8H2zm2 2v4h16v-4h-1v2h-2v-2h-2v2h-2v-2h-2v2H9v-2H7v2H5v-2z"/></svg><span>Units</span></button>
+    <button id="colorBtn" data-panel="colorPanel" aria-pressed="false" title="Colour picker"><svg viewBox="0 0 24 24"><path d="M17.7 2.3a2.4 2.4 0 0 1 3.4 3.4l-2.6 2.6 1.1 1.1-1.4 1.4-1.1-1.1-7.6 7.6a3 3 0 0 1-1.6.8l-2.2.4L4 20.2 2.6 18.8l1.7-1.7.4-2.2a3 3 0 0 1 .8-1.6l7.6-7.6-1.1-1.1 1.4-1.4 1.1 1.1zM14.5 7.9 7 15.4a1 1 0 0 0-.3.5l-.2 1.2 1.2-.2a1 1 0 0 0 .5-.3L15.7 9z"/></svg><span>Colour picker</span></button>
     <button id="sysBtn" data-panel="sysPanel" aria-pressed="false" title="System"><svg viewBox="0 0 24 24"><path d="M4 20V10h3v10zm6.5 0V4h3v16zM17 20v-7h3v7z"/></svg><span>System</span></button>
     <button id="aiBtn" data-panel="aiPanel" aria-pressed="false" title="AI coding"><svg viewBox="0 0 24 24"><path d="M11 2h2v3h4a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3h4zM7 7a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1zm2 3a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm6 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zM1 10h2v5H1zm20 0h2v5h-2z"/></svg><span>AI coding</span></button>
     <i class="dsep" aria-hidden="true"></i>
@@ -127,6 +128,12 @@
         <div class="ubox"><input id="uIn" type="number" value="1" aria-label="Value"><select id="uFrom" aria-label="From"></select><span>=</span><output id="uOut"></output><select id="uTo" aria-label="To"></select></div>
         <ul class="uall" id="uAll"></ul>
       </section>
+      <section class="panel" id="colorPanel" hidden aria-label="Colour picker">
+        <header><b>Colour picker</b><button id="colorPick">Pick from screen</button></header>
+        <div class="cbox"><span class="swatch" id="colorSwatch"></span><div class="chips" id="colorCodes"></div></div>
+        <p class="dsub" id="colorHint">Click "Pick from screen", then click any pixel. The HEX code is copied for you.</p>
+        <div class="recent" id="colorRecent" aria-label="Recent colours"></div>
+      </section>
       <section class="panel" id="sysPanel" hidden aria-label="System">
         <header><b>System</b><span class="dsub" id="sysCpuName"></span></header>
         <div class="meters" id="sysMeters"></div>
@@ -192,6 +199,7 @@
 <script src="sliders.js"></script>
 <script src="pet.js"></script>
 <script src="units.js"></script>
+<script src="colors.js"></script>
 <script src="notch.js"></script>
 </body>
 </html>

@@ -31,6 +31,7 @@ contextBridge.exposeInMainWorld("bridge", {
   linksGet: () => ipcRenderer.invoke("linksGet"),
   linksSave: list => ipcRenderer.invoke("linksSave", list),
   openLink: url => ipcRenderer.send("openLink", url),
+  copyText: t => ipcRenderer.send("copyText", t),
   timerStart: min => ipcRenderer.send("timerStart", min),
   stopwatchToggle: () => ipcRenderer.send("stopwatchToggle"),
   openSettings: () => ipcRenderer.send("openSettings"),
