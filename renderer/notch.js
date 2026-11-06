@@ -796,6 +796,7 @@ window.bridge.onWeather(w => { wx = w; render(); });
 window.bridge.onDownloads(list => { dls = list; render(); });
 window.bridge.onUpdateReady(v => toast({ update: true, app: "Islet", badge: "↑", color: "#30d158", title: `Islet ${v} is ready`, body: "Click to restart and update, or it installs when you quit.", ms: 10000 }));
 window.bridge.onDownloadDone(d => toast({ id: d.id, app: "Downloads", badge: "↓", color: "#0a84ff", title: d.name, body: "Downloaded. Click to show in folder." }));
+window.bridge.onScreenshot(d => toast({ id: d.id, app: "Screenshot", badge: "▣", color: "#30d158", title: d.name, body: "On the shelf. Drag it out, or click to show in folder." }));
 
 // ---- look ----
 window.bridge.onTheme(t => {

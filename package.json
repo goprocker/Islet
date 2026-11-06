@@ -29,6 +29,7 @@
       "lyrics.js",
       "weather.js",
       "downloads.js",
+      "screenshots.js",
       "shelf-file.js",
       "helper-lifecycle.js",
       "audio-target.js",
