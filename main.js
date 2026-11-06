@@ -582,6 +582,7 @@ ipcMain.on("phoneStop", () => phoneDrop.stop());
 // ---- links: saved sites, and web searches opened in the browser ----
 ipcMain.handle("linksGet", () => loadLinks(app.getPath("userData")));
 ipcMain.handle("linksSave", (_, list) => saveLinks(app.getPath("userData"), list));
+ipcMain.on("copyText", (_, t) => { if (typeof t === "string" && t.length <= 100) clipboard.writeText(t); });
 ipcMain.on("openLink", (_, url) => { try { if (/^https?:$/.test(new URL(url).protocol)) shell.openExternal(url); } catch {} });
 
 // ---- timer tool: the same timers as the tray menu ----

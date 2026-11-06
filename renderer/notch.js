@@ -636,7 +636,7 @@ function drawHello() {
 
 // ---- tools: one panel at a time, in the tall view with the dock under it ----
 const PANELS = [...document.querySelectorAll(".panel")].map(p => p.id);
-const OPENED = { dashPanel: () => { refreshQuick(); drawHello(); }, phonePanel: startPhone, linksPanel: loadLinks, clockPanel: drawClocks, timerPanel: drawTimer, weatherPanel: drawWeather, unitsPanel: drawUnits, sysPanel: drawSys, aiPanel: drawAi };
+const OPENED = { dashPanel: () => { refreshQuick(); drawHello(); }, phonePanel: startPhone, linksPanel: loadLinks, clockPanel: drawClocks, timerPanel: drawTimer, weatherPanel: drawWeather, unitsPanel: drawUnits, colorPanel: drawColors, sysPanel: drawSys, aiPanel: drawAi };
 let openPanel = null;
 // toggle: a second click on the button that opened it closes it (the dock only switches)
 function showPanel(id, toggle = true) {
@@ -900,6 +900,36 @@ function drawUnits(resetUnits) {
 }
 $("uKind").onchange = () => drawUnits(true);
 for (const id of ["uIn", "uFrom", "uTo"]) $(id).oninput = () => drawUnits(false);
+
+// ---- colour picker: Chromium's EyeDropper samples any pixel on screen ----
+let colors = [];
+try { colors = window.Colors.addRecent(JSON.parse(localStorage.colors || "[]")); } catch {}
+function drawColors() {
+  const f = window.Colors.formats(colors[0]);
+  $("colorSwatch").style.setProperty("--c", f?.hex || "");
+  $("colorCodes").replaceChildren(...(f ? Object.values(f) : []).map(code => {
+    const b = Object.assign(document.createElement("button"), { textContent: code, title: "Copy" });
+    b.onclick = () => { window.bridge.copyText(code); b.textContent = "Copied"; setTimeout(() => { b.textContent = code; }, 900); };
+    return b;
+  }));
+  $("colorRecent").replaceChildren(...colors.slice(1).map(hex => {
+    const b = Object.assign(document.createElement("button"), { title: hex, ariaLabel: hex });
+    b.style.setProperty("--c", hex);
+    b.onclick = () => pickedColor(hex, false);
+    return b;
+  }));
+}
+function pickedColor(hex, copy = true) {
+  colors = window.Colors.addRecent(colors, hex);
+  try { localStorage.colors = JSON.stringify(colors); } catch {}
+  if (copy) window.bridge.copyText(colors[0]);
+  drawColors();
+}
+$("colorPick").hidden = !("EyeDropper" in window);
+if ($("colorPick").hidden) $("colorHint").textContent = "Picking from the screen isn't available in this version.";
+$("colorPick").onclick = async () => {
+  try { pickedColor((await new EyeDropper().open()).sRGBHex); } catch {} // Esc cancels
+};
 
 // ---- system: CPU, memory, disk, battery, uptime ----
 const gb = n => `${(n / 1024 ** 3).toFixed(1)} GB`;
