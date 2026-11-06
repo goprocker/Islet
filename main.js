@@ -18,6 +18,7 @@ const universalSearch = require("./search");
 const quickSettings = require("./quick-settings");
 const downloads = require("./downloads");
 const screenshots = require("./screenshots");
+const devices = require("./devices");
 const volumeHud = require("./volume-hud");
 const { readShelf } = require("./shelf-file");
 const { helperLifecycle } = require("./helper-lifecycle");
@@ -766,6 +767,12 @@ function startScreenshots() {
   });
 }
 
+// ---- Bluetooth battery levels: shown in the System tool, with a toast when one runs low ----
+let btDevices = [];
+function startDevices() {
+  devices.poll(list => { btDevices = list; send("devices", list); }, d => send("deviceLow", d));
+}
+
 // ---- timer + pomodoro ----
 let timerEnd = 0, timerDone, timerLabel = "Timer", pomo = null;
 function runTimer(min, label) {
@@ -895,18 +902,20 @@ app.whenReady().then(() => {
   for (const ev of ["on-ac", "on-battery", "resume"]) powerMonitor.on(ev, sendPower);
   powerMonitor.on("lock-screen", () => { locked = true; applyBanners(); helpers.pause("locked"); });
   powerMonitor.on("unlock-screen", () => { locked = false; applyBanners(); helpers.resume("locked"); });
-  powerMonitor.on("suspend", () => helpers.pause("asleep"));
-  powerMonitor.on("resume", () => helpers.resume("asleep"));
+  powerMonitor.on("suspend", () => { helpers.pause("asleep"); devices.stop(); });
+  powerMonitor.on("resume", () => { helpers.resume("asleep"); startDevices(); });
   win.webContents.on("did-finish-load", () => {
     sendPower();
     lastClaude = ""; iconFor = null; lastMediaLine = ""; readClaude(); refreshSpotifyExtras(); send("timerLabel", timerLabel); send("timer", timerEnd); send("stopwatch", stopwatchStart); sendDnd(true); send("shelf", shelf); sendTheme(); lyricsNow.resend();
     sendClips();
+    send("devices", btDevices);
     send("notes", loadNotes(app.getPath("userData")));
     calendar.poll(config.calendarIcsUrl, ev => send("calendar", ev));
     startWeather();
   });
   startDownloads();
   startScreenshots();
+  startDevices();
   applyServices(); // remember what the services started with
   setInterval(readClaude, 2000);
   setInterval(refreshSpotifyExtras, 30000);

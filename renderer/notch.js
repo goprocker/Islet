@@ -932,7 +932,10 @@ $("colorPick").onclick = async () => {
   try { pickedColor((await new EyeDropper().open()).sRGBHex); } catch {} // Esc cancels
 };
 
-// ---- system: CPU, memory, disk, battery, uptime ----
+// ---- system: CPU, memory, disk, battery, Bluetooth batteries, uptime ----
+let btDevices = [];
+window.bridge.onDevices(list => { btDevices = list || []; });
+window.bridge.onDeviceLow(d => toast({ app: "Bluetooth", badge: "!", color: "#d1453b", title: `${d.name} battery low`, body: `${d.battery}% left. Charge it soon.` }));
 const gb = n => `${(n / 1024 ** 3).toFixed(1)} GB`;
 async function drawSys() {
   const s = await window.bridge.sysStats();
@@ -941,10 +944,11 @@ async function drawSys() {
   const m = [["CPU", s.cpu, `${s.cpu}%`], ["Memory", Math.round(100 * used / s.mem.total), `${gb(used)} of ${gb(s.mem.total)}`]];
   if (s.disk) m.push(["Disk", Math.round(100 * (1 - s.disk.free / s.disk.total)), `${gb(s.disk.free)} free`]);
   if (battery) m.push(["Battery", Math.round(battery.level * 100), battery.charging ? "Charging" : "On battery"]);
+  for (const d of btDevices) m.push([d.name, d.battery, "Bluetooth"]);
   m.push(["Uptime", null, up >= 24 ? `${Math.floor(up / 24)}d ${up % 24}h` : `${up}h ${Math.floor(s.uptime % 3600 / 60)}m`]);
   $("sysMeters").replaceChildren(...m.map(([name, pct, text]) => {
     const d = document.createElement("div");
-    d.append(Object.assign(document.createElement("small"), { textContent: name }), Object.assign(document.createElement("strong"), { textContent: pct == null ? text : `${pct}%` }));
+    d.append(Object.assign(document.createElement("small"), { textContent: name, title: name }), Object.assign(document.createElement("strong"), { textContent: pct == null ? text : `${pct}%` }));
     if (pct != null) { const bar = document.createElement("i"); bar.style.setProperty("--p", `${pct}%`); d.append(bar, Object.assign(document.createElement("span"), { textContent: text })); }
     return d;
   }));
