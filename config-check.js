@@ -9,7 +9,7 @@ const CHECKS = {
   spotifyClientId: text, calendarIcsUrl: text, weatherCity: text, downloadsFolder: text,
   displayId: v => v === null || number(v),
   notifications: bool, hideInFullscreen: bool, lyrics: bool, dnd: bool, clipboardHistory: bool, volumeHud: bool, focusDnd: bool, universalSearch: bool,
-  idleHide: bool, hideWindowsBanners: bool, powerAnim: bool, pet: bool,
+  idleHide: bool, hideWindowsBanners: bool, screenshotShelf: bool, powerAnim: bool, pet: bool,
   permissionWaitSeconds: v => number(v) && v >= 0 && v <= 24,
   dndFrom: time, dndTo: time, dndSkipUntil: number,
   weatherUnit: v => v === "C" || v === "F",

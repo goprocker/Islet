@@ -17,6 +17,7 @@ const { loadNotes, saveNotes } = require("./notes");
 const universalSearch = require("./search");
 const quickSettings = require("./quick-settings");
 const downloads = require("./downloads");
+const screenshots = require("./screenshots");
 const volumeHud = require("./volume-hud");
 const { readShelf } = require("./shelf-file");
 const { helperLifecycle } = require("./helper-lifecycle");
@@ -46,7 +47,7 @@ app.on("second-instance", () => (welcomePending ? openWelcome() : openSettings()
 // ---- settings (userData/config.json) ----
 const { checkConfig, clock } = require("./config-check");
 const configPath = () => path.join(app.getPath("userData"), "config.json");
-const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true, lyrics: true, permissionWaitSeconds: 8, dnd: false, dndFrom: "", dndTo: "", dndSkipUntil: 0, clipboardHistory: true, volumeHud: true, focusDnd: true, universalSearch: true, weatherCity: "", weatherUnit: "C", downloadsFolder: "", size: "normal", accent: "album", idleHide: false, hideWindowsBanners: true, powerAnim: true, powerAnimStyle: "cinematic", pet: true, userName: "", customPet: "" };
+const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true, lyrics: true, permissionWaitSeconds: 8, dnd: false, dndFrom: "", dndTo: "", dndSkipUntil: 0, clipboardHistory: true, volumeHud: true, focusDnd: true, universalSearch: true, weatherCity: "", weatherUnit: "C", downloadsFolder: "", size: "normal", accent: "album", idleHide: false, hideWindowsBanners: true, powerAnim: true, powerAnimStyle: "cinematic", pet: true, userName: "", customPet: "", screenshotShelf: true };
 let config = { ...DEFAULTS };
 // only a missing file is created; one that can't be read or parsed (a hand edit in
 // progress, a half-written save) is left alone and the current settings stay in use.
@@ -654,6 +655,7 @@ ipcMain.handle("settings:save", (_, v) => {
     weatherCity: str(v.weatherCity, 100), weatherUnit: v.weatherUnit === "F" ? "F" : "C",
     calendarIcsUrl: /^(https?|webcal):\/\//i.test(str(v.calendarIcsUrl)) ? str(v.calendarIcsUrl).replace(/^webcal:/i, "https:") : "",
     downloadsFolder: str(v.downloadsFolder, 500), clipboardHistory: !!v.clipboardHistory, volumeHud: !!v.volumeHud, focusDnd: !!v.focusDnd, universalSearch: !!v.universalSearch,
+    screenshotShelf: !!v.screenshotShelf,
   };
   config = next;
   updateLyrics();
@@ -737,11 +739,12 @@ function startWeather() { weather.poll(config.weatherCity.trim(), config.weather
 // replaces `config` before the file watcher fires.
 let applied = null;
 function applyServices() {
-  const now = { ics: config.calendarIcsUrl, wx: [config.weatherCity, config.weatherUnit].join("|"), dl: config.downloadsFolder };
+  const now = { ics: config.calendarIcsUrl, wx: [config.weatherCity, config.weatherUnit].join("|"), dl: config.downloadsFolder, shots: config.screenshotShelf };
   if (!applied) { applied = now; return; } // first run: started by did-finish-load / startDownloads()
   if (now.ics !== applied.ics) calendar.poll(config.calendarIcsUrl, ev => send("calendar", ev));
   if (now.wx !== applied.wx) startWeather();
   if (now.dl !== applied.dl) startDownloads();
+  if (now.shots !== applied.shots) startScreenshots();
   applied = now;
 }
 function startDownloads() {
@@ -750,6 +753,16 @@ function startDownloads() {
     const id = ++notifCount;
     notifTargets.set(id, { file: done.path });
     send("downloadDone", { id, name: done.name });
+  });
+}
+// a new screenshot goes on the shelf, ready to drag into a chat or send with Phone drop
+function startScreenshots() {
+  if (!config.screenshotShelf) return screenshots.stop();
+  screenshots.watch(path.join(app.getPath("pictures"), "Screenshots"), async p => {
+    await shelfAdd([p]);
+    const id = ++notifCount;
+    notifTargets.set(id, { file: p });
+    send("screenshot", { id, name: path.basename(p) });
   });
 }
 
@@ -893,6 +906,7 @@ app.whenReady().then(() => {
     startWeather();
   });
   startDownloads();
+  startScreenshots();
   applyServices(); // remember what the services started with
   setInterval(readClaude, 2000);
   setInterval(refreshSpotifyExtras, 30000);

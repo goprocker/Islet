@@ -41,6 +41,7 @@ contextBridge.exposeInMainWorld("bridge", {
   onTheme: on("theme"),
   onDownloads: on("downloads"),
   onDownloadDone: on("downloadDone"),
+  onScreenshot: on("screenshot"),
   onUpdateReady: on("updateReady"),
   copyClip: i => ipcRenderer.send("copyClip", i),
   onNotes: on("notes"),
