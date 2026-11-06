@@ -1,0 +1,24 @@
+# Pull requests from the two maintainers are approved and merged automatically once the
+# other checks pass. Anyone else's pull request waits for goprocker or geek007git to
+# approve it (branch rule on main: one approving review).
+# pull_request_target runs this file from main and never checks out the PR's code.
+name: Auto-merge maintainer PRs
+on:
+  pull_request_target:
+    types: [opened, reopened, ready_for_review, synchronize]
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  auto-merge:
+    if: >-
+      !github.event.pull_request.draft &&
+      contains(fromJSON('["goprocker","geek007git"]'), github.event.pull_request.user.login)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Approve
+        run: gh pr review "$PR" --approve --repo "$REPO"
+        env: { GH_TOKEN: "${{ github.token }}", PR: "${{ github.event.pull_request.number }}", REPO: "${{ github.repository }}" }
+      - name: Merge when checks pass
+        run: gh pr merge "$PR" --auto --squash --repo "$REPO"
+        env: { GH_TOKEN: "${{ github.token }}", PR: "${{ github.event.pull_request.number }}", REPO: "${{ github.repository }}" }
