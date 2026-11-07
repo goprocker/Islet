@@ -75,7 +75,7 @@ pre.t { padding: 3mm 4mm; margin: 1.5mm 0 1.5mm; font-size: 8pt; }
   <p style="color:#6e6e73">Music, Claude Code and Codex activity, notifications, battery and more,<br>in one small black pill at the top of your screen.</p>
   <div class="meta">
     <div><small>MADE BY</small><b>Gopinath</b></div>
-    <div><small>VERSION</small><b>2.3.3</b></div>
+    <div><small>VERSION</small><b>2.3.4</b></div>
     <div><small>PLATFORM</small><b>Windows 10 / 11</b></div>
     <div><small>BUILT WITH</small><b>Electron 45</b></div>
   </div>
@@ -486,21 +486,26 @@ node_modules\electron\dist\electron.exe . --remote-debugging-port=9333</pre>
 <section class="page">
   <div class="kick">SECTION 14 · 2.2</div>
   <h1>The pet</h1>
-  <div class="lead">The cat reacts to what your PC is doing, and now it talks.</div>
-  <figure style="margin:0"><img src="../tools/pet-moods.png" style="width:100%;display:block;border-radius:3mm"><figcaption style="font-size:7.5pt;color:#6e6e73;margin-top:1mm">Idle, coding, asking, planting, focus, music and sleep.</figcaption></figure>
+  <div class="lead">Your pet reacts to what your PC is doing, and it talks.</div>
   <h2>When it talks</h2>
   <p style="font-size:9.5pt">Its line appears beside it in the closed pill, which widens for 6 seconds: a hello by name when Islet starts, a line when its mood changes, and a word after 10 quiet minutes. Set <b>Your name</b> in Settings; empty uses your Windows account name.</p>
   <h2>Moods, first match wins</h2>
-  <table><tr><th>Mood</th><th>When</th></tr>
+  <style>.moods td{font-size:8.3pt;padding-top:1mm;padding-bottom:1mm}</style>
+  <table class="moods"><tr><th>Mood</th><th>When</th></tr>
     <tr><td>Sick</td><td>Battery under 20% and not charging</td></tr>
     <tr><td>Alert</td><td>A pop-up arrived in the last 4 seconds</td></tr>
     <tr><td>Asking</td><td>A Claude Code or Codex session needs you</td></tr>
+    <tr><td>Love ♥ / Happy ✦ / Charge ⚡</td><td>You liked a song (3 s) / an agent finished (8 s) / the charger went in (8 s)</td></tr>
     <tr><td>Planting</td><td>A focus session just ended; one more pair of leaves per session today, a flower on the fourth</td></tr>
+    <tr><td>Rush ⏰</td><td>A calendar meeting starts within 5 minutes</td></tr>
     <tr><td>Focus</td><td>A focus or Pomodoro timer is running</td></tr>
-    <tr><td>Coding</td><td>An agent session is working</td></tr>
+    <tr><td>Coding / Work</td><td>An agent session is working, or an editor / office app is in front</td></tr>
     <tr><td>Music</td><td>Something is playing</td></tr>
-    <tr><td>Sleep / Idle</td><td>Two quiet minutes / anything else</td></tr></table>
-  <figure style="margin:2mm 0 0"><img src="../tools/clawd-moods.png" style="width:100%;display:block;border-radius:3mm"><figcaption style="font-size:7.5pt;color:#6e6e73;margin-top:1mm">Clawd, a custom pet, in the pose each mood plays.</figcaption></figure>
+    <tr><td>Hello 👋</td><td>You just opened the notch (2.5 s, no words)</td></tr>
+    <tr><td>Sleep</td><td>Two quiet minutes</td></tr>
+    <tr><td>Zen ☾ / Sleepy … / Cold ❄ / Hot 💧</td><td>Calm, and: Do Not Disturb on / midnight to 5 am / 10 °C or colder outside / 35 °C or hotter</td></tr>
+    <tr><td>Idle</td><td>Anything else</td></tr></table>
+  <figure style="margin:2mm auto 0;width:62%"><img src="../tools/clawd-moods.png" style="width:100%;display:block;border-radius:3mm"><figcaption style="font-size:7.5pt;color:#6e6e73;margin-top:1mm">Clawd, a custom pet, in all 18 moods. The small emote beside it works for any pet.</figcaption></figure>
   <h2>Bring your own pet</h2>
   <p style="font-size:9.5pt">Settings → <b>Choose a pet…</b> takes a pet in the Codex Pets format (a .zip or its pet.json, from codex-pets.net). Islet checks the sprite sheet (192 × 208 frames, 1536 × 1872 or 1536 × 2288), copies it into its own folder and plays each mood from the matching row. <b>Use Doudou</b> picks the built-in pet, and <b>Use the cat</b> switches back.</p>
   <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
@@ -529,6 +534,32 @@ node_modules\electron\dist\electron.exe . --remote-debugging-port=9333</pre>
     <li><b>The website</b> (islet.loopfound.in) downloads the installer directly, shows real screenshots and live download, star and fork counts, read from GitHub on every visit.</li>
     <li><b>Security (7 Nov)</b>: pet zips are refused above 64 entries or 64 MB, and their temp folder is always removed; Electron 45.2.3; patched zod and minimatch in the launch film; auto-merge only for maintainer pushes.</li>
     <li><b>Tests</b>: 291 in 37 files → 312 in 42 files.</li>
+  </ul>
+  <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<section class="page">
+  <div class="kick">SECTION 14 · 2.3.4</div>
+  <h1>What's new in 2.3.4</h1>
+  <div class="lead">A new look for the notch and the settings window, a pet with 18 moods, and a fix that brings the pet back.</div>
+  <h2>In the app</h2>
+  <ul style="font-size:9.5pt">
+    <li><b>The pet is back</b>: in 2.3.3 the notch's script stopped on its first draw (it read the foreground app before that value existed), so the pet, the theme and everything set up after it never loaded.</li>
+    <li><b>New look</b>: the zinc palette of shadcn/ui, thin borders instead of grey blocks, white "on" tiles, and Lucide outline icons in the dock, the tools and Quick Settings.</li>
+    <li><b>Settings</b>: sections down the left, one shown at a time (the last one opens next time; the arrow keys move between them), switches, outline buttons and a small "Saved." note.</li>
+    <li><b>Pet moods</b>: love, happy, charge, rush, zen, sleepy, cold, hot and hello join the old nine, each with a sprite row, a line and an emote that works for any pet.</li>
+    <li><b>Weather</b> shows the last forecast right away after a restart, and says how old it is.</li>
+    <li><b>Lyrics</b>: a song without synced lyrics says so.</li>
+    <li><b>Do Not Disturb</b>: when it ends, one pop-up says what came in meanwhile ("5 notifications from WhatsApp, Teams and 1 more").</li>
+    <li><b>Battery</b>: the status column shows Windows' estimate ("Full in 1h 5m", "3h 10m left").</li>
+    <li><b>Privacy dots</b>: click them to see which apps use the mic, camera or screen.</li>
+    <li><b>Spotify queue</b>: with a connected account, the album view lists the next three songs.</li>
+  </ul>
+  <figure style="margin:2mm auto 0;width:62%"><img src="../tools/settings.png" style="width:100%;display:block;border-radius:3mm"><figcaption style="font-size:7.5pt;color:#6e6e73;margin-top:1mm">The settings window: one section at a time, picked on the left.</figcaption></figure>
+  <h2>Around the code</h2>
+  <ul style="font-size:9.5pt">
+    <li><b>New module</b> <code>missed.js</code> (listed in <code>build.files</code>); <code>weather.fromCache</code> / <code>toCache</code>; <code>lyrics.follower</code> sends <code>false</code> for "no lyrics".</li>
+    <li><b>Tests</b>: 312 → 323.</li>
   </ul>
   <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
 </section>
