@@ -185,13 +185,18 @@ navigator.getBattery?.().then(b => {
       el.title = b.charging ? `Charging, ${pct}%` : `Battery ${pct}%`;
     }
     $("batt").hidden = false;
-    $("power").textContent = b.charging ? (b.level >= 1 ? "Fully charged" : "Charging") : "On battery";
+    // Windows' own estimate, once it has one (Infinity until then)
+    const left = s => { const m = Math.round(s / 60); return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`; };
+    const est = b.charging ? b.chargingTime : b.dischargingTime, known = Number.isFinite(est) && est > 0;
+    $("power").textContent = b.charging ? (b.level >= 1 ? "Fully charged" : known ? `Full in ${left(est)}` : "Charging") : known ? `${left(est)} left` : "On battery";
     $("pillBatt").hidden = !b.charging; // pill only shows it while plugged in
     notch.classList.toggle("charging", b.charging);
   };
   show();
   b.addEventListener("chargingchange", show);
   b.addEventListener("levelchange", show);
+  b.addEventListener("chargingtimechange", show);
+  b.addEventListener("dischargingtimechange", show);
   // one short pop on plug-in, no loop
   let popTimer;
   b.addEventListener("chargingchange", () => {
@@ -451,10 +456,11 @@ function render() {
   $("like").setAttribute("aria-pressed", likedNow);
   $("like").setAttribute("aria-label", extras.connected ? (extras.liked ? "Remove from Liked Songs" : "Save to Liked Songs") : "Like or unlike in Spotify");
   $("like").title = extras.connected ? "" : "Like / unlike (sends Alt+Shift+B to Spotify)";
-  // lyrics win over "up next" when the song has them
-  const lyricShown = !!(lyricLines && track);
-  $("upnext").textContent = lyricShown ? lyricNow : extras.next ? `Up next: ${extras.next.title} · ${extras.next.artist}` : "";
+  // lyrics win over "up next" when the song has them; a song without any says so once the lookup is done
+  const lyricShown = !!(lyricLines && track), noLyrics = lyricLines === false && !!track && !extras.next;
+  $("upnext").textContent = lyricShown ? lyricNow : extras.next ? `Up next: ${extras.next.title} · ${extras.next.artist}` : noLyrics ? "No synced lyrics for this song" : "";
   $("upnext").classList.toggle("lyric", lyricShown);
+  $("upnext").classList.toggle("none", noLyrics);
 
   // right of the controls + pill chip: running timer beats the next meeting
   let side = "", chip = "", soon = false, joinable = null;
@@ -595,10 +601,11 @@ setInterval(wakeWave, 500); // playback and accent changes
 new MutationObserver(wakeWave).observe(notch, { attributes: true, attributeFilter: ["class"] }); // open / closed / hidden
 
 // ---- mic / camera / screen capture in use ----
-let fgApp = "";
+let fgApp = "", privUse = [];
 window.bridge.onSystem(d => {
   fgApp = d.app || "";
   const kinds = [["mic", "Microphone", d.mic], ["cam", "Camera", d.cam], ["screen", "Screen capture", d.screen]];
+  privUse = kinds.filter(([, , apps]) => apps?.length);
   for (const box of [$("pillPriv"), $("priv")]) {
     box.replaceChildren(...kinds.filter(([, , apps]) => apps?.length).map(([cls, label, apps]) => {
       const i = document.createElement("i");
@@ -608,6 +615,13 @@ window.bridge.onSystem(d => {
     }));
   }
 });
+
+// clicking the dots says which apps use the mic, camera or screen
+$("priv").onclick = () => {
+  if (!privUse.length) return;
+  toast({ app: "Privacy", badge: "●", color: privUse.some(([c]) => c === "cam") ? "#30d158" : "#ff9f0a", title: privUse.map(([, label]) => label).join(", ") + " in use", body: privUse.map(([, label, apps]) => `${label}: ${apps.join(", ")}`).join(" · ") });
+};
+window.bridge.onDndSummary(m => toast({ app: "Do Not Disturb", badge: "☾", color: "#5e5ce6", title: "While you were away", body: m.text }));
 
 // ---- album view ----
 $("artBtn").addEventListener("click", () => { if (track?.art) { $("albumv").hidden = false; renderAlbum(); } });
@@ -620,7 +634,12 @@ function renderAlbum() {
   $("albumv").querySelectorAll("img").forEach(i => { if (i.src !== track.art) i.src = track.art; });
   $("aTitle").textContent = track.title || "";
   $("aArtist").textContent = track.artist || "";
-  $("aLyric").textContent = lyricLines ? lyricNow : "";
+  $("aLyric").textContent = lyricLines ? lyricNow : lyricLines === false ? "No synced lyrics" : "";
+  // Spotify's queue, when the account is connected
+  const q = extras.queue || [];
+  $("aQueue").hidden = !q.length;
+  $("aQueue").replaceChildren(...(q.length ? [Object.assign(document.createElement("small"), { textContent: "Up next" })] : []),
+    ...q.map(s => Object.assign(document.createElement("li"), { textContent: `${s.title} · ${s.artist}` })));
 }
 setInterval(renderAlbum, 500);
 
@@ -882,7 +901,8 @@ function drawWeather() {
   const ok = wx && !wx.error;
   $("wEmpty").hidden = ok; $("wEmpty").textContent = wx?.error || "Set a city in Settings to see the weather.";
   $("wPlace").textContent = ok ? wx.place : "Weather";
-  $("wMeta").textContent = ok && wx.humidity != null ? `Humidity ${wx.humidity}% · Wind ${wx.wind} km/h` : "";
+  // a forecast kept from last time says how old it is until the fresh one arrives
+  $("wMeta").textContent = ok && wx.humidity != null ? `Humidity ${wx.humidity}% · Wind ${wx.wind} km/h${wx.cached ? ` · from ${ago(Date.now() - wx.cached)} ago` : ""}` : "";
   $("wIcon").textContent = ok ? wx.icon : ""; $("wTemp").textContent = ok ? `${wx.temp}°${wx.unit}` : ""; $("wLabel").textContent = ok ? wx.label : "";
   const li = (top, icon, bottom) => { const e = document.createElement("li"); e.append(Object.assign(document.createElement("small"), { textContent: top }), Object.assign(document.createElement("span"), { textContent: icon }), Object.assign(document.createElement("b"), { textContent: bottom })); return e; };
   $("wHours").replaceChildren(...(ok ? wx.hours || [] : []).map(h => li(h.time, h.icon, `${h.temp}°`)));

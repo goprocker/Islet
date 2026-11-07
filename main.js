@@ -26,6 +26,7 @@ const { audioTarget } = require("./audio-target");
 const { needsWelcome, finishWelcome } = require("./welcome");
 const { loadLinks, saveLinks } = require("./links");
 const phoneDrop = require("./phone-drop");
+const { missedLog } = require("./missed");
 const QRCode = require("qrcode");
 const petPack = require("./pet-pack");
 const petsDir = () => path.join(app.getPath("userData"), "pets");
@@ -406,9 +407,14 @@ function toggleDnd() {
   saveConfig(); sendDnd(); buildMenu();
 }
 let lastDnd = null;
+const missed = missedLog();
 function sendDnd(force) {
   const on = dndActive();
-  if (force || on !== lastDnd) { lastDnd = on; send("dnd", on); if (tray) buildMenu(); }
+  if (force || on !== lastDnd) {
+    // turning off: one line about what came in meanwhile
+    if (lastDnd && !on) { const m = missed.take(); if (m) send("dndSummary", m); }
+    lastDnd = on; send("dnd", on); if (tray) buildMenu();
+  }
 }
 ipcMain.on("toggleDnd", toggleDnd);
 
@@ -734,7 +740,18 @@ function nextScreen() {
 }
 
 // ---- weather + downloads ----
-function startWeather() { weather.poll(config.weatherCity.trim(), config.weatherUnit, w => send("weather", w)); }
+const weatherPath = () => path.join(app.getPath("userData"), "weather.json");
+function startWeather() {
+  const city = config.weatherCity.trim(), unit = config.weatherUnit;
+  let text = "";
+  try { text = fs.readFileSync(weatherPath(), "utf8"); } catch {}
+  const cached = weather.fromCache(text, city, unit);
+  if (cached) send("weather", cached);
+  weather.poll(city, unit, w => {
+    send("weather", w);
+    if (w && !w.error) fs.writeFile(weatherPath(), weather.toCache(city, unit, w), e => e && console.warn("weather cache", e.message));
+  });
+}
 // restart calendar, weather and downloads when their settings differ from what they run with.
 // Compared with the last applied values, not the previous `config`: the settings window
 // replaces `config` before the file watcher fires.
@@ -925,7 +942,8 @@ app.whenReady().then(() => {
   applyBanners();
   notifications.watch(async ({ aumid, xml, ...n }) => {
     if (aumid && bannersSaved && !(aumid in bannersSaved)) applyBanners([aumid]); // an app seen for the first time
-    if (!config.notifications || dndActive() || welcomePending) return;
+    if (!config.notifications || welcomePending) return;
+    if (dndActive()) return missed.add(n.app);
     // what a click opens: the toast's own link when it has one, else the app
     const launch = xml.match(/<toast[^>]*\blaunch="([^"]+)"/)?.[1]?.replace(/&amp;/g, "&");
     const protocol = /<toast[^>]*activationType="protocol"/.test(xml) && launch && /^[a-z][\w+.-]*:/i.test(launch);

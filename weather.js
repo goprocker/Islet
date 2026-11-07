@@ -53,4 +53,16 @@ function poll(city, unit, onWeather) {
   timer = setInterval(run, 15 * 60 * 1000);
 }
 
-module.exports = { poll, forecast };
+// the last forecast, kept between restarts so the notch shows weather before the first answer.
+// Only for the same city and unit, and only while it's under 6 hours old
+const CACHE_MS = 6 * 60 * 60 * 1000;
+function fromCache(text, city, unit, now = Date.now()) {
+  try {
+    const c = JSON.parse(text);
+    if (c && c.city === city && c.unit === unit && now - c.at >= 0 && now - c.at < CACHE_MS && c.w && !c.w.error) return { ...c.w, cached: c.at };
+  } catch {}
+  return null;
+}
+const toCache = (city, unit, w, now = Date.now()) => JSON.stringify({ city, unit, at: now, w });
+
+module.exports = { poll, forecast, fromCache, toCache };

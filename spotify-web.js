@@ -98,7 +98,7 @@ async function extras() {
   const id = now?.item?.id || null;
   // a new track's liked state isn't known yet: until it is, a click does nothing
   if (id !== currentId) { currentId = null; liked = false; }
-  if (!id) return { liked: false, next: null };
+  if (!id) return { liked: false, next: null, queue: [] };
   const [contains, queue] = await Promise.all([
     api("GET", `/me/tracks/contains?ids=${id}`),
     api("GET", "/me/player/queue").catch(() => null),
@@ -106,8 +106,9 @@ async function extras() {
   if (mine !== extrasRun) return null;
   currentId = id;
   liked = !!contains?.[0];
-  const n = queue?.queue?.[0];
-  return { liked, next: n ? { title: n.name, artist: (n.artists || []).map(a => a.name).join(", ") } : null };
+  const song = n => ({ title: n.name, artist: (n.artists || []).map(a => a.name).join(", ") });
+  const list = (queue?.queue || []).slice(0, 3).map(song);
+  return { liked, next: list[0] || null, queue: list };
 }
 
 async function toggleLike() {

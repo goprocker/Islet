@@ -115,7 +115,7 @@ test("answers in the normal order still give the newest track", async () => {
     assert.strictEqual(await a, null);
     const rb = await answer(d, 1, "B");
     rb.contains.reply([true]); rb.queue.reply({ queue: [{ name: "Next", artists: [{ name: "X" }] }] });
-    assert.deepStrictEqual(await b, { liked: true, next: { title: "Next", artist: "X" } });
+    assert.deepStrictEqual(await b, { liked: true, next: { title: "Next", artist: "X" }, queue: [{ title: "Next", artist: "X" }] });
     const like = spotify.toggleLike();
     const sent = await d.until("/me/tracks?ids=");
     assert.strictEqual(sent.method, "DELETE");

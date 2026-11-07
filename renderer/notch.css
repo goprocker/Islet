@@ -152,7 +152,7 @@ body {
 .stat small { font-size: 11px; color: var(--muted); white-space: nowrap; }
 .stat small.vol { color: var(--accent); }
 .stat .batt { margin-top: auto; font-size: 12px; }
-.stat .priv { min-height: 6px; }
+.stat .priv { min-height: 6px; cursor: pointer; }
 .ctl time, .side { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ctl time.vol { color: var(--accent); }
 .side { text-align: right; }
@@ -230,6 +230,7 @@ button.play svg { width: 22px; height: 22px; }
 
 /* lyric line sits under the seek bar, brighter than "up next" */
 .upnext.lyric { color: #e5e5ea; font-size: 11.5px; padding-left: 0; text-align: center; }
+.upnext.none { font-style: italic; opacity: .7; }
 
 /* album view: big art over a blurred copy of itself, click to close */
 .music { position: relative; }
@@ -241,6 +242,9 @@ button.play svg { width: 22px; height: 22px; }
 .ainfo b { font-size: 15px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .ainfo span { color: #ffffffb0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ainfo em { font-style: normal; color: #fff; font-size: 12px; margin-top: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.aqueue { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 2px; font-size: 11px; color: #ffffffb0; }
+.aqueue small { font-size: 9.5px; text-transform: uppercase; letter-spacing: .06em; color: #ffffff80; }
+.aqueue li { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .albumv:not([hidden]) { animation: in .25s ease; }
 
 /* tools: slim column on the right of the open notch */
