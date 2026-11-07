@@ -1,6 +1,10 @@
 # Pull requests from the two maintainers are approved and merged automatically once the
 # other checks pass. Anyone else's pull request waits for goprocker or geek007git to
 # approve it (branch rule on main: one approving review).
+# Both the PR's author and whoever triggered this event (on a push: the person who pushed
+# the latest commits) must be a maintainer, and the branch must live in this repository.
+# If anyone else pushes to a maintainer's PR, auto-merge is switched off and a maintainer
+# has to merge it by hand.
 # pull_request_target runs this file from main and never checks out the PR's code.
 name: Auto-merge maintainer PRs
 on:
@@ -13,7 +17,9 @@ jobs:
   auto-merge:
     if: >-
       !github.event.pull_request.draft &&
-      contains(fromJSON('["goprocker","geek007git"]'), github.event.pull_request.user.login)
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      contains(fromJSON('["goprocker","geek007git"]'), github.event.pull_request.user.login) &&
+      contains(fromJSON('["goprocker","geek007git"]'), github.actor)
     runs-on: ubuntu-latest
     steps:
       - name: Approve
@@ -22,3 +28,15 @@ jobs:
       - name: Merge when checks pass
         run: gh pr merge "$PR" --auto --squash --repo "$REPO"
         env: { GH_TOKEN: "${{ github.token }}", PR: "${{ github.event.pull_request.number }}", REPO: "${{ github.repository }}" }
+  untrusted-push:
+    if: >-
+      github.event.action == 'synchronize' &&
+      contains(fromJSON('["goprocker","geek007git"]'), github.event.pull_request.user.login) &&
+      !contains(fromJSON('["goprocker","geek007git"]'), github.actor)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Turn off auto-merge
+        run: |
+          gh pr merge "$PR" --disable-auto --repo "$REPO" || true
+          gh pr comment "$PR" --repo "$REPO" --body "Auto-merge is off: $ACTOR pushed to this PR and isn't a maintainer. A maintainer needs to review the latest commits and merge by hand."
+        env: { GH_TOKEN: "${{ github.token }}", PR: "${{ github.event.pull_request.number }}", REPO: "${{ github.repository }}", ACTOR: "${{ github.actor }}" }
