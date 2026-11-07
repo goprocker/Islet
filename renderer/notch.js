@@ -430,6 +430,7 @@ function render() {
   const d = new Date(), date = $("date");
   const showVol = now < volShownUntil && volume !== null;
   $("clock").textContent = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  $("rowTime").textContent = $("clock").textContent; // stands in for the music bars while no song plays
   date.textContent = showVol ? `Volume ${Math.round(volume * 100)}%` : d.toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" });
   date.classList.toggle("vol", showVol);
 
@@ -1003,3 +1004,15 @@ window.bridge.onClaude(() => { if (openPanel === "aiPanel") drawAi(); });
 
 // a custom pet's sprite sheet steps through its frames; the cat animates with CSS instead
 setInterval(() => { if (theme.petPack && theme.pet !== false) window.Pet.tick([$("pillPet"), $("fullPet")], Date.now()); }, 125);
+
+// ---- the window's shape follows the notch (shape.js in main): only the notch takes the mouse, so a file
+// dragged onto the pill lands without hovering first. Sent on every size change, also mid-animation ----
+let boxSent = "";
+function sendBox() {
+  const r = notch.getBoundingClientRect();
+  const box = { x: Math.max(0, Math.round(r.left)), width: Math.round(r.width), height: Math.round(r.bottom) };
+  const key = `${box.x},${box.width},${box.height}`;
+  if (key !== boxSent) { boxSent = key; window.bridge.notchBox(box); }
+}
+new ResizeObserver(sendBox).observe(notch);
+sendBox();

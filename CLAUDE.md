@@ -2,7 +2,7 @@
 
 Islet is a Dynamic-Island-style notch for Windows 10/11, built with Electron. The folder is still called `notch`. Repo: https://github.com/goprocker/Islet (branch `main`). Website: https://islet.loopfound.in (from `landing/`, deployed by Netlify). The full session history is in `SESSION_HANDOFF.md` (gitignored); read its section 0 first.
 
-- Run: `npm start`. Test: `npm test` (`node --test test/*.test.js`, 293 passing in 37 files on 2026-11-04; current version 2.3.0).
+- Run: `npm start`. Test: `npm test` (`node --test test/*.test.js`, 323 passing on 2026-11-07, 328 with the uncommitted shape.js; current version 2.3.4).
 - Commits: Conventional Commit subject plus a specific body; push straight to `main`, with no PR. Another session (co-author "Jarvis") also pushes to `main`, so `git fetch` before starting.
 - Line endings: most files are CRLF. Scripted edits must keep `\r\n`, or the replacements silently miss.
 - Installer: per machine (admin). `build/installer.nsh` adds/removes the "Islet Phone drop" firewall rule (private profile, program-based).

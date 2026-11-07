@@ -14,7 +14,7 @@ function setup(displays, primary, size = "normal") {
     BASE_W: 672, BASE_H: 190,
     scale: () => ({ compact: 0.85, normal: 1, large: 1.2 })[size],
     config: { displayId: 2 },
-    buildMenu() {},
+    buildMenu() {}, applyShape() {},
     screen: { getAllDisplays: () => displays(), getPrimaryDisplay: () => primary(), on: (ev, fn) => { handlers[ev] = fn; } },
     win: { setBounds: b => bounds.push(b), webContents: { setZoomFactor: z => zoom.push(z) } },
   };

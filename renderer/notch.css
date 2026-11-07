@@ -607,3 +607,8 @@ button.link:hover { background: var(--secondary); }
 /* the walking pet stops for a pose */
 .walker.love, .walker.happy, .walker.charge, .walker.zen, .walker.sleepy, .walker.cold, .walker.hello { animation-play-state: paused; }
 @media (prefers-reduced-motion: reduce) { .pet::after, .pet.rush, .pet.cold, .pet.happy, .pet.charge { animation: none; } }
+
+/* open notch: the music bars while a song plays; otherwise the time sits in their place, not a row of dashes */
+.notch:not(.playing) #wave { display: none; }
+.rowtime { flex: none; font-size: 12px; font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.notch.playing .rowtime { display: none; }

@@ -27,6 +27,7 @@ const { needsWelcome, finishWelcome } = require("./welcome");
 const { loadLinks, saveLinks } = require("./links");
 const phoneDrop = require("./phone-drop");
 const { missedLog } = require("./missed");
+const { shapeRect, sameRect } = require("./shape");
 const QRCode = require("qrcode");
 const petPack = require("./pet-pack");
 const petsDir = () => path.join(app.getPath("userData"), "pets");
@@ -91,6 +92,7 @@ function placeWindow() {
   const W = Math.round(BASE_W * scale()), H = Math.round(BASE_H * scale());
   win.setBounds({ x: Math.round(bounds.x + (bounds.width - W) / 2), y: bounds.y, width: W, height: H });
   win.webContents.setZoomFactor(scale());
+  appliedShape = null; applyShape(); // a new size or zoom moves the notch's pixels
 }
 function createWindow() {
   win = new BrowserWindow({
@@ -102,6 +104,7 @@ function createWindow() {
   placeWindow();
   win.setAlwaysOnTop(true, "screen-saver");
   win.setVisibleOnAllWorkspaces(true);
+  // click-through until the page reports the notch's box; then the window takes the notch's shape (applyShape)
   win.setIgnoreMouseEvents(true, { forward: true });
   win.loadFile(path.join(__dirname, "renderer", "index.html"));
   win.once("ready-to-show", () => win.showInactive());
@@ -109,6 +112,22 @@ function createWindow() {
   win.on("close", e => { if (!app.isQuitting) e.preventDefault(); });
 }
 
+// ---- window shape: only the notch itself takes the mouse (shape.js) ----
+// Once shaped, the window never needs click-through again, so files can be dropped on the pill straight away.
+// If setShape fails, the old way stays: click-through, taking the mouse only while it is over the notch.
+let notchBox = null, appliedShape = null, shaped = false;
+function applyShape() {
+  if (!win || win.isDestroyed() || !notchBox) return;
+  const [width, height] = win.getSize();
+  const r = shapeRect(notchBox, scale(), { width, height });
+  if (!r || sameRect(r, appliedShape)) return;
+  try {
+    win.setShape([r]);
+    appliedShape = r;
+    if (!shaped) { shaped = true; win.setIgnoreMouseEvents(false); }
+  } catch (e) { console.warn("shape", e.message); }
+}
+ipcMain.on("notchBox", (_, r) => { notchBox = r; applyShape(); });
 // ---- Spotify via Windows media session ----
 function lines(stream, fn) {
   // one decoder for the whole stream: a character split across chunks stays whole
@@ -904,7 +923,7 @@ function makeTray() {
 app.whenReady().then(() => {
   loadConfig();
   spotify.init(app.getPath("userData"));
-  ipcMain.on("hover", (_, over) => win.setIgnoreMouseEvents(!over, { forward: true }));
+  ipcMain.on("hover", (_, over) => { if (!shaped) win.setIgnoreMouseEvents(!over, { forward: true }); });
   welcomePending = needsWelcome(app.getPath("userData"));
   if (!welcomePending) enableLoginOnFirstRun();
   createWindow();

@@ -47,6 +47,7 @@
       "builtin-pets/**",
       "phone-drop.js",
       "missed.js",
+      "shape.js",
       "quickset.ps1",
       "radios.ps1",
       "volume-hud.ps1",
@@ -81,6 +82,19 @@
       "perMachine": true,
       "include": "build/installer.nsh",
       "runAfterFinish": true
+    },
+    "appx": {
+      "applicationId": "Islet",
+      "displayName": "Islet",
+      "publisherDisplayName": "Gopin",
+      "identityName": "Gopin.Islet",
+      "publisher": "CN=Gopin",
+      "artifactName": "Islet-${version}.${ext}",
+      "backgroundColor": "transparent",
+      "languages": [
+        "en-US"
+      ],
+      "showNameOnTiles": false
     }
   },
   "devDependencies": {

@@ -63,6 +63,7 @@ contextBridge.exposeInMainWorld("bridge", {
   answerPermission: (id, decision) => ipcRenderer.send("permissionAnswer", id, decision),
   control: cmd => ipcRenderer.send("control", cmd),
   hover: over => ipcRenderer.send("hover", over),
+  notchBox: box => ipcRenderer.send("notchBox", box),
   seek: sec => ipcRenderer.send("seek", sec),
   volume: delta => ipcRenderer.send("volume", delta),
   like: () => ipcRenderer.send("like"),
