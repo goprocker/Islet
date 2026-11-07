@@ -10,3 +10,6 @@ SESSION_HANDOFF.md
 !landing/demo-loop.mp3
 Microsoft/
 landing/public/
+
+# personal files kept out of the repo (music, audit shots, logs)
+local/

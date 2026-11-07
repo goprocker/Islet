@@ -41,7 +41,7 @@ All pass `npm test` (269 tests). Tried in the running app: HUD, search, Join (wi
 
 - Plugin / widget API for user-made widgets
 - Phone notification mirroring
-- Tauri changeover (see `tauri-changeover.md`, post-launch)
+- Tauri changeover (see `docs/notes/tauri-changeover.md`, post-launch)
 - Live activities for calls, deliveries and flights, parsed from notifications
 
 ## Sprint plan
