@@ -59,10 +59,10 @@ A rough map of the code:
 - `src/main.js` is the Electron main process: window, tray, IPC and the helpers it spawns. Small modules next to it (`weather.js`, `links.js`, `notes.js`, `pomodoro.js` and so on) each own one feature.
 - `renderer/` is the notch itself. `notch.js` shows the panels, `pet.js` runs the pet, and `units.js` is the unit converter.
 - `settings/` is the settings window.
-- `*.ps1` scripts read Windows state such as media, system stats and radios.
-- `builtin-pets/` holds the pets that ship with the app, and `pet-pack.js` loads custom ones.
+- `src/*.ps1` scripts read Windows state such as media, system stats and radios.
+- `builtin-pets/` holds the pets that ship with the app, and `src/pet-pack.js` loads custom ones.
 - `test/` has one `*.test.js` file per area. `npm test` runs them with Node's built-in test runner.
 
-New modules and scripts must be added to `build.files` in `package.json`, or the installer will crash.
+Put new modules and scripts in `src/`. The installer ships `src/**`, and CI fails if one is left at the repo root.
 
 Only add pets and artwork you made or that are licensed for redistribution.
