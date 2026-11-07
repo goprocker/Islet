@@ -64,3 +64,13 @@ test("a finished focus session shows the plant for a while, under sick and alert
   assert.strictEqual(pick({ ...base, plantUntil: base.now - 1 }), "idle");
   assert.strictEqual(pick({ ...base, plantUntil: base.now + 5000, toastAt: base.now }), "alert");
 });
+
+test("the foreground app picks the mood: editors and terminals code, office apps work, others change nothing", () => {
+  assert.strictEqual(pick({ ...base, app: "code" }), "code");
+  assert.strictEqual(pick({ ...base, app: "warp", playing: true }), "code");
+  assert.strictEqual(pick({ ...base, app: "winword" }), "work");
+  assert.strictEqual(pick({ ...base, app: "chrome", playing: true }), "dance");
+  assert.strictEqual(pick({ ...base, app: "chrome" }), "idle");
+  assert.strictEqual(pick({ ...base, app: "code", agent: "waiting" }), "ask");
+  assert.strictEqual(pick({ ...base, app: "code", battery: { level: 0.1, charging: false } }), "sick");
+});

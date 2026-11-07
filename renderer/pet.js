@@ -5,9 +5,20 @@
   const MOODS = ["idle", "sleep", "dance", "work", "alert", "sick", "code", "ask", "plant"];
   const ALERT_MS = 4000, SLEEP_AFTER_MS = 120000, LOW_BATTERY = 0.2;
 
+  // the foreground app (process name, lowercase) says what you're doing: editors and terminals mean coding,
+  // office and notes apps mean work; anything else (browser, games, video) doesn't change the mood
+  const CODE_APPS = /^(code|code - insiders|cursor|windsurf|zed|devenv|idea64|pycharm64|webstorm64|rider64|clion64|goland64|phpstorm64|studio64|sublime_text|notepad\+\+|vim|nvim|windowsterminal|wt|powershell|pwsh|cmd|wsl|mintty|alacritty|wezterm-gui|warp|hyper|tabby|githubdesktop|fork)$/;
+  const WORK_APPS = /^(winword|excel|powerpnt|onenote|outlook|olk|notion|obsidian|acrobat|acrord32|figma|photoshop|illustrator|blender|logseq)$/;
+  function activity(app) {
+    if (!app) return "";
+    if (CODE_APPS.test(app)) return "code";
+    if (WORK_APPS.test(app)) return "work";
+    return "";
+  }
+
   // ctx: {now, battery: {level 0..1, charging}|null, toastAt, timerEnd, timerLabel, playing, quietSince,
-  //       agent: "waiting" | "working" | "", plantUntil}
-  // first match wins: a sick cat stays sick even with music on
+  //       agent: "waiting" | "working" | "", plantUntil, app: foreground process name}
+  // first match wins: a sick cat stays sick even with music on; what you're doing beats the music
   function pick(ctx) {
     const b = ctx.battery;
     if (b && !b.charging && b.level < LOW_BATTERY) return "sick";
@@ -16,6 +27,8 @@
     if (ctx.plantUntil > ctx.now) return "plant";
     if (ctx.timerEnd > ctx.now && /focus/i.test(ctx.timerLabel || "")) return "work";
     if (ctx.agent === "working") return "code";
+    const doing = activity(ctx.app);
+    if (doing) return doing;
     if (ctx.playing) return "dance";
     if (ctx.quietSince && ctx.now - ctx.quietSince >= SLEEP_AFTER_MS) return "sleep";
     return "idle";
@@ -88,7 +101,7 @@
 
   // what the cat says when the notch opens: a hello the first time each day, then a word about its mood.
   // ctx: {hour 0..23, name, mood, firstToday}
-  const MOOD_LINES = { dance: "Nice song!", sleep: "zzz… let me nap", sick: "Plug me in, please!", work: "Focus time. You got this", alert: "Ooh, something new!", code: "Coding with your agent…", ask: "Your agent needs you!", plant: "Focus done. My plant grew!" };
+  const MOOD_LINES = { dance: "Nice song!", sleep: "zzz… let me nap", sick: "Plug me in, please!", work: "Busy? Me too", alert: "Ooh, something new!", code: "Let's write some code!", ask: "Your agent needs you!", plant: "Focus done. My plant grew!" };
   // idle chat, so a quiet spell isn't just "Hello" again and again; {who} becomes ", name"
   const IDLE_LINES = ["Just hanging out here{who}", "Need a break? Stretch a bit!", "Drink some water{who}", "All quiet up here", "Psst… I'm still here", "Want to start a focus timer?", "Looking good today{who}!", "*yawn*"];
   function line(ctx) {
@@ -113,7 +126,7 @@
     el._sayT = setTimeout(() => el.classList.remove("talking"), ms);
   }
 
-  const api = { MOODS, pick, paint, tick, frameAt, SVG, line, say };
+  const api = { MOODS, pick, activity, paint, tick, frameAt, SVG, line, say };
   if (typeof module !== "undefined") module.exports = api;
   else window.Pet = api;
 })();

@@ -509,7 +509,8 @@ function render() {
   const busy = track?.playing || chip || (s && (now - s.time < 60000 || s.status === "waiting"))
     || notch.classList.contains("talking") || notch.classList.contains("charging") || notch.classList.contains("bh") || $("pillPriv").childElementCount || !$("pillMoon").hasAttribute("hidden");
   notch.classList.toggle("quiet", !busy); // plain black pill, just the dot
-  notch.classList.toggle("playing", !!track?.playing); // the little equalizer shows only while music plays
+  notch.classList.toggle("playing", !!track?.playing);
+  notch.classList.toggle("eq", !!track?.playing && now - loudAt < 3000); // the little equalizer shows only while sound comes out
   notch.classList.toggle("idle", theme.idleHide && !busy);
   updatePet(now, busy);
   fitPill();
@@ -523,7 +524,7 @@ function updatePet(now, busy) {
   if (timerEnd && timerEnd <= now && /focus/i.test(timerLabel)) growPlant(); // a focus timer ran out
   // agents: one asking for you beats one working; a "working" session that went quiet over 2 minutes ago doesn't count
   const agent = sessions.some(x => x.status === "waiting") ? "waiting" : sessions.some(x => x.status === "working" && now - x.time < 120000) ? "working" : "";
-  const mood = window.Pet.pick({ now, battery, toastAt: lastToastAt, timerEnd, timerLabel, playing: !!track?.playing, quietSince, agent, plantUntil });
+  const mood = window.Pet.pick({ now, battery, toastAt: lastToastAt, timerEnd, timerLabel, playing: !!track?.playing, quietSince, agent, plantUntil, app: fgApp });
   window.Pet.paint(pets, mood, theme.petPack);
   // hello once the name has arrived; then a word on each new mood (not the 4-second pop-up startle), or a chat after a quiet spell
   if (!saidMood) { if (theme.name !== undefined) { saidMood = mood; petSay(mood, true); } }
@@ -546,8 +547,8 @@ render();
 
 // ---- wave from Spotify's own audio: 24 frequency bands from spotify-audio.ps1 ----
 const bars = new Array(24).fill(0);
-let levels = null;
-window.bridge.onLevels(l => { levels = l; wakeWave(); });
+let levels = null, loudAt = 0; // loudAt: when the audio last moved, so a silent "playing" player shows no bars
+window.bridge.onLevels(l => { levels = l; if (l.some(v => v > 8)) loudAt = Date.now(); wakeWave(); });
 
 function drawWave(cv, n, gap, accent) {
   const x = cv.getContext("2d"), w = cv.width, h = cv.height, bw = (w - gap * (n - 1)) / n;
@@ -594,7 +595,9 @@ setInterval(wakeWave, 500); // playback and accent changes
 new MutationObserver(wakeWave).observe(notch, { attributes: true, attributeFilter: ["class"] }); // open / closed / hidden
 
 // ---- mic / camera / screen capture in use ----
+let fgApp = "";
 window.bridge.onSystem(d => {
+  fgApp = d.app || "";
   const kinds = [["mic", "Microphone", d.mic], ["cam", "Camera", d.cam], ["screen", "Screen capture", d.screen]];
   for (const box of [$("pillPriv"), $("priv")]) {
     box.replaceChildren(...kinds.filter(([, , apps]) => apps?.length).map(([cls, label, apps]) => {

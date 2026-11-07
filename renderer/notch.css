@@ -66,7 +66,7 @@ body {
 .pill { display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 12px 0 10px; }
 .pill .art { width: 18px; height: 18px; border-radius: 5px; }
 .pill .art:not([src]) { display: none; } /* nothing playing: no empty art slot */
-.notch:not(.playing) .pill #mini { display: none; } /* nothing playing: no flat line of dashes */
+.notch:not(.eq) .pill #mini { display: none; } /* nothing playing, or a silent player: no flat line of dashes */
 .chip { margin-left: auto; font-size: 11px; font-variant-numeric: tabular-nums; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px; }
 .chip:empty { display: none; }
 .chip:empty + .dot { margin-left: auto; }
