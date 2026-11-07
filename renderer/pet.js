@@ -124,12 +124,12 @@
   const IDLE_LINES = ["Just hanging out here{who}", "Need a break? Stretch a bit!", "Drink some water{who}", "All quiet up here", "Psst… I'm still here", "Want to start a focus timer?", "Looking good today{who}!", "*yawn*"];
   function line(ctx) {
     const who = ctx.name ? `, ${ctx.name}` : "";
-    if (ctx.firstToday) {
+    if (ctx.firstToday || !ctx.mood) { // a greeting always says the time of day
       const part = ctx.hour < 5 ? "Still up" : ctx.hour < 12 ? "Good morning" : ctx.hour < 17 ? "Good afternoon" : "Good evening";
       return `${part}${who}!`;
     }
     if (ctx.mood === "idle") return IDLE_LINES[Math.floor((ctx.roll ?? Math.random()) * IDLE_LINES.length)].replace("{who}", who);
-    return MOOD_LINES[ctx.mood] || `Hello${who}!`;
+    return MOOD_LINES[ctx.mood] || `Hello${who}!`; // an unknown mood
   }
 
   // shows text beside the pet for a few seconds, on whichever side has more room in the notch
