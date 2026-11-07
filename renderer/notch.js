@@ -431,6 +431,7 @@ function render() {
   const showVol = now < volShownUntil && volume !== null;
   $("clock").textContent = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
   $("rowTime").textContent = $("clock").textContent; // stands in for the music bars while no song plays
+  $("pillTime").textContent = $("clock").textContent;
   date.textContent = showVol ? `Volume ${Math.round(volume * 100)}%` : d.toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" });
   date.classList.toggle("vol", showVol);
 

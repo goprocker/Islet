@@ -287,7 +287,10 @@ button.link:hover { color: var(--text); }
 .notch.idle:not(.open):not(.toast):not(.bh) { width: 90px; height: 7px; border-radius: 0 0 5px 5px; }
 .notch.idle:not(.open):not(.toast):not(.bh) .pill { opacity: 0; }
 /* quiet (nothing playing, not charging, Claude idle): black pill with only the dot, centred */
-.notch.quiet .pill > :not(.dot):not(.pet):not(.petsay) { display: none; }
+.notch.quiet .pill > :not(.dot):not(.pet):not(.petsay):not(.ptime) { display: none; }
+/* the time, always in the closed pill */
+.pill .ptime { font-size: 12px; font-weight: 600; color: #fafafa; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.notch.talking:not(.open) .pill .ptime { display: none; } /* the cat's words take its place */
 /* what the cat says, beside it in the closed pill */
 .petsay { display: none; font-size: 12px; font-weight: 600; color: #fafafa; white-space: nowrap; animation: sayin .25s ease-out; }
 .notch.talking:not(.open) .petsay { display: block; }
