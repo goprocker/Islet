@@ -75,7 +75,7 @@ pre.t { padding: 3mm 4mm; margin: 1.5mm 0 1.5mm; font-size: 8pt; }
   <p style="color:#6e6e73">Music, Claude Code and Codex activity, notifications, battery and more,<br>in one small black pill at the top of your screen.</p>
   <div class="meta">
     <div><small>MADE BY</small><b>Gopinath</b></div>
-    <div><small>VERSION</small><b>2.3.2</b></div>
+    <div><small>VERSION</small><b>2.3.3</b></div>
     <div><small>PLATFORM</small><b>Windows 10 / 11</b></div>
     <div><small>BUILT WITH</small><b>Electron 45</b></div>
   </div>
@@ -97,7 +97,7 @@ pre.t { padding: 3mm 4mm; margin: 1.5mm 0 1.5mm; font-size: 8pt; }
   </div>
   <div class="stats">
     <div><b>8</b><small>data sources</small></div><div><b>20</b><small>settings</small></div>
-    <div><b>13</b><small>notch states</small></div><div><b>311</b><small>passing tests</small></div>
+    <div><b>13</b><small>notch states</small></div><div><b>312</b><small>passing tests</small></div>
   </div>
   <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
 </section>
@@ -224,7 +224,7 @@ pre.t { padding: 3mm 4mm; margin: 1.5mm 0 1.5mm; font-size: 8pt; }
     <tr><td>Registry</td><td>HKCU Notifications\Settings</td><td>Turning Windows' banners off and back on</td></tr>
     <tr><td>Network</td><td>fetch()</td><td>lrclib.net, Open-Meteo, your ICS link, optional Spotify Web API</td></tr>
     <tr><td>Agent hooks</td><td>HTTP server on 127.0.0.1:47321</td><td>Claude Code and Codex hooks post events</td></tr>
-    <tr><td>Tests</td><td>node --test</td><td>42 files, 311 tests</td></tr>
+    <tr><td>Tests</td><td>node --test</td><td>42 files, 312 tests</td></tr>
     <tr><td>Packaging</td><td>electron-builder 26 (NSIS)</td><td>One-click per-user installer</td></tr></table>
   <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
 </section>
@@ -385,7 +385,7 @@ npm start</pre>
   <p style="margin-top:3mm;font-size:9pt;color:#6e6e73">If config.json can't be read (for example during a hand edit), Islet keeps the current settings and leaves the file as it is.</p>
   <div class="kick">SECTION 12</div>
   <h1>Build, test, debug</h1>
-  <pre>npm test        # node --test test/*.test.js  (42 files, 311 tests)
+  <pre>npm test        # node --test test/*.test.js  (42 files, 312 tests)
 npm run dist    # NSIS installer, run from PowerShell
 
 # inspect the notch with Chrome DevTools
@@ -516,17 +516,19 @@ node_modules\electron\dist\electron.exe . --remote-debugging-port=9333</pre>
     <li><b>Doudou</b> (2.3.1): a built-in pet in <code>builtin-pets/doudou</code>. Settings → <b>Use Doudou</b>.</li>
     <li><b>The pet</b> says varied idle lines instead of "Hello" every time.</li>
     <li><b>Phone drop</b>: links and uploads fixed, and pets can be imported straight from a .zip.</li>
-    <li><b>The pill equalizer</b> hides when nothing is playing.</li>
+    <li><b>The pill equalizer</b> hides when nothing is playing, or when a player says it plays but no sound comes out (2.3.3).</li>
+    <li><b>The pet follows your work</b> (2.3.3): it codes while an editor or terminal (VS Code, Cursor, JetBrains, Windows Terminal, Warp…) is in front, and works in Office, notes and design apps. <code>system.ps1</code> reports the foreground app; <code>Pet.activity()</code> maps it.</li>
   </ul>
   <h2>Around the code</h2>
   <ul style="font-size:9.5pt">
-    <li><b>Releases</b> are built by GitHub Actions on a <code>vX</code> tag. Signing through SignPath is ready but off: the Foundation declined for now, so the installer stays unsigned.</li>
+    <li><b>Releases</b> are built by GitHub Actions on a <code>vX</code> tag. Signing through SignPath is ready but off: the Foundation declined for now, so the installer stays unsigned. 2.3.2 never published (its test step ran in PowerShell, which doesn't expand <code>test/*.test.js</code>); the step now runs in bash and 2.3.3 shipped.</li>
+    <li><b>Download counts</b>: on GitHub, open the repo → <b>Releases</b> (github.com/goprocker/Islet/releases); each file under <b>Assets</b> shows its download count. Add up the <code>.exe</code> files (latest.yml counts update checks, not people). From a terminal: <code>gh api repos/goprocker/Islet/releases --jq '.[].assets[] | select(.name|endswith(".exe")) | .download_count'</code>. The site's download buttons 302 to the GitHub file, so every download is counted.</li>
     <li><b>Every pull request</b> runs the tests and a packaging check; Dependabot proposes dependency updates.</li>
     <li><b>A pre-push hook</b> (<code>.githooks/pre-push</code>) runs <code>npm test</code> before every push.</li>
     <li><b>CONTRIBUTING.md</b> has a where-to-start section, a code map and PR rules.</li>
-    <li><b>The website</b> (islet.loopfound.in) downloads the installer directly, shows real screenshots and live download, star and fork counts.</li>
+    <li><b>The website</b> (islet.loopfound.in) downloads the installer directly, shows real screenshots and live download, star and fork counts, read from GitHub on every visit.</li>
     <li><b>Security (7 Nov)</b>: pet zips are refused above 64 entries or 64 MB, and their temp folder is always removed; Electron 45.2.3; patched zod and minimatch in the launch film; auto-merge only for maintainer pushes.</li>
-    <li><b>Tests</b>: 291 in 37 files → 311 in 42 files.</li>
+    <li><b>Tests</b>: 291 in 37 files → 312 in 42 files.</li>
   </ul>
   <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
 </section>
@@ -710,7 +712,7 @@ if (gen === generation &amp;&amp; text !== null) onEvent(nextEvent(text));</pre>
   <h2>Security</h2>
   <div class="qa"><div><b>What's the security model?</b><p>Page isolated from Node, fixed bridge API, server on loopback only, every external input validated, outside text set with <code>textContent</code>, and link schemes allowlisted.</p></div><div><b>What's the weakest point?</b><p>The hook server has no authentication, so any local program could fake events. They can't approve anything for real, because the answer goes back to whoever asked. I'd add a random token shared through the hook's config.</p></div><div><b>Could a malicious notification attack the app?</b><p>Its text is only ever shown as text. Clicking it opens a URL only if the scheme is on the allowlist; otherwise it opens the sending app.</p></div></div>
   <h2>Testing and process</h2>
-  <div class="qa"><div><b>How is it tested?</b><p>311 tests in 42 files using Node's built-in <code>node --test</code>, with no extra dependencies. Mostly logic: calendar rules, time zones, lyrics, hook install, and races. Fakes replace the network and <code>http.createServer</code>.</p></div><div><b>How do you test time zones?</b><p>The calendar tests run with the host set to different zones, such as Asia/Kolkata and UTC, including daylight-saving changes.</p></div><div><b>What isn't tested?</b><p>The real screen and mouse, and the PowerShell helpers. I check those by hand, and through Chrome DevTools using <code>--remote-debugging-port=9333</code>.</p></div><div><b>Did you use AI to build this?</b><p>Answer truthfully; the commit history publicly shows Claude and Codex as co-authors. A strong answer says what you decided, how you checked the result, and which bugs you found. This guide is there so you can back that up.</p></div></div>
+  <div class="qa"><div><b>How is it tested?</b><p>312 tests in 42 files using Node's built-in <code>node --test</code>, with no extra dependencies. Mostly logic: calendar rules, time zones, lyrics, hook install, and races. Fakes replace the network and <code>http.createServer</code>.</p></div><div><b>How do you test time zones?</b><p>The calendar tests run with the host set to different zones, such as Asia/Kolkata and UTC, including daylight-saving changes.</p></div><div><b>What isn't tested?</b><p>The real screen and mouse, and the PowerShell helpers. I check those by hand, and through Chrome DevTools using <code>--remote-debugging-port=9333</code>.</p></div><div><b>Did you use AI to build this?</b><p>Answer truthfully; the commit history publicly shows Claude and Codex as co-authors. A strong answer says what you decided, how you checked the result, and which bugs you found. This guide is there so you can back that up.</p></div></div>
   <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
 </section>
 
