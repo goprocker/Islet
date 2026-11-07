@@ -9,9 +9,13 @@ let sessions = [], pinned = null;       // Claude projects; pinned = project the
 let timerEnd = 0, timerLabel = "Timer", stopwatchStart = 0, event = null, volShownUntil = 0, volume = null;
 let wx = null, dls = [];             // weather, downloads in progress
 let theme = { accent: "album", idleHide: false };
+// set from the system line further down, read by the first render() while the page loads
+let fgApp = "", privUse = [];
+// when things happened that the pet reacts to for a moment
+let likedAt = 0, doneAt = 0, plugAt = 0, openedAt = 0, dndOn = false;
 
 // ---- open / close; window is click-through except over the notch ----
-function setOpen(o) { notch.classList.toggle("open", o); notch.setAttribute("aria-expanded", o); }
+function setOpen(o) { if (o && !notch.classList.contains("open")) openedAt = Date.now(); notch.classList.toggle("open", o); notch.setAttribute("aria-expanded", o); }
 // the cat talks in the closed pill: a hello when Islet starts (by time of day on the first one each day),
 // a line when its mood changes, and now and then while idle; the pill widens for the text, then shrinks back
 const SAY_MS = 6000, CHAT_EVERY = 10 * 60000;
@@ -170,6 +174,7 @@ window.bridge.onPower(({ ac: now }) => {
   acTimer = setTimeout(() => {
     if (ac === null || now === ac) { ac = now; return; }
     ac = now;
+    if (now) plugAt = Date.now();
     if (theme?.powerAnim === false) return;
     if (!notch.classList.contains("hidden")) window.BlackHole.play(notch, now ? "on" : "off", battery?.level, { subtle: theme?.powerAnimStyle === "subtle" });
   }, 200);
@@ -282,6 +287,7 @@ $("next").onclick = () => window.bridge.control("next");
 $("prev").onclick = () => window.bridge.control("prev");
 let likeFlashUntil = 0;
 $("like").onclick = () => {
+  if (!(extras.connected && extras.liked)) likedAt = Date.now(); // liking, not unliking
   if (extras.connected) extras.liked = !extras.liked;
   else likeFlashUntil = Date.now() + 1200; // shortcut mode can't read liked state: just confirm the press
   render();
@@ -327,6 +333,7 @@ window.bridge.onClaude(list => {
     if (was && was !== s.status && (s.status === "waiting" || s.status === "done")) {
       if (pinned && pinned !== keyOf(s) && s.status === "waiting") pinned = null; // jump to the one asking
       peek(4000);
+      if (s.status === "done") doneAt = Date.now();
     }
     prevStatus[keyOf(s)] = s.status;
   }
@@ -530,11 +537,13 @@ function updatePet(now, busy) {
   if (timerEnd && timerEnd <= now && /focus/i.test(timerLabel)) growPlant(); // a focus timer ran out
   // agents: one asking for you beats one working; a "working" session that went quiet over 2 minutes ago doesn't count
   const agent = sessions.some(x => x.status === "waiting") ? "waiting" : sessions.some(x => x.status === "working" && now - x.time < 120000) ? "working" : "";
-  const mood = window.Pet.pick({ now, battery, toastAt: lastToastAt, timerEnd, timerLabel, playing: !!track?.playing, quietSince, agent, plantUntil, app: fgApp });
+  const mood = window.Pet.pick({ now, battery, toastAt: lastToastAt, timerEnd, timerLabel, playing: !!track?.playing, quietSince, agent, plantUntil, app: fgApp,
+    likedAt, doneAt, plugAt, openedAt, meetingAt: event?.start || 0, dnd: dndOn, hour: new Date(now).getHours(),
+    tempC: wx && !wx.error ? (wx.unit === "F" ? (wx.temp - 32) * 5 / 9 : wx.temp) : NaN });
   window.Pet.paint(pets, mood, theme.petPack);
   // hello once the name has arrived; then a word on each new mood (not the 4-second pop-up startle), or a chat after a quiet spell
   if (!saidMood) { if (theme.name !== undefined) { saidMood = mood; petSay(mood, true); } }
-  else if (mood !== saidMood && mood !== "alert") { saidMood = mood; petSay(mood); }
+  else if (mood !== saidMood && mood !== "alert" && mood !== "hello") { saidMood = mood; petSay(mood); } // a startle or a hello on opening is too brief for words
   else if (now - lastSaid > CHAT_EVERY && !notch.classList.contains("open")) petSay(mood);
 }
 // closed pill: as wide as what it shows, no empty black on either side
@@ -601,7 +610,6 @@ setInterval(wakeWave, 500); // playback and accent changes
 new MutationObserver(wakeWave).observe(notch, { attributes: true, attributeFilter: ["class"] }); // open / closed / hidden
 
 // ---- mic / camera / screen capture in use ----
-let fgApp = "", privUse = [];
 window.bridge.onSystem(d => {
   fgApp = d.app || "";
   const kinds = [["mic", "Microphone", d.mic], ["cam", "Camera", d.cam], ["screen", "Screen capture", d.screen]];
@@ -645,6 +653,7 @@ setInterval(renderAlbum, 500);
 
 // ---- Do Not Disturb ----
 window.bridge.onDnd(on => {
+  dndOn = !!on;
   $("dndBtn").setAttribute("aria-pressed", on);
   $("dndBtn").title = on ? "Do Not Disturb is on. Click to turn off." : "Do Not Disturb: pause notification pop-ups";
   $("pillMoon").toggleAttribute("hidden", !on); // svg has no .hidden property

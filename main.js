@@ -623,7 +623,7 @@ const APP_ICON = path.join(__dirname, "assets", "logo-apple", "icon.ico");
 function openSettings() {
   if (settingsWin && !settingsWin.isDestroyed()) return settingsWin.focus();
   settingsWin = new BrowserWindow({
-    width: 600, height: 760, title: "Islet settings", icon: APP_ICON, backgroundColor: "#0b0b0c", autoHideMenuBar: true,
+    width: 780, height: 620, title: "Islet settings", icon: APP_ICON, backgroundColor: "#0b0b0c", autoHideMenuBar: true,
     webPreferences: { preload: path.join(__dirname, "settings", "preload.js") },
   });
   settingsWin.loadFile(path.join(__dirname, "settings", "settings.html"));
