@@ -56,3 +56,30 @@ test("moods map to sprite rows and frames step at 8 fps", () => {
   assert.strictEqual(frameAt("ask", 0, 9).y, 75);                            // waiting row 6
   assert.strictEqual(frameAt("idle", 6 * 125, 9).x, 0);                      // idle has 6 frames, wraps
 });
+
+// zips built with Windows' own Compress-Archive, like the ones users download
+function zip(dir) {
+  const out = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "petzip-")), "pack.zip");
+  require("child_process").execFileSync("powershell.exe", ["-NoProfile", "-Command", "Compress-Archive -Path (Join-Path $env:D '*') -DestinationPath $env:O"], { env: { ...process.env, D: dir, O: out } });
+  return out;
+}
+const unpacked = () => new Set(fs.readdirSync(os.tmpdir()).filter(n => n.startsWith("islet-pet-")));
+
+test("imports a zipped pack and removes its temp folder", { skip: process.platform !== "win32" }, () => {
+  const before = unpacked();
+  const file = zip(pack({ id: "zipped", spritesheetPath: "s.png" }, png(1536, 1872)));
+  const pets = fs.mkdtempSync(path.join(os.tmpdir(), "pets-"));
+  assert.strictEqual(importPack(file, pets).id, "zipped");
+  assert.ok(fs.existsSync(path.join(pets, "zipped", "sheet.png")));
+  assert.deepStrictEqual([...unpacked()].filter(n => !before.has(n)), []);
+});
+
+test("refuses a zip that unpacks too big, before writing it", { skip: process.platform !== "win32" }, () => {
+  const before = unpacked();
+  const dir = pack({ id: "bomb", spritesheetPath: "s.png" }, png(1536, 1872));
+  fs.writeFileSync(path.join(dir, "filler.bin"), Buffer.alloc(65 * 1024 * 1024));
+  const file = zip(dir);
+  assert.ok(fs.statSync(file).size < 1024 * 1024);
+  assert.throws(() => importPack(file, os.tmpdir()), /too big/);
+  assert.deepStrictEqual([...unpacked()].filter(n => !before.has(n)), []);
+});
