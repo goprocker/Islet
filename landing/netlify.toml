@@ -5,19 +5,19 @@
 # the installer: a 302 straight to the GitHub release, so the browser downloads it at once and
 # GitHub counts every download (a 200 proxy let Netlify's cache serve it, and the site's count fell behind)
 [[redirects]]
-  from = "/Islet-Setup-2.3.3.exe"
-  to = "https://github.com/goprocker/Islet/releases/download/v2.3.3/Islet-Setup-2.3.3.exe"
+  from = "/Islet-Setup-2.3.4.exe"
+  to = "https://github.com/goprocker/Islet/releases/download/v2.3.4/Islet-Setup-2.3.4.exe"
   status = 302
   force = true
 
 # old links to an earlier version get the current one
 [[redirects]]
   from = "/Islet-Setup-2.3.1.exe"
-  to = "/Islet-Setup-2.3.3.exe"
+  to = "/Islet-Setup-2.3.4.exe"
   status = 302
   force = true
 
 [[redirects]]
   from = "/download"
-  to = "/Islet-Setup-2.3.3.exe"
+  to = "/Islet-Setup-2.3.4.exe"
   status = 302
