@@ -3,7 +3,7 @@ const assert = require("node:assert");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
-const { tracker } = require("../screenshots");
+const { tracker } = require("../src/screenshots");
 
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), "islet-shots-"));
 const write = (dir, n, bytes = 10) => fs.writeFileSync(path.join(dir, n), Buffer.alloc(bytes));

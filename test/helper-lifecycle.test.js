@@ -1,7 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert");
 const { EventEmitter } = require("events");
-const { helperLifecycle } = require("../helper-lifecycle");
+const { helperLifecycle } = require("../src/helper-lifecycle");
 
 // counts the helpers started and stopped, with the retry timer run by hand
 function setup() {

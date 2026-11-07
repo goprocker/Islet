@@ -3,7 +3,7 @@ const assert = require("node:assert");
 const fs = require("fs");
 const path = require("path");
 const { spawn } = require("child_process");
-const { audioTarget } = require("../audio-target");
+const { audioTarget } = require("../src/audio-target");
 
 test("known players map to their process", () => {
   assert.strictEqual(audioTarget("Spotify.exe"), "Spotify");
@@ -25,7 +25,7 @@ test("anything unresolved captures nothing", () => {
 
 // the real capture code, compiled as the app does, driven over stdin
 test("a target with no process gives one flat line, and switching gives another", { skip: process.platform !== "win32", timeout: 60000 }, async () => {
-  const script = path.join(__dirname, "..", "spotify-audio.ps1");
+  const script = path.join(__dirname, "..", "src", "spotify-audio.ps1");
   assert.ok(fs.existsSync(script));
   const p = spawn("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", script], { windowsHide: true });
   let out = "", err = "";

@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert");
-const { missedLog } = require("../missed");
+const { missedLog } = require("../src/missed");
 
 test("nothing held back: no summary", () => {
   assert.strictEqual(missedLog().take(), null);

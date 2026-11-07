@@ -4,7 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
 
-const source = fs.readFileSync(path.join(__dirname, "../main.js"), "utf8");
+const source = fs.readFileSync(path.join(__dirname, "../src/main.js"), "utf8");
 const between = (a, b) => { const s = source.indexOf(a); return source.slice(s, source.indexOf(b, s)); };
 
 // the real placement code and event wiring, with made-up monitors

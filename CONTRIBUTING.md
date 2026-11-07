@@ -56,7 +56,7 @@ Look for issues labelled [good first issue](https://github.com/goprocker/Islet/l
 
 A rough map of the code:
 
-- `main.js` is the Electron main process: window, tray, IPC and the helpers it spawns. Small modules next to it (`weather.js`, `links.js`, `notes.js`, `pomodoro.js` and so on) each own one feature.
+- `src/main.js` is the Electron main process: window, tray, IPC and the helpers it spawns. Small modules next to it (`weather.js`, `links.js`, `notes.js`, `pomodoro.js` and so on) each own one feature.
 - `renderer/` is the notch itself. `notch.js` shows the panels, `pet.js` runs the pet, and `units.js` is the unit converter.
 - `settings/` is the settings window.
 - `*.ps1` scripts read Windows state such as media, system stats and radios.

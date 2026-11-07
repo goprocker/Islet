@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert");
-const { state, action, TILES } = require("../quick-settings");
+const { state, action, TILES } = require("../src/quick-settings");
 
 test("radio states become booleans, a missing radio is null", () => {
   const s = state({ wifi: "On", airplane: false }, { vol: 0.4, mute: false, bright: 55 });

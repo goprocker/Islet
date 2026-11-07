@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert");
-const { follower } = require("../lyrics");
+const { follower } = require("../src/lyrics");
 
 const SONG = { title: "Song", artist: "Artist", duration: 120 };
 const LINES = [{ t: 10, line: "One" }];

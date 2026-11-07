@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert");
-const { parse } = require("../lyrics");
+const { parse } = require("../src/lyrics");
 
 test("a line with two stamps gives two entries", () => {
   assert.deepStrictEqual(parse("[00:10.00][00:20.00]Repeated chorus"), [{ t: 10, line: "Repeated chorus" }, { t: 20, line: "Repeated chorus" }]);
@@ -28,7 +28,7 @@ test("get keeps separate lyrics for different lengths of one song", async () => 
   const realFetch = global.fetch, urls = [];
   global.fetch = async url => { urls.push(url); return { ok: true, status: 200, json: async () => ({ syncedLyrics: "[00:10.00]x" }) }; };
   try {
-    const { get } = require("../lyrics");
+    const { get } = require("../src/lyrics");
     await get("Versions", "Same", 180);
     await get("Versions", "Same", 360);
     await get("Versions", "Same", 181);

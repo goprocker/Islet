@@ -3,7 +3,7 @@ const assert = require("node:assert");
 const path = require("path");
 const { spawn } = require("child_process");
 
-const run = args => spawn("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", path.join(__dirname, "..", "helpers.ps1"), ...args], { windowsHide: true });
+const run = args => spawn("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", path.join(__dirname, "..", "src", "helpers.ps1"), ...args], { windowsHide: true });
 const exited = (p, ms) => new Promise(resolve => {
   const t = setTimeout(() => resolve(false), ms);
   p.on("exit", () => { clearTimeout(t); resolve(true); });

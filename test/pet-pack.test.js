@@ -3,7 +3,7 @@ const assert = require("node:assert");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
-const { readPack, importPack, loadPack, imageSize, safeId } = require("../pet-pack");
+const { readPack, importPack, loadPack, imageSize, safeId } = require("../src/pet-pack");
 const { frameAt } = require("../renderer/pet");
 
 // a PNG whose header says w x h (enough for the size check)

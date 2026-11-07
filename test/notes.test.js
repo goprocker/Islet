@@ -3,7 +3,7 @@ const assert = require("node:assert");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
-const { loadNotes, saveNotes, MAX } = require("../notes");
+const { loadNotes, saveNotes, MAX } = require("../src/notes");
 
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), "islet-notes-"));
 

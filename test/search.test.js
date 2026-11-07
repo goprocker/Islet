@@ -3,7 +3,7 @@ const assert = require("node:assert");
 const path = require("path");
 const fs = require("fs");
 const os = require("os");
-const { score, rank, appsFromLinks, appsFromStartApps, scanFiles, withFiles, COMMANDS } = require("../search");
+const { score, rank, appsFromLinks, appsFromStartApps, scanFiles, withFiles, COMMANDS } = require("../src/search");
 
 test("scores exact, prefix, word prefix, substring and in-order letters in that order", () => {
   const s = ["chrome", "chrome browser", "google chrome", "mychromebook", "chm"].map(t => score("chrome", t));

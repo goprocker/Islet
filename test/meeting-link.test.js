@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert");
-const { nextEvent, meetingLink, isMeetingUrl } = require("../calendar");
+const { nextEvent, meetingLink, isMeetingUrl } = require("../src/calendar");
 
 const now = new Date("2026-11-03T09:00:00Z");
 const event = fields => `BEGIN:VCALENDAR\nBEGIN:VEVENT\nDTSTART:20261103T093000Z\nSUMMARY:Standup\n${fields}\nEND:VEVENT\nEND:VCALENDAR`;

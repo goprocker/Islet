@@ -12,7 +12,7 @@ const soon = () => { const d = new Date(Date.now() + 3600e3); return d.toISOStri
 
 test("calendar: a reply from the old link is dropped after turning it off", async () => {
   const waiting = deferredFetch();
-  const cal = require("../calendar"), got = [];
+  const cal = require("../src/calendar"), got = [];
   cal.poll("https://old.example/cal.ics", e => got.push(e));
   cal.poll("", e => got.push(e));
   waiting[0].resolve({ ok: true, text: async () => `BEGIN:VEVENT\nDTSTART:${soon()}\nSUMMARY:Old feed\nEND:VEVENT` });
@@ -23,7 +23,7 @@ test("calendar: a reply from the old link is dropped after turning it off", asyn
 
 test("weather: a reply for the old city is dropped after turning it off", async () => {
   const waiting = deferredFetch();
-  const wx = require("../weather"), got = [];
+  const wx = require("../src/weather"), got = [];
   wx.poll("Old city", "C", w => got.push(w));
   wx.poll("", "C", w => got.push(w));
   waiting[0].resolve({ json: async () => ({ results: [{ name: "Old city", latitude: 1, longitude: 2 }] }) });
@@ -35,7 +35,7 @@ test("weather: a reply for the old city is dropped after turning it off", async 
 
 test("weather: the current city still gets its reply", async () => {
   const waiting = deferredFetch();
-  const wx = require("../weather"), got = [];
+  const wx = require("../src/weather"), got = [];
   wx.poll("Chennai", "C", w => got.push(w));
   waiting[0].resolve({ json: async () => ({ results: [{ name: "Chennai", latitude: 13, longitude: 80 }] }) });
   await tick(); await tick();

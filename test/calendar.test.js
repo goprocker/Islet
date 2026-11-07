@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert");
-const { nextEvent } = require("../calendar");
+const { nextEvent } = require("../src/calendar");
 
 const ics = rrule => `BEGIN:VCALENDAR\nBEGIN:VEVENT\nDTSTART:20261026T100000Z\n${rrule ? `RRULE:${rrule}\n` : ""}SUMMARY:Test\nEND:VEVENT\nEND:VCALENDAR`;
 const now = new Date("2026-10-28T09:00:00Z"); // Wednesday; DTSTART is Monday 26 Oct

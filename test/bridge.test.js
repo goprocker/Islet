@@ -17,8 +17,8 @@ function startBridge(options = {}) {
   const realCreate = http.createServer;
   let handler;
   http.createServer = h => { handler = h; return Object.assign(new EventEmitter(), { listen() {} }); };
-  delete require.cache[require.resolve("../claude-bridge")];
-  const bridge = require("../claude-bridge");
+  delete require.cache[require.resolve("../src/claude-bridge")];
+  const bridge = require("../src/claude-bridge");
   const seen = [], permissions = [], gone = [];
   try { bridge.start({
     onStatus: (s, st) => seen.push([s, st]),
@@ -101,8 +101,8 @@ test("the 1 MB limit counts bytes, not characters", () => {
   const realCreate = http.createServer;
   let handler;
   http.createServer = h => { handler = h; return Object.assign(new EventEmitter(), { listen() {} }); };
-  delete require.cache[require.resolve("../claude-bridge")];
-  try { require("../claude-bridge").start({ onStatus() {}, onPermission() {}, onPermissionGone() {} }); }
+  delete require.cache[require.resolve("../src/claude-bridge")];
+  try { require("../src/claude-bridge").start({ onStatus() {}, onPermission() {}, onPermissionGone() {} }); }
   finally { http.createServer = realCreate; }
   const body = Buffer.from("😀".repeat(300000)); // 1.2 MB, but only 600,000 UTF-16 units
   let destroyed = false;
@@ -113,13 +113,13 @@ test("the 1 MB limit counts bytes, not characters", () => {
 });
 
 test("a permission card shows the real command, not just its description", () => {
-  const { summarize } = require("../claude-bridge");
+  const { summarize } = require("../src/claude-bridge");
   const detail = summarize("Bash", { command: "echo actual-command", description: "Read project files" });
   assert.strictEqual(detail, "echo actual-command\n(Read project files)");
   assert.strictEqual(summarize("Bash", { command: "ls" }), "ls");
 });
 test("a long command is kept well past the old 140 characters", () => {
-  const { summarize } = require("../claude-bridge");
+  const { summarize } = require("../src/claude-bridge");
   const tail = "x".repeat(1000) + "rm -rf build";
   assert.ok(summarize("Bash", { command: tail }).endsWith("rm -rf build"));
 });

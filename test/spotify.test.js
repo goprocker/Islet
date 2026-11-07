@@ -15,7 +15,7 @@ function loadWithoutElectron() {
     return request === "electron" ? fake : realResolve.call(this, request, ...rest);
   };
   require.cache[fake] = { id: fake, filename: fake, loaded: true, exports: { shell: {} } };
-  try { return require("../spotify-web"); } finally {
+  try { return require("../src/spotify-web"); } finally {
     Module._resolveFilename = realResolve;
     delete require.cache[fake];
   }
@@ -35,7 +35,7 @@ test("a refresh that finishes after disconnect doesn't reconnect", async () => {
   };
   try {
     fs.writeFileSync(path.join(dir, "spotify-token.json"), JSON.stringify({ clientId: "c", access: "old", refresh: "r", expires: 0 }));
-    const spotify = require("../spotify-web");
+    const spotify = require("../src/spotify-web");
     spotify.init(dir);
     const pending = spotify.extras();
     while (!release) await new Promise(r => setImmediate(r));
@@ -70,7 +70,7 @@ function deferredSpotify() {
 function connectedSpotify() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "islet-sp-"));
   fs.writeFileSync(path.join(dir, "spotify-token.json"), JSON.stringify({ clientId: "c", access: "a", refresh: "r", expires: Date.now() + 3600e3 }));
-  const spotify = require("../spotify-web");
+  const spotify = require("../src/spotify-web");
   spotify.init(dir);
   return { spotify, done: () => { spotify.disconnect(); fs.rmSync(dir, { recursive: true, force: true }); } };
 }

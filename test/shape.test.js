@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert");
-const { shapeRect, sameRect, MARGIN } = require("../shape");
+const { shapeRect, sameRect, MARGIN } = require("../src/shape");
 
 const WIN = { width: 672, height: 270 };
 

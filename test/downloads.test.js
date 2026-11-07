@@ -11,8 +11,8 @@ function run(setup, steps) {
   let scan;
   global.setTimeout = fn => { scan = fn; return 0; };
   const done = [];
-  delete require.cache[require.resolve("../downloads")];
-  const downloads = require("../downloads");
+  delete require.cache[require.resolve("../src/downloads")];
+  const downloads = require("../src/downloads");
   try {
     setup(dir);
     downloads.watch(dir, () => {}, d => done.push(d.name));
@@ -49,8 +49,8 @@ test("switching to an empty folder reports an empty list", () => {
   global.setTimeout = () => 0;
   const old = fs.mkdtempSync(path.join(os.tmpdir(), "islet-dl-")), empty = fs.mkdtempSync(path.join(os.tmpdir(), "islet-dl-"));
   const seen = [];
-  delete require.cache[require.resolve("../downloads")];
-  const { watch, stop } = require("../downloads");
+  delete require.cache[require.resolve("../src/downloads")];
+  const { watch, stop } = require("../src/downloads");
   try {
     write(old, "a.zip.crdownload", 42);
     watch(old, l => seen.push(l), () => {});
@@ -113,8 +113,8 @@ function timing(fn) {
     w.close = () => { open--; close(); };
     return w;
   };
-  delete require.cache[require.resolve("../downloads")];
-  const downloads = require("../downloads");
+  delete require.cache[require.resolve("../src/downloads")];
+  const downloads = require("../src/downloads");
   try {
     fn({ dir, downloads, delays, scan: () => scan(), open: () => open });
   } finally {
@@ -174,8 +174,8 @@ test("switching folders leaves one watcher, and stop leaves none", () => timing(
 
 test("a new temp file and its rename are noticed without waiting for the timer", async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "islet-dl-"));
-  delete require.cache[require.resolve("../downloads")];
-  const downloads = require("../downloads");
+  delete require.cache[require.resolve("../src/downloads")];
+  const downloads = require("../src/downloads");
   const until = async check => { for (let i = 0; i < 100 && !check(); i++) await new Promise(r => setTimeout(r, 20)); };
   const lists = [], done = [];
   try {

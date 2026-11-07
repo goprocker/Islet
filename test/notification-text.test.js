@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert");
-const { texts } = require("../notifications");
+const { texts } = require("../src/notifications");
 
 test("CDATA is taken literally, without its markers", () => {
   assert.deepStrictEqual(texts("<toast><text><![CDATA[A &lt; B &amp; C]]></text></toast>"), ["A &lt; B &amp; C"]);

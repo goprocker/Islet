@@ -9,13 +9,13 @@ function withHome(files, fn) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "islet-home-"));
   const realHome = os.homedir;
   os.homedir = () => home;
-  delete require.cache[require.resolve("../claude-bridge")];
+  delete require.cache[require.resolve("../src/claude-bridge")];
   try {
     for (const [rel, text] of Object.entries(files)) {
       fs.mkdirSync(path.dirname(path.join(home, rel)), { recursive: true });
       fs.writeFileSync(path.join(home, rel), text);
     }
-    return fn(require("../claude-bridge"), rel => fs.readFileSync(path.join(home, rel), "utf8"));
+    return fn(require("../src/claude-bridge"), rel => fs.readFileSync(path.join(home, rel), "utf8"));
   } finally {
     os.homedir = realHome;
     fs.rmSync(home, { recursive: true, force: true });

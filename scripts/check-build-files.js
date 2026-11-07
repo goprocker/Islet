@@ -1,14 +1,14 @@
-// Fails when a root-level module or script is missing from package.json build.files,
-// because the installer then crashes on a missing file.
+// Fails when a module or script sits outside src/, because package.json build.files
+// only ships src/** and the installer then crashes on a missing file.
 const fs = require('fs')
 const path = require('path')
 
 const root = path.join(__dirname, '..')
 const listed = require(path.join(root, 'package.json')).build.files
-const missing = fs.readdirSync(root).filter(f => /\.(js|ps1|cs)$/.test(f) && !listed.includes(f))
+const stray = fs.readdirSync(root).filter(f => /\.(js|ps1|cs)$/.test(f))
 
-if (missing.length) {
-  console.error('Add these to build.files in package.json:\n  ' + missing.join('\n  '))
+if (!listed.includes('src/**') || stray.length) {
+  console.error('Keep app modules in src/ and list "src/**" in build.files:\n  ' + stray.join('\n  '))
   process.exit(1)
 }
-console.log('build.files lists every root module and script')
+console.log('build.files ships src/** and no module is left at the root')

@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert");
-const { parse, newlyLow } = require("../devices");
+const { parse, newlyLow } = require("../src/devices");
 
 test("devices: parse keeps one valid entry per name, lowest battery first", () => {
   const out = JSON.stringify([

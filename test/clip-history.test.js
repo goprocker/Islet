@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert");
-const { clipHistory } = require("../clip-history");
+const { clipHistory } = require("../src/clip-history");
 
 test("newest first, duplicates move to the front, capped at max", () => {
   const h = clipHistory({ max: 3 });

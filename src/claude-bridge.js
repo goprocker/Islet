@@ -5,11 +5,11 @@ const { StringDecoder } = require("string_decoder");
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
-const hookAuth = require("./hooks/hook-auth");
+const hookAuth = require("../hooks/hook-auth");
 
 const PORT = 47321;
 const SETTINGS = path.join(os.homedir(), ".claude", "settings.json");
-const HOOK = path.join(__dirname, "hooks", "islet-hook.js");
+const HOOK = path.join(__dirname, "..", "hooks", "islet-hook.js");
 const EVENTS = ["PermissionRequest", "Notification", "Stop", "UserPromptSubmit", "PostToolUse", "SessionEnd"];
 const MARK = "islet-hook.js";
 const CODEX_DIR = path.join(os.homedir(), ".codex");

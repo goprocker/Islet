@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert");
-const { fromCache, toCache } = require("../weather");
+const { fromCache, toCache } = require("../src/weather");
 
 const W = { place: "Chennai", temp: 30, unit: "C", icon: "☀️", label: "Clear" };
 

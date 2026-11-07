@@ -4,8 +4,8 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const { convert, show } = require("../renderer/units");
-const { loadLinks, saveLinks, clean } = require("../links");
-const { lanAddress, safeName, freePath } = require("../phone-drop");
+const { loadLinks, saveLinks, clean } = require("../src/links");
+const { lanAddress, safeName, freePath } = require("../src/phone-drop");
 
 test("units convert by factor, and temperature through Celsius", () => {
   assert.strictEqual(show(convert(1, "length", "km", "m")), "1000");

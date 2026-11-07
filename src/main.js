@@ -32,7 +32,7 @@ const QRCode = require("qrcode");
 const petPack = require("./pet-pack");
 const petsDir = () => path.join(app.getPath("userData"), "pets");
 // pets that ship with Islet; one the user imported with the same id wins
-const BUILTIN_PETS = path.join(__dirname, "builtin-pets");
+const BUILTIN_PETS = path.join(__dirname, "..", "builtin-pets");
 const loadPet = id => id ? petPack.loadPack(fs.existsSync(path.join(petsDir(), petPack.safeId(id))) ? petsDir() : BUILTIN_PETS, id) : null;
 
 const BASE_W = 672, BASE_H = 270;
@@ -106,7 +106,7 @@ function createWindow() {
   win.setVisibleOnAllWorkspaces(true);
   // click-through until the page reports the notch's box; then the window takes the notch's shape (applyShape)
   win.setIgnoreMouseEvents(true, { forward: true });
-  win.loadFile(path.join(__dirname, "renderer", "index.html"));
+  win.loadFile(path.join(__dirname, "..", "renderer", "index.html"));
   win.once("ready-to-show", () => win.showInactive());
   // Alt+F4 would destroy the notch while the app keeps running; only the tray's Quit closes it
   win.on("close", e => { if (!app.isQuitting) e.preventDefault(); });
@@ -638,14 +638,14 @@ const EMPTY_PNG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAA
 
 // ---- settings window ----
 let settingsWin = null;
-const APP_ICON = path.join(__dirname, "assets", "logo-apple", "icon.ico");
+const APP_ICON = path.join(__dirname, "..", "assets", "logo-apple", "icon.ico");
 function openSettings() {
   if (settingsWin && !settingsWin.isDestroyed()) return settingsWin.focus();
   settingsWin = new BrowserWindow({
     width: 780, height: 620, title: "Islet settings", icon: APP_ICON, backgroundColor: "#0b0b0c", autoHideMenuBar: true,
-    webPreferences: { preload: path.join(__dirname, "settings", "preload.js") },
+    webPreferences: { preload: path.join(__dirname, "..", "settings", "preload.js") },
   });
-  settingsWin.loadFile(path.join(__dirname, "settings", "settings.html"));
+  settingsWin.loadFile(path.join(__dirname, "..", "settings", "settings.html"));
 }
 const settingsView = () => ({ ...config, hooks: bridge.installed(), login: login(), petName: loadPet(config.customPet)?.name || "" });
 // custom pet: pick a Codex Pets pack (.zip or pet.json) the user downloaded; it is checked and copied into userData/pets
@@ -700,9 +700,9 @@ function openWelcome() {
   if (welcomeWin && !welcomeWin.isDestroyed()) return welcomeWin.focus();
   welcomeWin = new BrowserWindow({
     width: 560, height: 660, title: "Welcome to Islet", icon: APP_ICON, backgroundColor: "#0b0b0c", autoHideMenuBar: true,
-    webPreferences: { preload: path.join(__dirname, "settings", "welcome-preload.js") },
+    webPreferences: { preload: path.join(__dirname, "..", "settings", "welcome-preload.js") },
   });
-  welcomeWin.loadFile(path.join(__dirname, "settings", "welcome.html"));
+  welcomeWin.loadFile(path.join(__dirname, "..", "settings", "welcome.html"));
 }
 ipcMain.handle("welcome:load", () => ({
   agents: [".claude", ".codex"].some(d => fs.existsSync(path.join(os.homedir(), d))),
@@ -837,7 +837,7 @@ function toggleStopwatch() {
 
 // ---- login item ----
 // unpackaged, electron.exe needs the app folder as an argument or it opens its default app
-const loginOpts = { path: process.execPath, args: app.isPackaged ? [] : [path.resolve(__dirname)] };
+const loginOpts = { path: process.execPath, args: app.isPackaged ? [] : [path.resolve(__dirname, "..")] };
 const login = () => app.getLoginItemSettings(loginOpts).openAtLogin;
 const setLogin = on => app.setLoginItemSettings({ ...loginOpts, openAtLogin: on });
 function enableLoginOnFirstRun() {
