@@ -2,14 +2,22 @@
   command = "mkdir -p public && node build-stats.js && cp -r index.html features.html changelog.html about.html site.css chrome.css shots downloads.html privacy.html terms.html blackhole.js stats.js robots.txt sitemap.xml demo-loop.mp3 islet-film.mp4 islet-film-poster.jpg open.png favicon-32.png apple-touch-icon.png public/"
   publish = "public"
 
-# the installer is served from this domain; Netlify fetches it from the GitHub release
+# the installer: a 302 straight to the GitHub release, so the browser downloads it at once and
+# GitHub counts every download (a 200 proxy let Netlify's cache serve it, and the site's count fell behind)
+[[redirects]]
+  from = "/Islet-Setup-2.3.3.exe"
+  to = "https://github.com/goprocker/Islet/releases/download/v2.3.3/Islet-Setup-2.3.3.exe"
+  status = 302
+  force = true
+
+# old links to an earlier version get the current one
 [[redirects]]
   from = "/Islet-Setup-2.3.1.exe"
-  to = "https://github.com/goprocker/Islet/releases/download/v2.3.1/Islet-Setup-2.3.1.exe"
-  status = 200
+  to = "/Islet-Setup-2.3.3.exe"
+  status = 302
   force = true
 
 [[redirects]]
   from = "/download"
-  to = "/Islet-Setup-2.3.1.exe"
+  to = "/Islet-Setup-2.3.3.exe"
   status = 302
