@@ -19,6 +19,7 @@ const quickSettings = require("./quick-settings");
 const downloads = require("./downloads");
 const screenshots = require("./screenshots");
 const devices = require("./devices");
+const agentUpdates = require("./agent-updates");
 const volumeHud = require("./volume-hud");
 const { readShelf } = require("./shelf-file");
 const { helperLifecycle } = require("./helper-lifecycle");
@@ -50,7 +51,7 @@ app.on("second-instance", () => (welcomePending ? openWelcome() : openSettings()
 // ---- settings (userData/config.json) ----
 const { checkConfig, clock } = require("./config-check");
 const configPath = () => path.join(app.getPath("userData"), "config.json");
-const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true, lyrics: true, permissionWaitSeconds: 8, dnd: false, dndFrom: "", dndTo: "", dndSkipUntil: 0, clipboardHistory: true, volumeHud: true, focusDnd: true, universalSearch: true, weatherCity: "", weatherUnit: "C", downloadsFolder: "", size: "normal", accent: "album", idleHide: false, hideWindowsBanners: true, powerAnim: true, powerAnimStyle: "cinematic", pet: true, userName: "", customPet: "", screenshotShelf: true };
+const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true, lyrics: true, permissionWaitSeconds: 8, dnd: false, dndFrom: "", dndTo: "", dndSkipUntil: 0, clipboardHistory: true, volumeHud: true, focusDnd: true, universalSearch: true, weatherCity: "", weatherUnit: "C", downloadsFolder: "", size: "normal", accent: "album", idleHide: false, hideWindowsBanners: true, powerAnim: true, powerAnimStyle: "cinematic", pet: true, userName: "", customPet: "", screenshotShelf: true, agentUpdates: true };
 let config = { ...DEFAULTS };
 // only a missing file is created; one that can't be read or parsed (a hand edit in
 // progress, a half-written save) is left alone and the current settings stay in use.
@@ -681,7 +682,7 @@ ipcMain.handle("settings:save", (_, v) => {
     weatherCity: str(v.weatherCity, 100), weatherUnit: v.weatherUnit === "F" ? "F" : "C",
     calendarIcsUrl: /^(https?|webcal):\/\//i.test(str(v.calendarIcsUrl)) ? str(v.calendarIcsUrl).replace(/^webcal:/i, "https:") : "",
     downloadsFolder: str(v.downloadsFolder, 500), clipboardHistory: !!v.clipboardHistory, volumeHud: !!v.volumeHud, focusDnd: !!v.focusDnd, universalSearch: !!v.universalSearch,
-    screenshotShelf: !!v.screenshotShelf,
+    screenshotShelf: !!v.screenshotShelf, agentUpdates: !!v.agentUpdates,
   };
   config = next;
   updateLyrics();
@@ -776,12 +777,13 @@ function startWeather() {
 // replaces `config` before the file watcher fires.
 let applied = null;
 function applyServices() {
-  const now = { ics: config.calendarIcsUrl, wx: [config.weatherCity, config.weatherUnit].join("|"), dl: config.downloadsFolder, shots: config.screenshotShelf };
+  const now = { ics: config.calendarIcsUrl, wx: [config.weatherCity, config.weatherUnit].join("|"), dl: config.downloadsFolder, shots: config.screenshotShelf, agents: config.agentUpdates };
   if (!applied) { applied = now; return; } // first run: started by did-finish-load / startDownloads()
   if (now.ics !== applied.ics) calendar.poll(config.calendarIcsUrl, ev => send("calendar", ev));
   if (now.wx !== applied.wx) startWeather();
   if (now.dl !== applied.dl) startDownloads();
   if (now.shots !== applied.shots) startScreenshots();
+  if (now.agents !== applied.agents) startAgentUpdates();
   applied = now;
 }
 function startDownloads() {
@@ -791,6 +793,11 @@ function startDownloads() {
     notifTargets.set(id, { file: done.path });
     send("downloadDone", { id, name: done.name });
   });
+}
+// a toast when Claude Code or Codex publishes a new release
+function startAgentUpdates() {
+  if (!config.agentUpdates) return agentUpdates.stop();
+  agentUpdates.start(app.getPath("userData"), u => send("agentUpdate", u));
 }
 // a new screenshot goes on the shelf, ready to drag into a chat or send with Phone drop
 function startScreenshots() {
@@ -951,6 +958,7 @@ app.whenReady().then(() => {
   });
   startDownloads();
   startScreenshots();
+  startAgentUpdates();
   startDevices();
   applyServices(); // remember what the services started with
   setInterval(readClaude, 2000);

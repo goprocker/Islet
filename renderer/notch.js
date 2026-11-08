@@ -970,6 +970,7 @@ $("colorPick").onclick = async () => {
 let btDevices = [];
 window.bridge.onDevices(list => { btDevices = list || []; });
 window.bridge.onDeviceLow(d => toast({ app: "Bluetooth", badge: "!", color: "#d1453b", title: `${d.name} battery low`, body: `${d.battery}% left. Charge it soon.` }));
+window.bridge.onAgentUpdate(u => toast({ app: u.name, badge: "↑", color: "#6b5bd6", title: `${u.name} ${u.version} is out`, body: `Update with: ${u.update}`, ms: 7000 }));
 const gb = n => `${(n / 1024 ** 3).toFixed(1)} GB`;
 async function drawSys() {
   const s = await window.bridge.sysStats();
