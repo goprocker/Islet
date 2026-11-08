@@ -1,0 +1,27 @@
+# Adds the owner's two accounts as co-authors to pull requests from anyone else, so the
+# squash commit on main credits them whoever merges (needs the repo's squash default set to
+# "pull request title and description"). Skips the owner's own PRs and bots.
+# pull_request_target runs this file from main and never checks out the PR's code; the PR
+# body only reaches the shell through an environment variable.
+name: Co-author owner on outside PRs
+on:
+  pull_request_target:
+    types: [opened, reopened, edited]
+permissions:
+  pull-requests: write
+jobs:
+  coauthor:
+    if: >-
+      github.event.pull_request.user.type != 'Bot' &&
+      !contains(fromJSON('["goprocker","gopinath2638"]'), github.event.pull_request.user.login)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add the Co-authored-by lines
+        run: |
+          body=$(gh pr view "$PR" --repo "$REPO" --json body --jq .body)
+          add=""
+          printf '%s' "$body" | grep -qF '190861483+goprocker@' || add="${add}Co-authored-by: goprocker <190861483+goprocker@users.noreply.github.com>"$'\n'
+          printf '%s' "$body" | grep -qF '336635493+gopinath2638@' || add="${add}Co-authored-by: gopinath2638 <336635493+gopinath2638@users.noreply.github.com>"$'\n'
+          [ -z "$add" ] && exit 0
+          gh pr edit "$PR" --repo "$REPO" --body "$body"$'\n\n'"$add"
+        env: { GH_TOKEN: "${{ github.token }}", PR: "${{ github.event.pull_request.number }}", REPO: "${{ github.repository }}" }
