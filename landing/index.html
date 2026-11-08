@@ -40,11 +40,13 @@ h1,h2,h3{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:700;
 #notch[data-view=quiet]{width:64px}
 #notch[data-view=open],#notch[data-view=needs]{width:640px;height:150px;border-radius:0 0 28px 28px}
 #notch[data-view=message]{width:400px;height:92px;border-radius:0 0 26px 26px}
+#notch[data-view=dash]{width:640px;height:184px;border-radius:0 0 28px 28px}
 #notch.bh{width:340px;height:84px;border-radius:0 0 30px 30px}
 .view{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .2s}
 #notch[data-view=quiet]:not(.bh) .v-quiet,#notch[data-view=playing]:not(.bh) .v-playing,#notch[data-view=open]:not(.bh) .v-open,#notch[data-view=needs]:not(.bh) .v-open,#notch[data-view=message]:not(.bh) .v-message{opacity:1;pointer-events:auto;transition-delay:.14s}
+#notch[data-view=dash]:not(.bh) .v-dash{opacity:1;pointer-events:auto;transition-delay:.14s}
 .dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--violet);flex:none}
-.v-quiet{display:grid;place-items:center}
+.v-quiet{display:flex;align-items:center;justify-content:center;gap:8px}
 .v-playing{display:flex;align-items:center;gap:10px;padding:0 14px 0 8px}
 .art{background:linear-gradient(135deg,#f4d67a,var(--gold) 55%,#8f6414);border-radius:6px;flex:none}
 .v-playing .art{width:22px;height:22px}
@@ -85,6 +87,35 @@ h1,h2,h3{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:700;
 .hint{flex-basis:100%;font-size:15px;color:var(--soft);margin-top:4px}
 .clock{font-weight:600;font-size:18px;line-height:1.1}
 .v-message{display:flex;gap:12px;padding:14px 18px;align-items:flex-start}
+/* the pet: the same cat as the app */
+.pet{display:block;width:22px;height:18px;flex:none;color:#fafafa}
+.pet svg{width:100%;height:100%;overflow:visible}
+.pet .fur{fill:currentColor}
+.pet .eyes{fill:#111;transform-origin:12px 9.2px;animation:blink 5s infinite}
+.pet .nose{fill:#ff9fb2}
+.pet .tail{fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;transform-origin:18.5px 16.5px;animation:tail 2.4s ease-in-out infinite}
+.pet.dance{animation:bop .5s ease-in-out infinite alternate}
+.pet.dance .tail{animation-duration:.5s}
+#notch.paused .pet{animation-play-state:paused}
+@keyframes tail{50%{transform:rotate(18deg)}}
+@keyframes blink{0%,94%,100%{transform:scaleY(1)}97%{transform:scaleY(.1)}}
+@keyframes bop{to{transform:translateY(-2px)}}
+.side{display:flex;align-items:center;gap:8px;margin-top:10px}
+/* the dashboard: greeting, quick settings, sliders and the dock */
+.v-dash{display:flex;flex-direction:column;gap:7px;padding:10px 18px}
+.v-dash header{display:flex;align-items:baseline;gap:10px}
+.v-dash header b{font-size:15px}
+.v-dash header .icon{margin-left:auto;align-self:center}
+.qt{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.qt button{font:600 12px Figtree,sans-serif;background:#1c1c1e;color:#bdbdbd;border:0;border-radius:11px;padding:6px;cursor:pointer}
+.qt button[aria-pressed=true]{background:#e9eefb;color:#000}
+.sl{display:flex;align-items:center;gap:10px;font-size:12px;color:#9a9a9a}
+.sl span{width:68px;flex:none}
+.sl input{flex:1;min-width:0;accent-color:var(--gold)}
+.dock{display:flex;gap:4px;margin-top:auto;border-top:1px solid #2b2b2b;padding-top:7px;overflow-x:auto;scrollbar-width:none}
+.dock button{flex:none;min-width:34px;height:30px;border:0;border-radius:9px;background:none;font-size:15px;cursor:pointer;opacity:.6}
+.dock button.on{background:#262626;opacity:1}
+.dock button:hover{opacity:1}
 .logo{width:30px;height:30px;border-radius:8px;background:#25d366;display:grid;place-items:center;font-weight:600;flex:none}
 
 .bhv{position:absolute;inset:0;z-index:12;pointer-events:none;display:flex;align-items:center;justify-content:space-between;padding:0 22px 0 14px;opacity:0;transition:opacity .3s ease}
@@ -136,6 +167,7 @@ footer{background:var(--sea);padding:30px 0;font-size:15px}
   .v-open{grid-template-columns:1fr 1.3fr;padding:12px;gap:10px}
   .v-open>div:nth-child(3){display:none}
   #notch[data-view=open],#notch[data-view=needs]{height:160px}
+  .sl span{width:56px}
   /* the longest headline phrase has to fit the screen */
   h1{font-size:12vw}
 }
@@ -149,7 +181,7 @@ footer{background:var(--sea);padding:30px 0;font-size:15px}
 .rotor>span.on{opacity:1;transform:none}
 .rotor>span.out{opacity:0;transform:translateY(-100%)}
 /* the notch stays on screen and reacts to the section being read */
-#notch{position:fixed;top:0;left:50%;translate:-50% 0;z-index:10;max-width:calc(100vw - 16px)}
+#notch{position:fixed;top:0;left:50%;translate:-50% 0;z-index:60;max-width:calc(100vw - 16px)}
 .features{display:block}
 .features>div{min-height:72vh;display:grid;grid-template-columns:1fr 1fr;gap:24px 56px;align-items:center}
 .features h3{font-size:clamp(2.4rem,6vw,5rem);line-height:1;letter-spacing:-.03em;margin:0}
@@ -178,8 +210,8 @@ footer{background:var(--sea);padding:30px 0;font-size:15px}
 <header class="hero">
   <div class="stage">
     <div id="notch" data-view="quiet">
-      <div class="view v-quiet"><span class="dot"></span></div>
-      <div class="view v-playing"><span class="art"></span><span class="dot"></span><span class="wave"><i></i><i></i><i></i><i></i><i></i></span></div>
+      <div class="view v-quiet"><span class="pet" aria-hidden="true"><svg viewBox="0 0 24 20"><path class="tail" d="M18.5 16.5c4 0 5-4 3-8"/><ellipse class="fur" cx="12" cy="15.5" rx="7.5" ry="4.2"/><g class="head"><path class="fur" d="M6.2 8.6 6.8 2.4 11 5.6z"/><path class="fur" d="M17.8 8.6 17.2 2.4 13 5.6z"/><ellipse class="fur" cx="12" cy="9.4" rx="6" ry="5"/><g class="eyes"><circle cx="9.5" cy="9.2" r="1.15"/><circle cx="14.5" cy="9.2" r="1.15"/></g><path class="nose" d="M11.2 10.9h1.6l-.8.9z"/></g></svg></span><span class="dot"></span></div>
+      <div class="view v-playing"><span class="art"></span><span class="pet dance" aria-hidden="true"><svg viewBox="0 0 24 20"><path class="tail" d="M18.5 16.5c4 0 5-4 3-8"/><ellipse class="fur" cx="12" cy="15.5" rx="7.5" ry="4.2"/><g class="head"><path class="fur" d="M6.2 8.6 6.8 2.4 11 5.6z"/><path class="fur" d="M17.8 8.6 17.2 2.4 13 5.6z"/><ellipse class="fur" cx="12" cy="9.4" rx="6" ry="5"/><g class="eyes"><circle cx="9.5" cy="9.2" r="1.15"/><circle cx="14.5" cy="9.2" r="1.15"/></g><path class="nose" d="M11.2 10.9h1.6l-.8.9z"/></g></svg></span><span class="dot"></span><span class="wave"><i></i><i></i><i></i><i></i><i></i></span></div>
       <div class="view v-open">
         <div class="agent">
           <div class="chips"><button type="button" class="chip on" data-project="islet">islet</button><button type="button" class="chip" data-project="api">api</button></div>
@@ -192,7 +224,14 @@ footer{background:var(--sea);padding:30px 0;font-size:15px}
           <div class="times"><span class="dim" id="pos"></span><div class="bar" id="bar" role="slider" tabindex="0" aria-label="Seek"><i></i></div><span class="dim" id="len"></span></div>
           <div class="ctl"><button type="button" class="icon" id="prev" aria-label="Previous song">⏮</button><button type="button" class="icon" id="toggle" aria-label="Pause">⏸</button><button type="button" class="icon" id="next" aria-label="Next song">⏭</button></div>
         </div>
-        <div><div class="clock" id="clock"></div><span class="dim" id="date"></span><br><br><span class="dim">27%, on battery</span></div>
+        <div><div class="clock" id="clock"></div><span class="dim" id="date"></span><br><br><span class="dim">27%, on battery</span><div class="side"><span class="pet dance" aria-hidden="true"><svg viewBox="0 0 24 20"><path class="tail" d="M18.5 16.5c4 0 5-4 3-8"/><ellipse class="fur" cx="12" cy="15.5" rx="7.5" ry="4.2"/><g class="head"><path class="fur" d="M6.2 8.6 6.8 2.4 11 5.6z"/><path class="fur" d="M17.8 8.6 17.2 2.4 13 5.6z"/><ellipse class="fur" cx="12" cy="9.4" rx="6" ry="5"/><g class="eyes"><circle cx="9.5" cy="9.2" r="1.15"/><circle cx="14.5" cy="9.2" r="1.15"/></g><path class="nose" d="M11.2 10.9h1.6l-.8.9z"/></g></svg></span><button type="button" class="icon" id="dashBtn" aria-label="Open the dashboard"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg></button></div></div>
+      </div>
+      <div class="view v-dash">
+        <header><b id="dashHello">Good evening</b><span class="dim" id="dashSub">Quick settings</span><button type="button" class="icon" id="dashBack" aria-label="Close the dashboard">✕</button></header>
+        <div class="qt"><button type="button" aria-pressed="true">Wi-Fi</button><button type="button" aria-pressed="true">Bluetooth</button><button type="button" aria-pressed="false">Airplane</button><button type="button" aria-pressed="false">Saver</button></div>
+        <label class="sl"><span>Brightness</span><input type="range" min="0" max="100" value="70" aria-label="Brightness"></label>
+        <label class="sl"><span>Volume</span><input type="range" id="dashVol" min="0" max="100" value="60" aria-label="Volume"></label>
+        <nav class="dock" aria-label="Tools"><button type="button" class="on" data-tool="Home" aria-label="Home" title="Home">🏠</button><button type="button" data-tool="Phone drop" aria-label="Phone drop" title="Phone drop">📱</button><button type="button" data-tool="Links" aria-label="Links" title="Links">🔗</button><button type="button" data-tool="World clock" aria-label="World clock" title="World clock">🕐</button><button type="button" data-tool="Clipboard" aria-label="Clipboard" title="Clipboard">📋</button><button type="button" data-tool="Notes" aria-label="Notes" title="Notes">📝</button><button type="button" data-tool="Timer" aria-label="Timer" title="Timer">⏱️</button><button type="button" data-tool="Shelf" aria-label="Shelf" title="Shelf">📁</button><button type="button" data-tool="Weather" aria-label="Weather" title="Weather">⛅</button><button type="button" data-tool="Units" aria-label="Units" title="Units">📐</button><button type="button" data-tool="System" aria-label="System" title="System">💻</button><button type="button" data-tool="AI coding" aria-label="AI coding" title="AI coding">🤖</button></nav>
       </div>
       <div class="view v-message"><span class="logo">W</span><div><span class="dim">WhatsApp</span><br><b>Arun</b><br>Lunch at 1? I can book the table if you're in.</div></div>
       <div class="bhv" aria-live="polite"><canvas id="bhCanvas"></canvas><div class="bhmeta"><b id="bhPct"></b><small id="bhLabel"></small></div><i class="bhwave" aria-hidden="true"></i></div>
@@ -202,10 +241,11 @@ footer{background:var(--sea);padding:30px 0;font-size:15px}
     <button type="button" data-view="quiet" aria-pressed="true">Idle</button>
     <button type="button" data-view="playing" aria-pressed="false">Music</button>
     <button type="button" data-view="open" aria-pressed="false">Open</button>
+    <button type="button" data-view="dash" aria-pressed="false">Dashboard</button>
     <button type="button" data-view="needs" aria-pressed="false">Agent needs you</button>
     <button type="button" data-view="message" aria-pressed="false">Message</button>
     <button type="button" data-view="charge" aria-pressed="false">Plug in charger</button>
-    <p class="hint">Tap the notch to open it, then press play for music.</p>
+    <p class="hint">Tap the notch to open it, then press play for music or the grid icon for the dashboard.</p>
   </div>
   <img src="apple-touch-icon.png" alt="" width="48" height="48" style="margin-bottom:12px">
   <h1 aria-label="Islet is out now.">
@@ -442,6 +482,18 @@ footer{background:var(--sea);padding:30px 0;font-size:15px}
   document.addEventListener("click", e => { if (!notch.contains(e.target)) closeNotch(); });
   document.addEventListener("keydown", e => { if (e.key === "Escape") closeNotch(); });
   buttons.forEach(b => b.addEventListener("click", () => { backTo = null; }, true));
+
+  // the dashboard: sample tiles, a working volume slider, and the dock names the tool you pick
+  const hour = now.getHours();
+  $("dashHello").textContent = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  $("dashBtn").addEventListener("click", e => { e.stopPropagation(); touched = true; show("dash"); });
+  $("dashBack").addEventListener("click", e => { e.stopPropagation(); show("open"); });
+  notch.querySelectorAll(".qt button").forEach(b => b.addEventListener("click", () => b.setAttribute("aria-pressed", b.getAttribute("aria-pressed") !== "true")));
+  notch.querySelectorAll(".dock button").forEach(b => b.addEventListener("click", () => {
+    notch.querySelectorAll(".dock button").forEach(x => x.classList.toggle("on", x === b));
+    $("dashSub").textContent = b.dataset.tool === "Home" ? "Quick settings" : b.dataset.tool;
+  }));
+  $("dashVol").addEventListener("input", e => { volume = Number(e.target.value); audio.volume = volume / 100; });
 
   // scroll: each feature wakes the notch, the hero shrinks away, the screenshot grows into place
   if (!reduced) {
