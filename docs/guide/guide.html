@@ -97,7 +97,7 @@ pre.t { padding: 3mm 4mm; margin: 1.5mm 0 1.5mm; font-size: 8pt; }
   </div>
   <div class="stats">
     <div><b>8</b><small>data sources</small></div><div><b>20</b><small>settings</small></div>
-    <div><b>13</b><small>notch states</small></div><div><b>312</b><small>passing tests</small></div>
+    <div><b>13</b><small>notch states</small></div><div><b>333</b><small>passing tests</small></div>
   </div>
   <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
 </section>
@@ -140,7 +140,8 @@ pre.t { padding: 3mm 4mm; margin: 1.5mm 0 1.5mm; font-size: 8pt; }
       <li>Allow / Deny Claude Code permission requests from the notch</li>
       <li>Session chips to switch project; Codex chips have a blue dot</li>
       <li>Hooks install on first run, with a backup; unticking removes only Islet's handlers</li>
-      <li>Falls back to reading transcripts when hooks are off</li></ul></div>
+      <li>Falls back to reading transcripts when hooks are off</li>
+      <li>A pop-up when Claude Code or Codex publishes a new release <span class="new">NEW</span></li></ul></div>
     <div class="card"><h3><span class="d" style="background:#5b5bd6"></span>Notifications</h3><ul>
       <li>Every Windows toast except Spotify's becomes a notch pop-up <span class="new">NEW</span> with the full message: 400 px wide, grows up to about 7 lines</li>
       <li>Display time grows with message length (4.5 s + 40 ms per character, max 12 s)</li>
@@ -208,6 +209,7 @@ pre.t { padding: 3mm 4mm; margin: 1.5mm 0 1.5mm; font-size: 8pt; }
     <div><img src="../pill.png">Pill</div>
     <div><img src="../toast.png">Pop-up</div>
     <div><img src="../album.png">Album view</div>
+    <div><img src="../tools/toast-agent-update.png">Release pop-up</div>
   </div>
   <p style="font-size:8pt;color:#6e6e73;margin-top:2mm">The real notch page with sample data.</p>
   <div class="kick" style="margin-top:12mm">SECTION 04</div>
@@ -224,7 +226,7 @@ pre.t { padding: 3mm 4mm; margin: 1.5mm 0 1.5mm; font-size: 8pt; }
     <tr><td>Registry</td><td>HKCU Notifications\Settings</td><td>Turning Windows' banners off and back on</td></tr>
     <tr><td>Network</td><td>fetch()</td><td>lrclib.net, Open-Meteo, your ICS link, optional Spotify Web API</td></tr>
     <tr><td>Agent hooks</td><td>HTTP server on 127.0.0.1:47321</td><td>Claude Code and Codex hooks post events</td></tr>
-    <tr><td>Tests</td><td>node --test</td><td>42 files, 312 tests</td></tr>
+    <tr><td>Tests</td><td>node --test</td><td>43 files, 333 tests</td></tr>
     <tr><td>Packaging</td><td>electron-builder 26 (NSIS)</td><td>One-click per-user installer</td></tr></table>
   <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
 </section>
@@ -290,6 +292,7 @@ pre.t { padding: 3mm 4mm; margin: 1.5mm 0 1.5mm; font-size: 8pt; }
     <tr><td>claude-bridge.js</td><td>212</td><td>Hook HTTP server; installs and removes Claude Code / Codex hooks</td></tr>
     <tr><td>hooks/islet-hook.js</td><td>76</td><td>Run by each agent hook; checks the listener, then POSTs the event</td></tr>
     <tr><td>hooks/hook-auth.js</td><td>26</td><td>Per-user secret and HMAC proof for the hook and listener</td></tr>
+    <tr><td>agent-updates.js</td><td>80</td><td>Checks npm for new Claude Code and Codex releases; remembers the last one seen</td></tr>
     <tr><td>config-check.js</td><td>29</td><td>Checks known config.json fields on load</td></tr>
     <tr><td>media.ps1</td><td>121</td><td>Windows media session reader and controller</td></tr>
     <tr><td>spotify-audio.ps1 / .cs</td><td>325</td><td>Spotify loopback capture, FFT bands, volume</td></tr>
@@ -301,7 +304,7 @@ pre.t { padding: 3mm 4mm; margin: 1.5mm 0 1.5mm; font-size: 8pt; }
     <tr><td>downloads.js</td><td>77</td><td>Browser download progress</td></tr>
     <tr><td>shelf-file.js</td><td>23</td><td>Reads and checks shelf.json</td></tr>
     <tr><td>spotify-web.js</td><td>122</td><td>Optional Spotify Web API (PKCE login)</td></tr>
-    <tr><td>test/</td><td>1405</td><td>19 test files run by node --test</td></tr>
+    <tr><td>test/</td><td>1405</td><td>43 test files run by node --test</td></tr>
     <tr><td>demo.html</td><td>191</td><td>Original browser design demo (not used by the app)</td></tr>
     <tr><td>docs/ · package.json</td><td>- · 54</td><td>Screenshots · scripts, Electron version, installer config</td></tr></table>
   <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
@@ -356,7 +359,8 @@ npm start</pre>
     <li>Codex: ~/.codex/hooks.json if ~/.codex exists (backup hooks.json.islet-backup). Approve Islet's hooks once in Codex (/hooks).</li>
     <li>Removing hooks deletes only Islet's handlers, even when they share a matcher group with your own.</li>
     <li>permissionWaitSeconds (default 8) is how long a request waits for you in the notch. 0 turns holding off.</li>
-    <li>Codex permission requests show 'Needs you' but are answered in Codex.</li></ul>
+    <li>Codex permission requests show 'Needs you' but are answered in Codex.</li>
+    <li><b>New releases</b> get one pop-up each (Settings: <code>agentUpdates</code>).</li></ul>
   <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
 </section>
 
@@ -385,7 +389,7 @@ npm start</pre>
   <p style="margin-top:3mm;font-size:9pt;color:#6e6e73">If config.json can't be read (for example during a hand edit), Islet keeps the current settings and leaves the file as it is.</p>
   <div class="kick">SECTION 12</div>
   <h1>Build, test, debug</h1>
-  <pre>npm test        # node --test test/*.test.js  (42 files, 312 tests)
+  <pre>npm test        # node --test test/*.test.js  (43 files, 333 tests)
 npm run dist    # NSIS installer, run from PowerShell
 
 # inspect the notch with Chrome DevTools
@@ -743,7 +747,7 @@ if (gen === generation &amp;&amp; text !== null) onEvent(nextEvent(text));</pre>
   <h2>Security</h2>
   <div class="qa"><div><b>What's the security model?</b><p>Page isolated from Node, fixed bridge API, server on loopback only, every external input validated, outside text set with <code>textContent</code>, and link schemes allowlisted.</p></div><div><b>What's the weakest point?</b><p>The hook server has no authentication, so any local program could fake events. They can't approve anything for real, because the answer goes back to whoever asked. I'd add a random token shared through the hook's config.</p></div><div><b>Could a malicious notification attack the app?</b><p>Its text is only ever shown as text. Clicking it opens a URL only if the scheme is on the allowlist; otherwise it opens the sending app.</p></div></div>
   <h2>Testing and process</h2>
-  <div class="qa"><div><b>How is it tested?</b><p>312 tests in 42 files using Node's built-in <code>node --test</code>, with no extra dependencies. Mostly logic: calendar rules, time zones, lyrics, hook install, and races. Fakes replace the network and <code>http.createServer</code>.</p></div><div><b>How do you test time zones?</b><p>The calendar tests run with the host set to different zones, such as Asia/Kolkata and UTC, including daylight-saving changes.</p></div><div><b>What isn't tested?</b><p>The real screen and mouse, and the PowerShell helpers. I check those by hand, and through Chrome DevTools using <code>--remote-debugging-port=9333</code>.</p></div><div><b>Did you use AI to build this?</b><p>Answer truthfully; the commit history publicly shows Claude and Codex as co-authors. A strong answer says what you decided, how you checked the result, and which bugs you found. This guide is there so you can back that up.</p></div></div>
+  <div class="qa"><div><b>How is it tested?</b><p>333 tests in 43 files using Node's built-in <code>node --test</code>, with no extra dependencies. Mostly logic: calendar rules, time zones, lyrics, hook install, and races. Fakes replace the network and <code>http.createServer</code>.</p></div><div><b>How do you test time zones?</b><p>The calendar tests run with the host set to different zones, such as Asia/Kolkata and UTC, including daylight-saving changes.</p></div><div><b>What isn't tested?</b><p>The real screen and mouse, and the PowerShell helpers. I check those by hand, and through Chrome DevTools using <code>--remote-debugging-port=9333</code>.</p></div><div><b>Did you use AI to build this?</b><p>Answer truthfully; the commit history publicly shows Claude and Codex as co-authors. A strong answer says what you decided, how you checked the result, and which bugs you found. This guide is there so you can back that up.</p></div></div>
   <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
 </section>
 
