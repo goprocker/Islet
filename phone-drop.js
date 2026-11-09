@@ -10,6 +10,7 @@ const crypto = require("crypto");
 const LIFETIME = 10 * 60 * 1000;
 const MAX_FILE = 2 * 1024 ** 3;
 let server = null, secret = "", stopTimer = null, url = "";
+const connections = new Set();
 
 // the first private IPv4 address of a real adapter (Wi-Fi or Ethernet)
 function lanAddress(ifaces = os.networkInterfaces()) {
@@ -106,6 +107,10 @@ function start({ dir, shelf, onFile }) {
     }
     res.writeHead(404); res.end();
   });
+  server.on("connection", socket => {
+    connections.add(socket);
+    socket.once("close", () => connections.delete(socket));
+  });
   return new Promise((resolve, reject) => {
     server.once("error", e => { server = null; reject(e); });
     server.listen(0, host, () => { url = `http://${host}:${server.address().port}/${secret}/`; resolve(url); });
@@ -115,6 +120,8 @@ function start({ dir, shelf, onFile }) {
 function stop() {
   clearTimeout(stopTimer);
   server?.close();
+  for (const socket of connections) socket.destroy();
+  connections.clear();
   server = null; url = ""; secret = "";
 }
 
