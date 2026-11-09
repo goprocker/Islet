@@ -1,8 +1,8 @@
 {
   "name": "islet",
-  "version": "2.3.2",
+  "version": "2.3.4",
   "description": "Islet: a Dynamic-Island style notch for Windows: Spotify now playing + latest Claude Code activity",
-  "main": "main.js",
+  "main": "src/main.js",
   "license": "MIT",
   "engines": {
     "node": ">=22"
@@ -20,41 +20,10 @@
       "en-US"
     ],
     "files": [
-      "main.js",
-      "preload.js",
-      "spotify-web.js",
-      "notifications.js",
-      "calendar.js",
-      "icons.js",
-      "lyrics.js",
-      "weather.js",
-      "downloads.js",
-      "shelf-file.js",
-      "helper-lifecycle.js",
-      "audio-target.js",
-      "welcome.js",
-      "config-check.js",
-      "clip-history.js",
-      "notes.js",
-      "pomodoro.js",
-      "quick-settings.js",
-      "search.js",
-      "volume-hud.js",
-      "links.js",
-      "pet-pack.js",
+      "src/**",
       "builtin-pets/**",
-      "phone-drop.js",
-      "quickset.ps1",
-      "radios.ps1",
-      "volume-hud.ps1",
       "settings/**",
-      "claude-bridge.js",
       "hooks/**",
-      "helpers.ps1",
-      "media.ps1",
-      "system.ps1",
-      "spotify-audio.ps1",
-      "spotify-audio.cs",
       "renderer/**",
       "assets/logo-apple/icon.ico",
       "LICENSE"
@@ -77,17 +46,30 @@
       "perMachine": true,
       "include": "build/installer.nsh",
       "runAfterFinish": true
+    },
+    "appx": {
+      "applicationId": "Islet",
+      "displayName": "Islet",
+      "publisherDisplayName": "Gopin",
+      "identityName": "Gopin.Islet",
+      "publisher": "CN=Gopin",
+      "artifactName": "Islet-${version}.${ext}",
+      "backgroundColor": "transparent",
+      "languages": [
+        "en-US"
+      ],
+      "showNameOnTiles": false
     }
   },
   "devDependencies": {
-    "electron": "45.2.1",
+    "electron": "45.2.3",
     "electron-builder": "^26.18.0"
   },
   "overrides": {
     "minimatch": "11.0.3"
   },
   "allowScripts": {
-    "electron@45.2.1": true
+    "electron@45.2.3": true
   },
   "dependencies": {
     "electron-updater": "^6.8.11",

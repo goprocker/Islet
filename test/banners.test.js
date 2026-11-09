@@ -13,7 +13,7 @@ cp.execFileSync = (cmd, args) => {
   if (args[0] === "import") { imports++; onImport?.(); if (importFails) throw new Error("access denied"); return ""; }
   return Object.entries(registry).map(([id, v]) => `${KEY}${id}\r\n    ShowBanner    REG_DWORD    0x${v.toString(16)}\r\n`).join("\r\n");
 };
-const { restoreBanners, hideBanners, saveJournal } = require("../notifications");
+const { restoreBanners, hideBanners, saveJournal } = require("../src/notifications");
 cp.execFileSync = realExec;
 
 test("a failed restore keeps the saved values for a retry", () => {
@@ -73,7 +73,7 @@ test("a process killed right after the import leaves a journal the next run can 
       if (args[0] === "import") process.exit(7); // dies with the registry already changed
       return "";
     };
-    const n = require(${JSON.stringify(path.resolve(__dirname, "../notifications.js"))});
+    const n = require(${JSON.stringify(path.resolve(__dirname, "../src/notifications.js"))});
     n.hideBanners({}, ["ExampleApp"], v => n.saveJournal(${JSON.stringify(file)}, v));
   `);
   try {

@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert");
-const { nextEvent } = require("../calendar");
+const { nextEvent } = require("../src/calendar");
 
 function inZone(tz, fn) {
   const was = process.env.TZ;

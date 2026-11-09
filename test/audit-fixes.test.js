@@ -1,8 +1,8 @@
 const test = require("node:test");
 const assert = require("node:assert");
-const { checkConfig, clock } = require("../config-check");
-const { nextEvent } = require("../calendar");
-const { pickSessions } = require("../claude-bridge");
+const { checkConfig, clock } = require("../src/config-check");
+const { nextEvent } = require("../src/calendar");
+const { pickSessions } = require("../src/claude-bridge");
 
 const DEFAULTS = { weatherCity: "", size: "normal", displayId: null, lyrics: true, permissionWaitSeconds: 8 };
 test("config: wrong types fall back and are reported, good values and unknown keys stay", () => {

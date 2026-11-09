@@ -61,6 +61,7 @@ function get(title, artist, duration) {
 // What the page should show follows the song: update() asks once per song (null = no song
 // or lyrics turned off), resend() fills a page that reloaded and lost them. An answer for
 // a song that's no longer current is dropped; one still on its way reaches the new page.
+// null means none yet (no song, or still looking); false means the song has no lyrics.
 function follower(send, fetchLines = get) {
   let asked = null, lines = null;
   return {
@@ -73,7 +74,7 @@ function follower(send, fetchLines = get) {
       const now = asked = song ? { key, duration: song.duration } : null;
       lines = null;
       send(null);
-      if (song) fetchLines(song.title, song.artist || "", song.duration).then(l => { if (asked === now) { lines = l; send(l); } });
+      if (song) fetchLines(song.title, song.artist || "", song.duration).then(l => { if (asked === now) { lines = l || false; send(lines); } });
     },
     resend() { send(lines); },
   };

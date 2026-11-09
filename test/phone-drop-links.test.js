@@ -4,7 +4,7 @@ const http = require("http");
 const fs = require("fs");
 const os = require("os");
 const net = require("net");
-const pd = require("../phone-drop.js");
+const pd = require("../src/phone-drop.js");
 
 const lan = pd.lanAddress();
 const get = u => new Promise(r => http.get(u, x => { let s = ""; x.on("data", c => s += c).on("end", () => r([x.statusCode, s])); }));

@@ -9,7 +9,7 @@ const crypto = require("crypto");
 
 const LIFETIME = 10 * 60 * 1000;
 const MAX_FILE = 2 * 1024 ** 3;
-let server = null, secret = "", stopTimer = null, url = "";
+let server = null, secret = "", stopTimer = null, url = "", starting = null, abortStart = null;
 const connections = new Set();
 
 // the first private IPv4 address of a real adapter (Wi-Fi or Ethernet)
@@ -55,11 +55,12 @@ s.textContent=bad.length?"Couldn't send "+bad.join(", ")+(ok?" ("+ok+" sent)":""
 function start({ dir, shelf, onFile }) {
   clearTimeout(stopTimer);
   stopTimer = setTimeout(stop, LIFETIME);
-  if (server) return Promise.resolve(url);
+  // one startup per session: a caller that arrives while the server is still binding shares its promise
+  if (starting) return starting;
   const host = lanAddress();
   if (!host) return Promise.reject(new Error("Connect to Wi-Fi or Ethernet to use Phone drop."));
   secret = crypto.randomBytes(16).toString("hex");
-  server = http.createServer((req, res) => {
+  const srv = server = http.createServer((req, res) => {
     const u = new URL(req.url, "http://x");
     const parts = u.pathname.split("/").filter(Boolean);
     if (parts[0] !== secret) { res.writeHead(404); return res.end(); }
@@ -107,14 +108,26 @@ function start({ dir, shelf, onFile }) {
     }
     res.writeHead(404); res.end();
   });
-  server.on("connection", socket => {
+  srv.on("connection", socket => {
     connections.add(socket);
     socket.once("close", () => connections.delete(socket));
   });
-  return new Promise((resolve, reject) => {
-    server.once("error", e => { server = null; reject(e); });
-    server.listen(0, host, () => { url = `http://${host}:${server.address().port}/${secret}/`; resolve(url); });
+  starting = new Promise((resolve, reject) => {
+    // closing a server that is still binding never fires its listen callback, so stop() rejects through here
+    abortStart = () => reject(new Error("Phone drop was stopped."));
+    srv.once("error", e => {
+      if (server === srv) { clearTimeout(stopTimer); server = null; starting = null; secret = ""; abortStart = null; }
+      reject(e);
+    });
+    srv.listen(0, host, () => {
+      // stop() ran before the server finished binding: do not publish a URL for a closed session
+      if (server !== srv) return reject(new Error("Phone drop was stopped."));
+      abortStart = null;
+      url = `http://${host}:${srv.address().port}/${secret}/`;
+      resolve(url);
+    });
   });
+  return starting;
 }
 
 function stop() {
@@ -122,7 +135,9 @@ function stop() {
   server?.close();
   for (const socket of connections) socket.destroy();
   connections.clear();
-  server = null; url = ""; secret = "";
+  abortStart?.();
+  abortStart = null;
+  server = null; starting = null; url = ""; secret = "";
 }
 
 module.exports = { start, stop, lanAddress, safeName, freePath };

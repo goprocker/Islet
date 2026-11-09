@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert");
-const { nextEvent } = require("../calendar");
+const { nextEvent } = require("../src/calendar");
 
 const series = extra => `BEGIN:VEVENT\nUID:s1\nDTSTART:20261029T100000Z\nRRULE:FREQ=DAILY\nSUMMARY:Test\n${extra}END:VEVENT`;
 const thu = new Date("2026-10-29T09:00:00Z");

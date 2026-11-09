@@ -4,7 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
 
-const source = fs.readFileSync(path.join(__dirname, "../main.js"), "utf8");
+const source = fs.readFileSync(path.join(__dirname, "../src/main.js"), "utf8");
 const between = (a, b) => { const s = source.indexOf(a); return source.slice(s, source.indexOf(b, s)); };
 
 // the real placement code and event wiring, with made-up monitors
@@ -14,7 +14,7 @@ function setup(displays, primary, size = "normal") {
     BASE_W: 672, BASE_H: 190,
     scale: () => ({ compact: 0.85, normal: 1, large: 1.2 })[size],
     config: { displayId: 2 },
-    buildMenu() {},
+    buildMenu() {}, applyShape() {},
     screen: { getAllDisplays: () => displays(), getPrimaryDisplay: () => primary(), on: (ev, fn) => { handlers[ev] = fn; } },
     win: { setBounds: b => bounds.push(b), webContents: { setZoomFactor: z => zoom.push(z) } },
   };

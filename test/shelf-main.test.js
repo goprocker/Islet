@@ -4,7 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
 
-const source = fs.readFileSync(path.join(__dirname, "../main.js"), "utf8");
+const source = fs.readFileSync(path.join(__dirname, "../src/main.js"), "utf8");
 const start = source.indexOf("// ---- file shelf:");
 const end = source.indexOf("// ---- phone drop:", start);
 const piece = source.slice(start, end);

@@ -1,6 +1,7 @@
 # Watches the PC once a second and prints a JSON line when something changes:
 #   mic / cam / screen : apps using the microphone, camera, or Windows screen capture
 #   fullscreen         : the foreground window covers its whole monitor (game, video)
+#   app                : the foreground window's process name, lowercase
 $ErrorActionPreference = "SilentlyContinue"
 Add-Type @"
 using System;
@@ -15,6 +16,12 @@ public static class Fg {
   [DllImport("user32.dll")] static extern bool GetMonitorInfo(IntPtr m, ref MONITORINFO i);
   [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern int GetClassName(IntPtr h, StringBuilder s, int n);
   [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);
+  public static uint ForegroundPid() {
+    IntPtr h = GetForegroundWindow();
+    if (h == IntPtr.Zero) return 0;
+    uint pid; GetWindowThreadProcessId(h, out pid);
+    return pid;
+  }
   public static string Fullscreen() {
     IntPtr h = GetForegroundWindow();
     if (h == IntPtr.Zero) return null;
@@ -63,6 +70,7 @@ while ($true) {
     cam        = InUse "webcam"
     screen     = [string[]]@(@(InUse "graphicsCaptureProgrammatic") + @(InUse "graphicsCaptureWithoutBorder") | Where-Object { $_ } | Select-Object -Unique)
     fullscreen = $fsStable
+    app        = [string](Get-Process -Id ([Fg]::ForegroundPid())).ProcessName.ToLower() # what the pet acts out
   }
   $json = $state | ConvertTo-Json -Compress
   if ($json -ne $last) { $last = $json; Write-Output $json }

@@ -3,7 +3,7 @@ const assert = require("node:assert");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
-const { readShelf } = require("../shelf-file");
+const { readShelf } = require("../src/shelf-file");
 
 function withFile(text, fn) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "islet-shelf-"));

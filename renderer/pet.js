@@ -2,22 +2,49 @@
 // pick() turns what the notch knows into one mood; paint() puts that mood on the pet elements as a class,
 // and the CSS does the animating.
 (() => {
-  const MOODS = ["idle", "sleep", "dance", "work", "alert", "sick", "code", "ask", "plant"];
+  const MOODS = ["idle", "sleep", "dance", "work", "alert", "sick", "code", "ask", "plant", "love", "happy", "charge", "rush", "zen", "cold", "hot", "sleepy", "hello"];
   const ALERT_MS = 4000, SLEEP_AFTER_MS = 120000, LOW_BATTERY = 0.2;
+  // short reactions: how long each lasts after the thing that caused it
+  const LOVE_MS = 3000, HAPPY_MS = 8000, CHARGE_MS = 8000, HELLO_MS = 2500, RUSH_MS = 5 * 60000;
+
+  // the foreground app (process name, lowercase) says what you're doing: editors and terminals mean coding,
+  // office and notes apps mean work; anything else (browser, games, video) doesn't change the mood
+  const CODE_APPS = /^(code|code - insiders|cursor|windsurf|zed|devenv|idea64|pycharm64|webstorm64|rider64|clion64|goland64|phpstorm64|studio64|sublime_text|notepad\+\+|vim|nvim|windowsterminal|wt|powershell|pwsh|cmd|wsl|mintty|alacritty|wezterm-gui|warp|hyper|tabby|githubdesktop|fork)$/;
+  const WORK_APPS = /^(winword|excel|powerpnt|onenote|outlook|olk|notion|obsidian|acrobat|acrord32|figma|photoshop|illustrator|blender|logseq)$/;
+  function activity(app) {
+    if (!app) return "";
+    if (CODE_APPS.test(app)) return "code";
+    if (WORK_APPS.test(app)) return "work";
+    return "";
+  }
 
   // ctx: {now, battery: {level 0..1, charging}|null, toastAt, timerEnd, timerLabel, playing, quietSince,
-  //       agent: "waiting" | "working" | "", plantUntil}
-  // first match wins: a sick cat stays sick even with music on
+  //       agent: "waiting" | "working" | "", plantUntil, app: foreground process name,
+  //       likedAt, doneAt (an agent finished), plugAt, openedAt, meetingAt (next meeting start),
+  //       dnd, tempC (outside, Celsius), hour 0..23}
+  // first match wins: a sick cat stays sick even with music on; what you're doing beats the music;
+  // the weather, the hour and Do Not Disturb only colour a calm moment
   function pick(ctx) {
-    const b = ctx.battery;
+    const b = ctx.battery, since = t => (t ? ctx.now - t : Infinity);
     if (b && !b.charging && b.level < LOW_BATTERY) return "sick";
     if (ctx.toastAt && ctx.now - ctx.toastAt < ALERT_MS) return "alert";
     if (ctx.agent === "waiting") return "ask";
+    if (since(ctx.likedAt) < LOVE_MS) return "love";
+    if (since(ctx.doneAt) < HAPPY_MS) return "happy";
+    if (since(ctx.plugAt) < CHARGE_MS) return "charge";
     if (ctx.plantUntil > ctx.now) return "plant";
+    if (ctx.meetingAt > ctx.now && ctx.meetingAt - ctx.now <= RUSH_MS) return "rush";
     if (ctx.timerEnd > ctx.now && /focus/i.test(ctx.timerLabel || "")) return "work";
     if (ctx.agent === "working") return "code";
+    const doing = activity(ctx.app);
+    if (doing) return doing;
     if (ctx.playing) return "dance";
+    if (since(ctx.openedAt) < HELLO_MS) return "hello";
     if (ctx.quietSince && ctx.now - ctx.quietSince >= SLEEP_AFTER_MS) return "sleep";
+    if (ctx.dnd) return "zen";
+    if (ctx.hour >= 0 && ctx.hour < 5) return "sleepy";
+    if (Number.isFinite(ctx.tempC) && ctx.tempC <= 10) return "cold";
+    if (Number.isFinite(ctx.tempC) && ctx.tempC >= 35) return "hot";
     return "idle";
   }
 
@@ -44,13 +71,16 @@
 
   // a custom pet (Codex Pets sprite sheet): which row each mood plays, and how many frames that row has
   const ROWS = { idle: [0, 6], waving: [3, 4], jumping: [4, 5], failed: [5, 8], waiting: [6, 6], running: [7, 6], review: [8, 6] };
-  const MOOD_ROW = { idle: "idle", sleep: "idle", dance: "jumping", work: "review", alert: "waving", sick: "failed", code: "running", ask: "waiting", plant: "waving" };
+  const MOOD_ROW = { idle: "idle", sleep: "idle", dance: "jumping", work: "review", alert: "waving", sick: "failed", code: "running", ask: "waiting", plant: "waving",
+    love: "jumping", happy: "jumping", charge: "jumping", rush: "running", zen: "idle", cold: "failed", hot: "waiting", sleepy: "idle", hello: "waving" };
+  // these play their row slowly, like sleep
+  const SLOW = new Set(["sleep", "sleepy", "zen"]);
   const FPS = 8, SLEEP_FPS = 2;
 
   // the sheet position for a mood at time `now`: { x, y } in percent for background-position
   function frameAt(mood, now, rows) {
     const [row, frames] = ROWS[MOOD_ROW[mood] || "idle"];
-    const frame = Math.floor(now / (1000 / (mood === "sleep" ? SLEEP_FPS : FPS))) % frames;
+    const frame = Math.floor(now / (1000 / (SLOW.has(mood) ? SLEEP_FPS : FPS))) % frames;
     return { x: (frame / 7) * 100, y: (row / (rows - 1)) * 100 };
   }
 
@@ -89,17 +119,18 @@
 
   // what the cat says when the notch opens: a hello the first time each day, then a word about its mood.
   // ctx: {hour 0..23, name, mood, firstToday}
-  const MOOD_LINES = { dance: "Nice song!", sleep: "zzz… let me nap", sick: "Plug me in, please!", work: "Focus time. You got this", alert: "Ooh, something new!", code: "Coding with your agent…", ask: "Your agent needs you!", plant: "Focus done. My plant grew!" };
+  const MOOD_LINES = { dance: "Nice song!", sleep: "zzz… let me nap", sick: "Plug me in, please!", work: "Busy? Me too", alert: "Ooh, something new!", code: "Let's write some code!", ask: "Your agent needs you!", plant: "Focus done. My plant grew!",
+    love: "Love this one!", happy: "Your agent finished. Nice work!", charge: "Mmm, power!", rush: "Meeting soon, get ready!", zen: "Shh… focus time", cold: "Brr, it's cold out", hot: "Phew, it's hot today", sleepy: "It's late… bedtime?", hello: "Hi there!" };
   // idle chat, so a quiet spell isn't just "Hello" again and again; {who} becomes ", name"
   const IDLE_LINES = ["Just hanging out here{who}", "Need a break? Stretch a bit!", "Drink some water{who}", "All quiet up here", "Psst… I'm still here", "Want to start a focus timer?", "Looking good today{who}!", "*yawn*"];
   function line(ctx) {
     const who = ctx.name ? `, ${ctx.name}` : "";
-    if (ctx.firstToday) {
+    if (ctx.firstToday || !ctx.mood) { // a greeting always says the time of day
       const part = ctx.hour < 5 ? "Still up" : ctx.hour < 12 ? "Good morning" : ctx.hour < 17 ? "Good afternoon" : "Good evening";
       return `${part}${who}!`;
     }
     if (ctx.mood === "idle") return IDLE_LINES[Math.floor((ctx.roll ?? Math.random()) * IDLE_LINES.length)].replace("{who}", who);
-    return MOOD_LINES[ctx.mood] || `Hello${who}!`;
+    return MOOD_LINES[ctx.mood] || `Hello${who}!`; // an unknown mood
   }
 
   // shows text beside the pet for a few seconds, on whichever side has more room in the notch
@@ -114,7 +145,7 @@
     el._sayT = setTimeout(() => el.classList.remove("talking"), ms);
   }
 
-  const api = { MOODS, pick, paint, tick, frameAt, SVG, line, say };
+  const api = { MOODS, pick, activity, paint, tick, frameAt, SVG, line, say };
   if (typeof module !== "undefined") module.exports = api;
   else window.Pet = api;
 })();

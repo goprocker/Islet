@@ -4,7 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
 
-const source = fs.readFileSync(path.join(__dirname, "../main.js"), "utf8");
+const source = fs.readFileSync(path.join(__dirname, "../src/main.js"), "utf8");
 const start = source.indexOf("// ---- Do Not Disturb:");
 const end = source.indexOf("// ---- clipboard history:", start);
 const piece = source.slice(start, end);
@@ -16,6 +16,7 @@ function setup(overrides = {}) {
     config,
     ipcMain: { on: (name, fn) => handlers.set(name, fn) },
     saveConfig() {}, send() {}, buildMenu() {}, tray: null,
+    missedLog: () => ({ add() {}, take: () => "" }),
     Date,
   };
   vm.runInNewContext(`${piece}; globalThis.dndApi = { setFocus: v => focusDnd = v, active: dndActive };`, context);

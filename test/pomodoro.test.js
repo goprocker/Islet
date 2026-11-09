@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert");
-const { next } = require("../pomodoro");
+const { next } = require("../src/pomodoro");
 
 test("starts with a 25 minute focus", () => {
   assert.deepStrictEqual(next(null), { phase: "focus", round: 1, min: 25, label: "Focus 1/4" });
@@ -20,7 +20,7 @@ test("a break leads to the next focus round, wrapping after round 4", () => {
 });
 
 test("Do Not Disturb follows the focus phase only when the setting is on", () => {
-  const { wantsDnd } = require("../pomodoro");
+  const { wantsDnd } = require("../src/pomodoro");
   assert.strictEqual(wantsDnd({ phase: "focus", round: 1 }, true), true);
   assert.strictEqual(wantsDnd({ phase: "break", round: 1 }, true), false);
   assert.strictEqual(wantsDnd({ phase: "focus", round: 1 }, false), false);

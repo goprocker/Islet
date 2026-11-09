@@ -17,6 +17,9 @@ const { loadNotes, saveNotes } = require("./notes");
 const universalSearch = require("./search");
 const quickSettings = require("./quick-settings");
 const downloads = require("./downloads");
+const screenshots = require("./screenshots");
+const devices = require("./devices");
+const agentUpdates = require("./agent-updates");
 const volumeHud = require("./volume-hud");
 const { readShelf } = require("./shelf-file");
 const { helperLifecycle } = require("./helper-lifecycle");
@@ -24,11 +27,13 @@ const { audioTarget } = require("./audio-target");
 const { needsWelcome, finishWelcome } = require("./welcome");
 const { loadLinks, saveLinks } = require("./links");
 const phoneDrop = require("./phone-drop");
+const { missedLog } = require("./missed");
+const { shapeRect, sameRect } = require("./shape");
 const QRCode = require("qrcode");
 const petPack = require("./pet-pack");
 const petsDir = () => path.join(app.getPath("userData"), "pets");
 // pets that ship with Islet; one the user imported with the same id wins
-const BUILTIN_PETS = path.join(__dirname, "builtin-pets");
+const BUILTIN_PETS = path.join(__dirname, "..", "builtin-pets");
 const loadPet = id => id ? petPack.loadPack(fs.existsSync(path.join(petsDir(), petPack.safeId(id))) ? petsDir() : BUILTIN_PETS, id) : null;
 
 const BASE_W = 672, BASE_H = 270;
@@ -46,7 +51,7 @@ app.on("second-instance", () => (welcomePending ? openWelcome() : openSettings()
 // ---- settings (userData/config.json) ----
 const { checkConfig, clock } = require("./config-check");
 const configPath = () => path.join(app.getPath("userData"), "config.json");
-const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true, lyrics: true, permissionWaitSeconds: 8, dnd: false, dndFrom: "", dndTo: "", dndSkipUntil: 0, clipboardHistory: true, volumeHud: true, focusDnd: true, universalSearch: true, weatherCity: "", weatherUnit: "C", downloadsFolder: "", size: "normal", accent: "album", idleHide: false, hideWindowsBanners: true, powerAnim: true, powerAnimStyle: "cinematic", pet: true, userName: "", customPet: "" };
+const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true, lyrics: true, permissionWaitSeconds: 8, dnd: false, dndFrom: "", dndTo: "", dndSkipUntil: 0, clipboardHistory: true, volumeHud: true, focusDnd: true, universalSearch: true, weatherCity: "", weatherUnit: "C", downloadsFolder: "", size: "normal", accent: "album", idleHide: false, hideWindowsBanners: true, powerAnim: true, powerAnimStyle: "cinematic", pet: true, userName: "", customPet: "", screenshotShelf: true, agentUpdates: true };
 let config = { ...DEFAULTS };
 // only a missing file is created; one that can't be read or parsed (a hand edit in
 // progress, a half-written save) is left alone and the current settings stay in use.
@@ -88,6 +93,7 @@ function placeWindow() {
   const W = Math.round(BASE_W * scale()), H = Math.round(BASE_H * scale());
   win.setBounds({ x: Math.round(bounds.x + (bounds.width - W) / 2), y: bounds.y, width: W, height: H });
   win.webContents.setZoomFactor(scale());
+  appliedShape = null; applyShape(); // a new size or zoom moves the notch's pixels
 }
 function createWindow() {
   win = new BrowserWindow({
@@ -99,13 +105,30 @@ function createWindow() {
   placeWindow();
   win.setAlwaysOnTop(true, "screen-saver");
   win.setVisibleOnAllWorkspaces(true);
+  // click-through until the page reports the notch's box; then the window takes the notch's shape (applyShape)
   win.setIgnoreMouseEvents(true, { forward: true });
-  win.loadFile(path.join(__dirname, "renderer", "index.html"));
+  win.loadFile(path.join(__dirname, "..", "renderer", "index.html"));
   win.once("ready-to-show", () => win.showInactive());
   // Alt+F4 would destroy the notch while the app keeps running; only the tray's Quit closes it
   win.on("close", e => { if (!app.isQuitting) e.preventDefault(); });
 }
 
+// ---- window shape: only the notch itself takes the mouse (shape.js) ----
+// Once shaped, the window never needs click-through again, so files can be dropped on the pill straight away.
+// If setShape fails, the old way stays: click-through, taking the mouse only while it is over the notch.
+let notchBox = null, appliedShape = null, shaped = false;
+function applyShape() {
+  if (!win || win.isDestroyed() || !notchBox) return;
+  const [width, height] = win.getSize();
+  const r = shapeRect(notchBox, scale(), { width, height });
+  if (!r || sameRect(r, appliedShape)) return;
+  try {
+    win.setShape([r]);
+    appliedShape = r;
+    if (!shaped) { shaped = true; win.setIgnoreMouseEvents(false); }
+  } catch (e) { console.warn("shape", e.message); }
+}
+ipcMain.on("notchBox", (_, r) => { notchBox = r; applyShape(); });
 // ---- Spotify via Windows media session ----
 function lines(stream, fn) {
   // one decoder for the whole stream: a character split across chunks stays whole
@@ -407,9 +430,14 @@ function toggleDnd() {
   saveConfig(); sendDnd(); buildMenu();
 }
 let lastDnd = null;
+const missed = missedLog();
 function sendDnd(force) {
   const on = dndActive();
-  if (force || on !== lastDnd) { lastDnd = on; send("dnd", on); if (tray) buildMenu(); }
+  if (force || on !== lastDnd) {
+    // turning off: one line about what came in meanwhile
+    if (lastDnd && !on) { const m = missed.take(); if (m) send("dndSummary", m); }
+    lastDnd = on; send("dnd", on); if (tray) buildMenu();
+  }
 }
 ipcMain.on("toggleDnd", toggleDnd);
 
@@ -585,6 +613,7 @@ ipcMain.on("phoneStop", () => phoneDrop.stop());
 // ---- links: saved sites, and web searches opened in the browser ----
 ipcMain.handle("linksGet", () => loadLinks(app.getPath("userData")));
 ipcMain.handle("linksSave", (_, list) => saveLinks(app.getPath("userData"), list));
+ipcMain.on("copyText", (_, t) => { if (typeof t === "string" && t.length <= 100) clipboard.writeText(t); });
 ipcMain.on("openLink", (_, url) => { try { if (/^https?:$/.test(new URL(url).protocol)) shell.openExternal(url); } catch {} });
 
 // ---- timer tool: the same timers as the tray menu ----
@@ -613,14 +642,14 @@ const EMPTY_PNG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAA
 
 // ---- settings window ----
 let settingsWin = null;
-const APP_ICON = path.join(__dirname, "assets", "logo-apple", "icon.ico");
+const APP_ICON = path.join(__dirname, "..", "assets", "logo-apple", "icon.ico");
 function openSettings() {
   if (settingsWin && !settingsWin.isDestroyed()) return settingsWin.focus();
   settingsWin = new BrowserWindow({
-    width: 600, height: 760, title: "Islet settings", icon: APP_ICON, backgroundColor: "#0b0b0c", autoHideMenuBar: true,
-    webPreferences: { preload: path.join(__dirname, "settings", "preload.js") },
+    width: 780, height: 620, title: "Islet settings", icon: APP_ICON, backgroundColor: "#0b0b0c", autoHideMenuBar: true,
+    webPreferences: { preload: path.join(__dirname, "..", "settings", "preload.js") },
   });
-  settingsWin.loadFile(path.join(__dirname, "settings", "settings.html"));
+  settingsWin.loadFile(path.join(__dirname, "..", "settings", "settings.html"));
 }
 const settingsView = () => ({ ...config, hooks: bridge.installed(), login: login(), petName: loadPet(config.customPet)?.name || "" });
 // custom pet: pick a Codex Pets pack (.zip or pet.json) the user downloaded; it is checked and copied into userData/pets
@@ -656,6 +685,7 @@ ipcMain.handle("settings:save", (_, v) => {
     weatherCity: str(v.weatherCity, 100), weatherUnit: v.weatherUnit === "F" ? "F" : "C",
     calendarIcsUrl: /^(https?|webcal):\/\//i.test(str(v.calendarIcsUrl)) ? str(v.calendarIcsUrl).replace(/^webcal:/i, "https:") : "",
     downloadsFolder: str(v.downloadsFolder, 500), clipboardHistory: !!v.clipboardHistory, volumeHud: !!v.volumeHud, focusDnd: !!v.focusDnd, universalSearch: !!v.universalSearch,
+    screenshotShelf: !!v.screenshotShelf, agentUpdates: !!v.agentUpdates,
   };
   config = next;
   updateLyrics();
@@ -674,9 +704,9 @@ function openWelcome() {
   if (welcomeWin && !welcomeWin.isDestroyed()) return welcomeWin.focus();
   welcomeWin = new BrowserWindow({
     width: 560, height: 660, title: "Welcome to Islet", icon: APP_ICON, backgroundColor: "#0b0b0c", autoHideMenuBar: true,
-    webPreferences: { preload: path.join(__dirname, "settings", "welcome-preload.js") },
+    webPreferences: { preload: path.join(__dirname, "..", "settings", "welcome-preload.js") },
   });
-  welcomeWin.loadFile(path.join(__dirname, "settings", "welcome.html"));
+  welcomeWin.loadFile(path.join(__dirname, "..", "settings", "welcome.html"));
 }
 ipcMain.handle("welcome:load", () => ({
   agents: [".claude", ".codex"].some(d => fs.existsSync(path.join(os.homedir(), d))),
@@ -733,17 +763,30 @@ function nextScreen() {
 }
 
 // ---- weather + downloads ----
-function startWeather() { weather.poll(config.weatherCity.trim(), config.weatherUnit, w => send("weather", w)); }
+const weatherPath = () => path.join(app.getPath("userData"), "weather.json");
+function startWeather() {
+  const city = config.weatherCity.trim(), unit = config.weatherUnit;
+  let text = "";
+  try { text = fs.readFileSync(weatherPath(), "utf8"); } catch {}
+  const cached = weather.fromCache(text, city, unit);
+  if (cached) send("weather", cached);
+  weather.poll(city, unit, w => {
+    send("weather", w);
+    if (w && !w.error) fs.writeFile(weatherPath(), weather.toCache(city, unit, w), e => e && console.warn("weather cache", e.message));
+  });
+}
 // restart calendar, weather and downloads when their settings differ from what they run with.
 // Compared with the last applied values, not the previous `config`: the settings window
 // replaces `config` before the file watcher fires.
 let applied = null;
 function applyServices() {
-  const now = { ics: config.calendarIcsUrl, wx: [config.weatherCity, config.weatherUnit].join("|"), dl: config.downloadsFolder };
+  const now = { ics: config.calendarIcsUrl, wx: [config.weatherCity, config.weatherUnit].join("|"), dl: config.downloadsFolder, shots: config.screenshotShelf, agents: config.agentUpdates };
   if (!applied) { applied = now; return; } // first run: started by did-finish-load / startDownloads()
   if (now.ics !== applied.ics) calendar.poll(config.calendarIcsUrl, ev => send("calendar", ev));
   if (now.wx !== applied.wx) startWeather();
   if (now.dl !== applied.dl) startDownloads();
+  if (now.shots !== applied.shots) startScreenshots();
+  if (now.agents !== applied.agents) startAgentUpdates();
   applied = now;
 }
 function startDownloads() {
@@ -753,6 +796,27 @@ function startDownloads() {
     notifTargets.set(id, { file: done.path });
     send("downloadDone", { id, name: done.name });
   });
+}
+// a toast when Claude Code or Codex publishes a new release
+function startAgentUpdates() {
+  if (!config.agentUpdates) return agentUpdates.stop();
+  agentUpdates.start(app.getPath("userData"), u => send("agentUpdate", u));
+}
+// a new screenshot goes on the shelf, ready to drag into a chat or send with Phone drop
+function startScreenshots() {
+  if (!config.screenshotShelf) return screenshots.stop();
+  screenshots.watch(path.join(app.getPath("pictures"), "Screenshots"), async p => {
+    await shelfAdd([p]);
+    const id = ++notifCount;
+    notifTargets.set(id, { file: p });
+    send("screenshot", { id, name: path.basename(p) });
+  });
+}
+
+// ---- Bluetooth battery levels: shown in the System tool, with a toast when one runs low ----
+let btDevices = [];
+function startDevices() {
+  devices.poll(list => { btDevices = list; send("devices", list); }, d => send("deviceLow", d));
 }
 
 // ---- timer + pomodoro ----
@@ -783,7 +847,7 @@ function toggleStopwatch() {
 
 // ---- login item ----
 // unpackaged, electron.exe needs the app folder as an argument or it opens its default app
-const loginOpts = { path: process.execPath, args: app.isPackaged ? [] : [path.resolve(__dirname)] };
+const loginOpts = { path: process.execPath, args: app.isPackaged ? [] : [path.resolve(__dirname, "..")] };
 const login = () => app.getLoginItemSettings(loginOpts).openAtLogin;
 const setLogin = on => app.setLoginItemSettings({ ...loginOpts, openAtLogin: on });
 function enableLoginOnFirstRun() {
@@ -869,7 +933,7 @@ function makeTray() {
 app.whenReady().then(() => {
   loadConfig();
   spotify.init(app.getPath("userData"));
-  ipcMain.on("hover", (_, over) => win.setIgnoreMouseEvents(!over, { forward: true }));
+  ipcMain.on("hover", (_, over) => { if (!shaped) win.setIgnoreMouseEvents(!over, { forward: true }); });
   welcomePending = needsWelcome(app.getPath("userData"));
   if (!welcomePending) enableLoginOnFirstRun();
   createWindow();
@@ -884,17 +948,21 @@ app.whenReady().then(() => {
   for (const ev of ["on-ac", "on-battery", "resume"]) powerMonitor.on(ev, sendPower);
   powerMonitor.on("lock-screen", () => { locked = true; applyBanners(); helpers.pause("locked"); });
   powerMonitor.on("unlock-screen", () => { locked = false; applyBanners(); helpers.resume("locked"); });
-  powerMonitor.on("suspend", () => helpers.pause("asleep"));
-  powerMonitor.on("resume", () => helpers.resume("asleep"));
+  powerMonitor.on("suspend", () => { helpers.pause("asleep"); devices.stop(); });
+  powerMonitor.on("resume", () => { helpers.resume("asleep"); startDevices(); });
   win.webContents.on("did-finish-load", () => {
     sendPower();
     lastClaude = ""; iconFor = null; lastMediaLine = ""; readClaude(); refreshSpotifyExtras(); send("timerLabel", timerLabel); send("timer", timerEnd); send("stopwatch", stopwatchStart); sendDnd(true); send("shelf", shelf); sendTheme(); lyricsNow.resend();
     sendClips();
+    send("devices", btDevices);
     send("notes", loadNotes(app.getPath("userData")));
     calendar.poll(config.calendarIcsUrl, ev => send("calendar", ev));
     startWeather();
   });
   startDownloads();
+  startScreenshots();
+  startAgentUpdates();
+  startDevices();
   applyServices(); // remember what the services started with
   setInterval(readClaude, 2000);
   setInterval(refreshSpotifyExtras, 30000);
@@ -904,7 +972,8 @@ app.whenReady().then(() => {
   applyBanners();
   notifications.watch(async ({ aumid, xml, ...n }) => {
     if (aumid && bannersSaved && !(aumid in bannersSaved)) applyBanners([aumid]); // an app seen for the first time
-    if (!config.notifications || dndActive() || welcomePending) return;
+    if (!config.notifications || welcomePending) return;
+    if (dndActive()) return missed.add(n.app);
     // what a click opens: the toast's own link when it has one, else the app
     const launch = xml.match(/<toast[^>]*\blaunch="([^"]+)"/)?.[1]?.replace(/&amp;/g, "&");
     const protocol = /<toast[^>]*activationType="protocol"/.test(xml) && launch && /^[a-z][\w+.-]*:/i.test(launch);

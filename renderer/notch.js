@@ -9,9 +9,13 @@ let sessions = [], pinned = null;       // Claude projects; pinned = project the
 let timerEnd = 0, timerLabel = "Timer", stopwatchStart = 0, event = null, volShownUntil = 0, volume = null;
 let wx = null, dls = [];             // weather, downloads in progress
 let theme = { accent: "album", idleHide: false };
+// set from the system line further down, read by the first render() while the page loads
+let fgApp = "", privUse = [];
+// when things happened that the pet reacts to for a moment
+let likedAt = 0, doneAt = 0, plugAt = 0, openedAt = 0, dndOn = false;
 
 // ---- open / close; window is click-through except over the notch ----
-function setOpen(o) { notch.classList.toggle("open", o); notch.setAttribute("aria-expanded", o); }
+function setOpen(o) { if (o && !notch.classList.contains("open")) openedAt = Date.now(); notch.classList.toggle("open", o); notch.setAttribute("aria-expanded", o); }
 // the cat talks in the closed pill: a hello when Islet starts (by time of day on the first one each day),
 // a line when its mood changes, and now and then while idle; the pill widens for the text, then shrinks back
 const SAY_MS = 6000, CHAT_EVERY = 10 * 60000;
@@ -170,6 +174,7 @@ window.bridge.onPower(({ ac: now }) => {
   acTimer = setTimeout(() => {
     if (ac === null || now === ac) { ac = now; return; }
     ac = now;
+    if (now) plugAt = Date.now();
     if (theme?.powerAnim === false) return;
     if (!notch.classList.contains("hidden")) window.BlackHole.play(notch, now ? "on" : "off", battery?.level, { subtle: theme?.powerAnimStyle === "subtle" });
   }, 200);
@@ -185,13 +190,18 @@ navigator.getBattery?.().then(b => {
       el.title = b.charging ? `Charging, ${pct}%` : `Battery ${pct}%`;
     }
     $("batt").hidden = false;
-    $("power").textContent = b.charging ? (b.level >= 1 ? "Fully charged" : "Charging") : "On battery";
+    // Windows' own estimate, once it has one (Infinity until then)
+    const left = s => { const m = Math.round(s / 60); return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`; };
+    const est = b.charging ? b.chargingTime : b.dischargingTime, known = Number.isFinite(est) && est > 0;
+    $("power").textContent = b.charging ? (b.level >= 1 ? "Fully charged" : known ? `Full in ${left(est)}` : "Charging") : known ? `${left(est)} left` : "On battery";
     $("pillBatt").hidden = !b.charging; // pill only shows it while plugged in
     notch.classList.toggle("charging", b.charging);
   };
   show();
   b.addEventListener("chargingchange", show);
   b.addEventListener("levelchange", show);
+  b.addEventListener("chargingtimechange", show);
+  b.addEventListener("dischargingtimechange", show);
   // one short pop on plug-in, no loop
   let popTimer;
   b.addEventListener("chargingchange", () => {
@@ -277,6 +287,7 @@ $("next").onclick = () => window.bridge.control("next");
 $("prev").onclick = () => window.bridge.control("prev");
 let likeFlashUntil = 0;
 $("like").onclick = () => {
+  if (!(extras.connected && extras.liked)) likedAt = Date.now(); // liking, not unliking
   if (extras.connected) extras.liked = !extras.liked;
   else likeFlashUntil = Date.now() + 1200; // shortcut mode can't read liked state: just confirm the press
   render();
@@ -322,6 +333,7 @@ window.bridge.onClaude(list => {
     if (was && was !== s.status && (s.status === "waiting" || s.status === "done")) {
       if (pinned && pinned !== keyOf(s) && s.status === "waiting") pinned = null; // jump to the one asking
       peek(4000);
+      if (s.status === "done") doneAt = Date.now();
     }
     prevStatus[keyOf(s)] = s.status;
   }
@@ -418,6 +430,8 @@ function render() {
   const d = new Date(), date = $("date");
   const showVol = now < volShownUntil && volume !== null;
   $("clock").textContent = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  $("rowTime").textContent = $("clock").textContent; // stands in for the music bars while no song plays
+  $("pillTime").textContent = $("clock").textContent;
   date.textContent = showVol ? `Volume ${Math.round(volume * 100)}%` : d.toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" });
   date.classList.toggle("vol", showVol);
 
@@ -451,10 +465,11 @@ function render() {
   $("like").setAttribute("aria-pressed", likedNow);
   $("like").setAttribute("aria-label", extras.connected ? (extras.liked ? "Remove from Liked Songs" : "Save to Liked Songs") : "Like or unlike in Spotify");
   $("like").title = extras.connected ? "" : "Like / unlike (sends Alt+Shift+B to Spotify)";
-  // lyrics win over "up next" when the song has them
-  const lyricShown = !!(lyricLines && track);
-  $("upnext").textContent = lyricShown ? lyricNow : extras.next ? `Up next: ${extras.next.title} · ${extras.next.artist}` : "";
+  // lyrics win over "up next" when the song has them; a song without any says so once the lookup is done
+  const lyricShown = !!(lyricLines && track), noLyrics = lyricLines === false && !!track && !extras.next;
+  $("upnext").textContent = lyricShown ? lyricNow : extras.next ? `Up next: ${extras.next.title} · ${extras.next.artist}` : noLyrics ? "No synced lyrics for this song" : "";
   $("upnext").classList.toggle("lyric", lyricShown);
+  $("upnext").classList.toggle("none", noLyrics);
 
   // right of the controls + pill chip: running timer beats the next meeting
   let side = "", chip = "", soon = false, joinable = null;
@@ -509,7 +524,8 @@ function render() {
   const busy = track?.playing || chip || (s && (now - s.time < 60000 || s.status === "waiting"))
     || notch.classList.contains("talking") || notch.classList.contains("charging") || notch.classList.contains("bh") || $("pillPriv").childElementCount || !$("pillMoon").hasAttribute("hidden");
   notch.classList.toggle("quiet", !busy); // plain black pill, just the dot
-  notch.classList.toggle("playing", !!track?.playing); // the little equalizer shows only while music plays
+  notch.classList.toggle("playing", !!track?.playing);
+  notch.classList.toggle("eq", !!track?.playing && now - loudAt < 3000); // the little equalizer shows only while sound comes out
   notch.classList.toggle("idle", theme.idleHide && !busy);
   updatePet(now, busy);
   fitPill();
@@ -523,11 +539,13 @@ function updatePet(now, busy) {
   if (timerEnd && timerEnd <= now && /focus/i.test(timerLabel)) growPlant(); // a focus timer ran out
   // agents: one asking for you beats one working; a "working" session that went quiet over 2 minutes ago doesn't count
   const agent = sessions.some(x => x.status === "waiting") ? "waiting" : sessions.some(x => x.status === "working" && now - x.time < 120000) ? "working" : "";
-  const mood = window.Pet.pick({ now, battery, toastAt: lastToastAt, timerEnd, timerLabel, playing: !!track?.playing, quietSince, agent, plantUntil });
+  const mood = window.Pet.pick({ now, battery, toastAt: lastToastAt, timerEnd, timerLabel, playing: !!track?.playing, quietSince, agent, plantUntil, app: fgApp,
+    likedAt, doneAt, plugAt, openedAt, meetingAt: event?.start || 0, dnd: dndOn, hour: new Date(now).getHours(),
+    tempC: wx && !wx.error ? (wx.unit === "F" ? (wx.temp - 32) * 5 / 9 : wx.temp) : NaN });
   window.Pet.paint(pets, mood, theme.petPack);
   // hello once the name has arrived; then a word on each new mood (not the 4-second pop-up startle), or a chat after a quiet spell
   if (!saidMood) { if (theme.name !== undefined) { saidMood = mood; petSay(mood, true); } }
-  else if (mood !== saidMood && mood !== "alert") { saidMood = mood; petSay(mood); }
+  else if (mood !== saidMood && mood !== "alert" && mood !== "hello") { saidMood = mood; petSay(mood); } // a startle or a hello on opening is too brief for words
   else if (now - lastSaid > CHAT_EVERY && !notch.classList.contains("open")) petSay(mood);
 }
 // closed pill: as wide as what it shows, no empty black on either side
@@ -546,8 +564,8 @@ render();
 
 // ---- wave from Spotify's own audio: 24 frequency bands from spotify-audio.ps1 ----
 const bars = new Array(24).fill(0);
-let levels = null;
-window.bridge.onLevels(l => { levels = l; wakeWave(); });
+let levels = null, loudAt = 0; // loudAt: when the audio last moved, so a silent "playing" player shows no bars
+window.bridge.onLevels(l => { levels = l; if (l.some(v => v > 8)) loudAt = Date.now(); wakeWave(); });
 
 function drawWave(cv, n, gap, accent) {
   const x = cv.getContext("2d"), w = cv.width, h = cv.height, bw = (w - gap * (n - 1)) / n;
@@ -595,7 +613,9 @@ new MutationObserver(wakeWave).observe(notch, { attributes: true, attributeFilte
 
 // ---- mic / camera / screen capture in use ----
 window.bridge.onSystem(d => {
+  fgApp = d.app || "";
   const kinds = [["mic", "Microphone", d.mic], ["cam", "Camera", d.cam], ["screen", "Screen capture", d.screen]];
+  privUse = kinds.filter(([, , apps]) => apps?.length);
   for (const box of [$("pillPriv"), $("priv")]) {
     box.replaceChildren(...kinds.filter(([, , apps]) => apps?.length).map(([cls, label, apps]) => {
       const i = document.createElement("i");
@@ -605,6 +625,13 @@ window.bridge.onSystem(d => {
     }));
   }
 });
+
+// clicking the dots says which apps use the mic, camera or screen
+$("priv").onclick = () => {
+  if (!privUse.length) return;
+  toast({ app: "Privacy", badge: "●", color: privUse.some(([c]) => c === "cam") ? "#30d158" : "#ff9f0a", title: privUse.map(([, label]) => label).join(", ") + " in use", body: privUse.map(([, label, apps]) => `${label}: ${apps.join(", ")}`).join(" · ") });
+};
+window.bridge.onDndSummary(m => toast({ app: "Do Not Disturb", badge: "☾", color: "#5e5ce6", title: "While you were away", body: m.text }));
 
 // ---- album view ----
 $("artBtn").addEventListener("click", () => { if (track?.art) { $("albumv").hidden = false; renderAlbum(); } });
@@ -617,12 +644,18 @@ function renderAlbum() {
   $("albumv").querySelectorAll("img").forEach(i => { if (i.src !== track.art) i.src = track.art; });
   $("aTitle").textContent = track.title || "";
   $("aArtist").textContent = track.artist || "";
-  $("aLyric").textContent = lyricLines ? lyricNow : "";
+  $("aLyric").textContent = lyricLines ? lyricNow : lyricLines === false ? "No synced lyrics" : "";
+  // Spotify's queue, when the account is connected
+  const q = extras.queue || [];
+  $("aQueue").hidden = !q.length;
+  $("aQueue").replaceChildren(...(q.length ? [Object.assign(document.createElement("small"), { textContent: "Up next" })] : []),
+    ...q.map(s => Object.assign(document.createElement("li"), { textContent: `${s.title} · ${s.artist}` })));
 }
 setInterval(renderAlbum, 500);
 
 // ---- Do Not Disturb ----
 window.bridge.onDnd(on => {
+  dndOn = !!on;
   $("dndBtn").setAttribute("aria-pressed", on);
   $("dndBtn").title = on ? "Do Not Disturb is on. Click to turn off." : "Do Not Disturb: pause notification pop-ups";
   $("pillMoon").toggleAttribute("hidden", !on); // svg has no .hidden property
@@ -636,7 +669,7 @@ function drawHello() {
 
 // ---- tools: one panel at a time, in the tall view with the dock under it ----
 const PANELS = [...document.querySelectorAll(".panel")].map(p => p.id);
-const OPENED = { dashPanel: () => { refreshQuick(); drawHello(); }, phonePanel: startPhone, linksPanel: loadLinks, clockPanel: drawClocks, timerPanel: drawTimer, weatherPanel: drawWeather, unitsPanel: drawUnits, sysPanel: drawSys, aiPanel: drawAi };
+const OPENED = { dashPanel: () => { refreshQuick(); drawHello(); }, phonePanel: startPhone, linksPanel: loadLinks, clockPanel: drawClocks, timerPanel: drawTimer, weatherPanel: drawWeather, unitsPanel: drawUnits, colorPanel: drawColors, sysPanel: drawSys, aiPanel: drawAi };
 let openPanel = null;
 // toggle: a second click on the button that opened it closes it (the dock only switches)
 function showPanel(id, toggle = true) {
@@ -796,6 +829,7 @@ window.bridge.onWeather(w => { wx = w; render(); });
 window.bridge.onDownloads(list => { dls = list; render(); });
 window.bridge.onUpdateReady(v => toast({ update: true, app: "Islet", badge: "↑", color: "#30d158", title: `Islet ${v} is ready`, body: "Click to restart and update, or it installs when you quit.", ms: 10000 }));
 window.bridge.onDownloadDone(d => toast({ id: d.id, app: "Downloads", badge: "↓", color: "#0a84ff", title: d.name, body: "Downloaded. Click to show in folder." }));
+window.bridge.onScreenshot(d => toast({ id: d.id, app: "Screenshot", badge: "▣", color: "#30d158", title: d.name, body: "On the shelf. Drag it out, or click to show in folder." }));
 
 // ---- look ----
 window.bridge.onTheme(t => {
@@ -878,7 +912,8 @@ function drawWeather() {
   const ok = wx && !wx.error;
   $("wEmpty").hidden = ok; $("wEmpty").textContent = wx?.error || "Set a city in Settings to see the weather.";
   $("wPlace").textContent = ok ? wx.place : "Weather";
-  $("wMeta").textContent = ok && wx.humidity != null ? `Humidity ${wx.humidity}% · Wind ${wx.wind} km/h` : "";
+  // a forecast kept from last time says how old it is until the fresh one arrives
+  $("wMeta").textContent = ok && wx.humidity != null ? `Humidity ${wx.humidity}% · Wind ${wx.wind} km/h${wx.cached ? ` · from ${ago(Date.now() - wx.cached)} ago` : ""}` : "";
   $("wIcon").textContent = ok ? wx.icon : ""; $("wTemp").textContent = ok ? `${wx.temp}°${wx.unit}` : ""; $("wLabel").textContent = ok ? wx.label : "";
   const li = (top, icon, bottom) => { const e = document.createElement("li"); e.append(Object.assign(document.createElement("small"), { textContent: top }), Object.assign(document.createElement("span"), { textContent: icon }), Object.assign(document.createElement("b"), { textContent: bottom })); return e; };
   $("wHours").replaceChildren(...(ok ? wx.hours || [] : []).map(h => li(h.time, h.icon, `${h.temp}°`)));
@@ -901,7 +936,41 @@ function drawUnits(resetUnits) {
 $("uKind").onchange = () => drawUnits(true);
 for (const id of ["uIn", "uFrom", "uTo"]) $(id).oninput = () => drawUnits(false);
 
-// ---- system: CPU, memory, disk, battery, uptime ----
+// ---- colour picker: Chromium's EyeDropper samples any pixel on screen ----
+let colors = [];
+try { colors = window.Colors.addRecent(JSON.parse(localStorage.colors || "[]")); } catch {}
+function drawColors() {
+  const f = window.Colors.formats(colors[0]);
+  $("colorSwatch").style.setProperty("--c", f?.hex || "");
+  $("colorCodes").replaceChildren(...(f ? Object.values(f) : []).map(code => {
+    const b = Object.assign(document.createElement("button"), { textContent: code, title: "Copy" });
+    b.onclick = () => { window.bridge.copyText(code); b.textContent = "Copied"; setTimeout(() => { b.textContent = code; }, 900); };
+    return b;
+  }));
+  $("colorRecent").replaceChildren(...colors.slice(1).map(hex => {
+    const b = Object.assign(document.createElement("button"), { title: hex, ariaLabel: hex });
+    b.style.setProperty("--c", hex);
+    b.onclick = () => pickedColor(hex, false);
+    return b;
+  }));
+}
+function pickedColor(hex, copy = true) {
+  colors = window.Colors.addRecent(colors, hex);
+  try { localStorage.colors = JSON.stringify(colors); } catch {}
+  if (copy) window.bridge.copyText(colors[0]);
+  drawColors();
+}
+$("colorPick").hidden = !("EyeDropper" in window);
+if ($("colorPick").hidden) $("colorHint").textContent = "Picking from the screen isn't available in this version.";
+$("colorPick").onclick = async () => {
+  try { pickedColor((await new EyeDropper().open()).sRGBHex); } catch {} // Esc cancels
+};
+
+// ---- system: CPU, memory, disk, battery, Bluetooth batteries, uptime ----
+let btDevices = [];
+window.bridge.onDevices(list => { btDevices = list || []; });
+window.bridge.onDeviceLow(d => toast({ app: "Bluetooth", badge: "!", color: "#d1453b", title: `${d.name} battery low`, body: `${d.battery}% left. Charge it soon.` }));
+window.bridge.onAgentUpdate(u => toast({ app: u.name, badge: "↑", color: "#6b5bd6", title: `${u.name} ${u.version} is out`, body: `Update with: ${u.update}`, ms: 7000 }));
 const gb = n => `${(n / 1024 ** 3).toFixed(1)} GB`;
 async function drawSys() {
   const s = await window.bridge.sysStats();
@@ -910,10 +979,11 @@ async function drawSys() {
   const m = [["CPU", s.cpu, `${s.cpu}%`], ["Memory", Math.round(100 * used / s.mem.total), `${gb(used)} of ${gb(s.mem.total)}`]];
   if (s.disk) m.push(["Disk", Math.round(100 * (1 - s.disk.free / s.disk.total)), `${gb(s.disk.free)} free`]);
   if (battery) m.push(["Battery", Math.round(battery.level * 100), battery.charging ? "Charging" : "On battery"]);
+  for (const d of btDevices) m.push([d.name, d.battery, "Bluetooth"]);
   m.push(["Uptime", null, up >= 24 ? `${Math.floor(up / 24)}d ${up % 24}h` : `${up}h ${Math.floor(s.uptime % 3600 / 60)}m`]);
   $("sysMeters").replaceChildren(...m.map(([name, pct, text]) => {
     const d = document.createElement("div");
-    d.append(Object.assign(document.createElement("small"), { textContent: name }), Object.assign(document.createElement("strong"), { textContent: pct == null ? text : `${pct}%` }));
+    d.append(Object.assign(document.createElement("small"), { textContent: name, title: name }), Object.assign(document.createElement("strong"), { textContent: pct == null ? text : `${pct}%` }));
     if (pct != null) { const bar = document.createElement("i"); bar.style.setProperty("--p", `${pct}%`); d.append(bar, Object.assign(document.createElement("span"), { textContent: text })); }
     return d;
   }));
@@ -936,3 +1006,15 @@ window.bridge.onClaude(() => { if (openPanel === "aiPanel") drawAi(); });
 
 // a custom pet's sprite sheet steps through its frames; the cat animates with CSS instead
 setInterval(() => { if (theme.petPack && theme.pet !== false) window.Pet.tick([$("pillPet"), $("fullPet")], Date.now()); }, 125);
+
+// ---- the window's shape follows the notch (shape.js in main): only the notch takes the mouse, so a file
+// dragged onto the pill lands without hovering first. Sent on every size change, also mid-animation ----
+let boxSent = "";
+function sendBox() {
+  const r = notch.getBoundingClientRect();
+  const box = { x: Math.max(0, Math.round(r.left)), width: Math.round(r.width), height: Math.round(r.bottom) };
+  const key = `${box.x},${box.width},${box.height}`;
+  if (key !== boxSent) { boxSent = key; window.bridge.notchBox(box); }
+}
+new ResizeObserver(sendBox).observe(notch);
+sendBox();

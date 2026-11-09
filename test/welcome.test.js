@@ -3,7 +3,7 @@ const assert = require("node:assert");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
-const { needsWelcome, finishWelcome } = require("../welcome");
+const { needsWelcome, finishWelcome } = require("../src/welcome");
 
 function withDir(fn) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "islet-welcome-"));

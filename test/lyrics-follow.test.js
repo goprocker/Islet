@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert");
-const { follower } = require("../lyrics");
+const { follower } = require("../src/lyrics");
 
 const SONG = { title: "Song", artist: "Artist", duration: 120 };
 const LINES = [{ t: 10, line: "One" }];
@@ -93,4 +93,14 @@ test("small length changes between polls, or a length arriving late, ask nothing
   f.update(SONG);
   f.update({ ...SONG, duration: 121 });
   assert.strictEqual(asks.length, 1);
+});
+test("a song without lyrics is sent as false, also after a reload", async () => {
+  const { f, asks, got } = setup();
+  f.update(SONG);
+  asks[0].resolve(null);
+  await tick();
+  assert.deepStrictEqual(got, [null, false]);
+  got.length = 0;
+  f.resend();
+  assert.deepStrictEqual(got, [false]);
 });

@@ -2,7 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert");
 const fs = require("fs");
 const path = require("path");
-const { clipHistory } = require("../clip-history");
+const { clipHistory } = require("../src/clip-history");
 
 test("newest first, duplicates move to the front, capped at max", () => {
   const h = clipHistory({ max: 3 });
@@ -44,6 +44,6 @@ test("text() follows the view order and view() flattens whitespace", () => {
 });
 
 test("search reads the full clipboard value instead of its shortened view", () => {
-  const source = fs.readFileSync(path.join(__dirname, "../main.js"), "utf8");
+  const source = fs.readFileSync(path.join(__dirname, "../src/main.js"), "utf8");
   assert.match(source, /kind: "clip", text: clipStore\(\)\.text\(i\)/);
 });

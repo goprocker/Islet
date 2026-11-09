@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert");
-const { parse, change } = require("../volume-hud");
+const { parse, change } = require("../src/volume-hud");
 
 const r = (vol, mute = false, bright = null, mic = null) => ({ vol, mute, mic, bright });
 

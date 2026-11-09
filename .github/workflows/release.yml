@@ -2,7 +2,7 @@
 # SignPath Foundation when its secrets are set, and publishes the GitHub
 # release with the three files auto-update needs (.exe, .blockmap, latest.yml).
 #
-# Release: bump package.json, commit, then `git tag v2.3.2 && git push --tags`.
+# Release: bump package.json, commit, then `git tag vX.Y.Z && git push --tags`.
 #
 # SignPath setup (after approval): add repo secret SIGNPATH_API_TOKEN and repo
 # variable SIGNPATH_ORGANIZATION_ID. Until then releases go out unsigned.
@@ -31,6 +31,7 @@ jobs:
 
       - run: npm ci
       - run: npm test
+        shell: bash # expands test/*.test.js itself; PowerShell passed the pattern through and v2.3.2 failed
 
       - name: Build installer
         run: npx electron-builder --win nsis --publish never

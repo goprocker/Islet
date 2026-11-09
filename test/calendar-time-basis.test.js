@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert");
-const { nextEvent } = require("../calendar");
+const { nextEvent } = require("../src/calendar");
 
 const event = (start, rule, extra = "") => `BEGIN:VEVENT\nDTSTART${start}\n${rule ? `RRULE:${rule}\n` : ""}${extra}SUMMARY:Test\nEND:VEVENT`;
 function inZone(tz, fn) {
