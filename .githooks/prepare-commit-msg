@@ -1,4 +1,13 @@
 #!/bin/sh
+# Credits the owner's two accounts on every commit, in the message's last trailer block so
+# Git and GitHub read them. Messages Git writes itself (merge, squash, amend) stay as they are.
+case "${2-}" in merge|squash|commit) ;; *)
+    for t in 'goprocker <190861483+goprocker@users.noreply.github.com>' \
+             'gopinath2638 <336635493+gopinath2638@users.noreply.github.com>'; do
+        grep -qF "${t#* }" "$1" ||
+            git interpret-trailers --in-place --if-exists addIfDifferent --trailer "Co-authored-by: $t" "$1"
+    done ;;
+esac
 # Setting core.hooksPath here replaces a global hooks folder, so hand this hook on to it.
 # Contributors without a global folder skip this.
 global="$HOME/.git-hooks/prepare-commit-msg"
