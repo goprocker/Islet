@@ -1,10 +1,15 @@
-# Adds the owner's two accounts as co-authors to pull requests from anyone else, so the
-# squash commit on main credits them whoever merges (needs the repo's squash default set to
-# "pull request title and description"). Skips the owner's own PRs and bots, except that
-# Dependabot PRs get the lines when the owner approves them: workflows Dependabot triggers
-# only get a read-only token, but the owner's review runs with a writable one.
+# Credits the owner's two accounts as co-authors on the squash commit of every pull request
+# from someone else (the owner's own commits get them from .githooks/prepare-commit-msg).
+# - Outside PRs: the lines go at the end of the PR body, which the squash commit uses (needs
+#   the repo's squash default set to "pull request title and description"). GitHub wraps body
+#   lines longer than 72 characters, which breaks a trailer, so gopinath2638 is credited by
+#   its shorter account email instead of the 79-character noreply line.
+# - Dependabot PRs: GitHub appends Dependabot's own trailers after the body, so lines in the
+#   body would not be the last block. When the owner approves, this sets auto-merge with an
+#   explicit commit message instead. Workflows Dependabot triggers only get a read-only token,
+#   but the owner's review runs with a writable one.
 # pull_request_target runs this file from main and never checks out the PR's code; the PR
-# body only reaches the shell through an environment variable.
+# body and title only reach the shell through environment variables.
 name: Co-author owner on outside PRs
 on:
   pull_request_target:
@@ -12,24 +17,40 @@ on:
   pull_request_review:
     types: [submitted]
 permissions:
+  contents: write
   pull-requests: write
+env:
+  OWNER: "Co-authored-by: goprocker <190861483+goprocker@users.noreply.github.com>"
+  SECOND: "Co-authored-by: gopinath2638 <gopinath2638@gmail.com>"
 jobs:
   coauthor:
     if: >-
-      (github.event_name == 'pull_request_target' &&
-       github.event.pull_request.user.type != 'Bot' &&
-       !contains(fromJSON('["goprocker","gopinath2638"]'), github.event.pull_request.user.login)) ||
-      (github.event_name == 'pull_request_review' &&
-       github.event.pull_request.user.login == 'dependabot[bot]' &&
-       contains(fromJSON('["goprocker","gopinath2638"]'), github.event.review.user.login))
+      github.event_name == 'pull_request_target' &&
+      github.event.pull_request.user.type != 'Bot' &&
+      !contains(fromJSON('["goprocker","gopinath2638"]'), github.event.pull_request.user.login)
     runs-on: ubuntu-latest
     steps:
       - name: Add the Co-authored-by lines
         run: |
           body=$(gh pr view "$PR" --repo "$REPO" --json body --jq .body)
+          # Drop the old 79-character gopinath2638 line; GitHub wraps it and the trailer breaks.
+          clean=$(printf '%s\n' "$body" | grep -vF '336635493+gopinath2638@' | sed -e :a -e '/^\n*$/{$d;N;ba' -e '}')
           add=""
-          printf '%s' "$body" | grep -qF '190861483+goprocker@' || add="${add}Co-authored-by: goprocker <190861483+goprocker@users.noreply.github.com>"$'\n'
-          printf '%s' "$body" | grep -qF '336635493+gopinath2638@' || add="${add}Co-authored-by: gopinath2638 <336635493+gopinath2638@users.noreply.github.com>"$'\n'
-          [ -z "$add" ] && exit 0
-          gh pr edit "$PR" --repo "$REPO" --body "$body"$'\n\n'"$add"
+          printf '%s' "$clean" | grep -qF "$OWNER" || add="${add}${OWNER}"$'\n'
+          printf '%s' "$clean" | grep -qF "$SECOND" || add="${add}${SECOND}"$'\n'
+          [ -z "$add" ] && [ "$clean" = "$body" ] && exit 0
+          # Join an existing trailer block at the end of the body instead of starting a new one.
+          if printf '%s' "$clean" | tail -n 1 | grep -q '^Co-authored-by:'; then sep=$'\n'; else sep=$'\n\n'; fi
+          gh pr edit "$PR" --repo "$REPO" --body "${clean}${add:+$sep$add}"
         env: { GH_TOKEN: "${{ github.token }}", PR: "${{ github.event.pull_request.number }}", REPO: "${{ github.repository }}" }
+  dependabot:
+    if: >-
+      github.event_name == 'pull_request_review' &&
+      github.event.review.state == 'approved' &&
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      contains(fromJSON('["goprocker","gopinath2638"]'), github.event.review.user.login)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Merge with the Co-authored-by lines once checks pass
+        run: gh pr merge "$PR" --repo "$REPO" --auto --squash --subject "$TITLE (#$PR)" --body "$OWNER"$'\n'"$SECOND"
+        env: { GH_TOKEN: "${{ github.token }}", PR: "${{ github.event.pull_request.number }}", REPO: "${{ github.repository }}", TITLE: "${{ github.event.pull_request.title }}" }
