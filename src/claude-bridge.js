@@ -107,6 +107,9 @@ function start({ onStatus, onPermission, onPermissionGone, permissionWait }) {
         for (const [id, p] of pending) if (p.session === e.session) settle(id, null, gone);
       }
       if (e.event !== "PermissionRequest") { res.writeHead(200).end("{}"); return; }
+      const detail = summarize(e.tool, e.toolInput, e.cwd);
+      // If the exact resource cannot be described, leave approval to the agent's own UI.
+      if (!detail) { res.writeHead(200).end("{}"); return; }
       const id = nextId++;
       // The agent holds its approval prompt while we wait, so keep this short.
       const ms = Math.min(Math.max(waitMs(), 0), 24000);
@@ -115,7 +118,7 @@ function start({ onStatus, onPermission, onPermissionGone, permissionWait }) {
       pending.set(id, { res, timer, session: e.session, nonce: e.nonce });
       // hook gave up (Claude Code timed it out or the user answered in the terminal)
       res.on("close", () => { if (pending.has(id) && !res.writableEnded) settle(id, null, gone); });
-      onPermission({ id, session: e.session, project: path.basename(e.cwd || ""), tool: e.tool, detail: summarize(e.tool, e.toolInput) });
+      onPermission({ id, session: e.session, agent: e.agent === "codex" ? "codex" : "claude", project: e.cwd ? path.resolve(e.cwd) : "", tool: e.tool, detail });
     });
   });
   server.on("error", err => console.warn("claude bridge", err.message));
@@ -138,11 +141,11 @@ function answer(id, decision, onGone) {
   settle(id, decision === "allow" || decision === "deny" ? decision : null, onGone);
 }
 
-function summarize(tool, input) {
+function summarize(tool, input, cwd = "") {
   if (!input) return "";
   // the command is what gets approved; the agent's description is only its own claim about it
   if (input.command) return String(input.command).slice(0, 2000) + (input.description ? `\n(${String(input.description).slice(0, 140)})` : "");
-  if (input.file_path) return path.basename(input.file_path);
+  if (input.file_path) return path.resolve(cwd || ".", String(input.file_path));
   if (input.url) return input.url;
   if (input.pattern) return input.pattern;
   return "";
