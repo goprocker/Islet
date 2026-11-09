@@ -67,13 +67,14 @@
   // custom: {id, sheet, rows} draws that sprite sheet instead of the cat
   function paint(els, mood, custom) {
     for (const el of els) {
-      if (el.dataset.kind !== (custom ? "custom" : "cat") || (custom && el.dataset.petId !== custom.id)) {
+      const customImage = custom ? `url("${custom.sheet}")` : "";
+      if (el.dataset.kind !== (custom ? "custom" : "cat") || (custom && (el.dataset.petId !== custom.id || el.dataset.rows !== String(custom.rows) || el.style?.backgroundImage !== customImage))) {
         el.dataset.kind = custom ? "custom" : "cat";
         el.dataset.petId = custom ? custom.id : "";
         el.innerHTML = custom ? "" : SVG;
         if (custom) el.classList.add("custom"); else el.classList.remove("custom");
         if (el.style) {
-          el.style.backgroundImage = custom ? `url("${custom.sheet}")` : "";
+          el.style.backgroundImage = customImage;
           el.style.backgroundSize = custom ? `800% ${custom.rows * 100}%` : "";
         }
         if (custom) el.dataset.rows = custom.rows;

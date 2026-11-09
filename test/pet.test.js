@@ -42,6 +42,14 @@ test("paint sets one mood class and leaves the DOM alone when it is unchanged", 
   assert.ok(MOODS.includes(el.dataset.mood));
 });
 
+test("paint refreshes artwork when the same custom pet ID is reimported", () => {
+  const classes = new Set();
+  const el = { dataset: {}, innerHTML: "", style: {}, classList: { remove: (...c) => c.forEach(x => classes.delete(x)), add: c => classes.add(c) } };
+  paint([el], "idle", { id: "robot", rows: 9, sheet: "data:image/png;base64,old" });
+  paint([el], "idle", { id: "robot", rows: 9, sheet: "data:image/png;base64,new" });
+  assert.strictEqual(el.style.backgroundImage, 'url("data:image/png;base64,new")');
+});
+
 test("the first open of the day greets by time and name, then the cat talks about its mood", () => {
   const { line } = require("../renderer/pet");
   assert.strictEqual(line({ hour: 9, name: "Gopinath", mood: "idle", firstToday: true }), "Good morning, Gopinath!");
