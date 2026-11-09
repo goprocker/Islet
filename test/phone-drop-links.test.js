@@ -37,3 +37,19 @@ test("an aborted upload leaves no partial file", { skip: !lan }, async () => {
     assert.strictEqual(calls, 0);
   } finally { pd.stop(); }
 });
+
+test("stopping Phone drop closes an active transfer", { skip: !lan }, async () => {
+  const d = fs.mkdtempSync(os.tmpdir() + "/pd");
+  const url = await pd.start({ dir: d, shelf: () => [], onFile() {} });
+  const u = new URL(url);
+  const closed = new Promise((resolve, reject) => {
+    const s = net.connect(u.port, u.hostname, () => {
+      s.write(`POST ${u.pathname}up?name=x.txt HTTP/1.1\r\nHost:x\r\nContent-Length: 100000\r\n\r\nPARTIAL`);
+      pd.stop();
+    });
+    s.on("close", resolve); s.on("error", e => e.code === "ECONNRESET" ? resolve() : reject(e));
+  });
+  await closed;
+  await new Promise(r => setTimeout(r, 50));
+  assert.deepStrictEqual(fs.readdirSync(d), []);
+});

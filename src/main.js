@@ -421,8 +421,11 @@ function dndActive(d = new Date()) {
 }
 // the button and tray item: turn whatever is on off (manual and today's window), or turn it on
 function toggleDnd() {
-  if (focusDnd) { focusDnd = false; sendDnd(); buildMenu(); return; } // turning it off during focus ends just the focus part
-  if (dndActive()) { config.dnd = false; config.dndSkipUntil = dndWindowEnd() || config.dndSkipUntil; }
+  if (dndActive()) {
+    focusDnd = false;
+    config.dnd = false;
+    config.dndSkipUntil = dndWindowEnd() || config.dndSkipUntil;
+  }
   else { config.dnd = true; config.dndSkipUntil = 0; }
   saveConfig(); sendDnd(); buildMenu();
 }
@@ -485,7 +488,7 @@ ipcMain.handle("search", (_, q) => {
   const items = [
     ...appIndex.map(a => ({ id: "app:" + (a.appId || a.file), title: a.name, sub: "App", kind: "app", file: a.file, appId: a.appId })),
     ...universalSearch.COMMANDS.map(c => ({ ...c, kind: "command" })),
-    ...(config.clipboardHistory ? clipStore().view().map((c, i) => ({ id: "clip:" + i, title: oneLine(c.text), sub: "Clipboard: copy again", kind: "clip", text: c.text })) : []),
+    ...(config.clipboardHistory ? clipStore().view().map((c, i) => ({ id: "clip:" + i, title: oneLine(c.text), sub: "Clipboard: copy again", kind: "clip", text: clipStore().text(i) })) : []),
     ...notes.map((l, i) => ({ id: "note:" + i, title: oneLine(l), sub: "Note: copy line", kind: "note", text: l })),
   ];
   const top = universalSearch.withFiles(universalSearch.rank(q, items, 8), universalSearch.rank(q, fileIndex, 3, 60)); // files must contain what was typed
