@@ -398,8 +398,11 @@ function dndActive(d = new Date()) {
 }
 // the button and tray item: turn whatever is on off (manual and today's window), or turn it on
 function toggleDnd() {
-  if (focusDnd) { focusDnd = false; sendDnd(); buildMenu(); return; } // turning it off during focus ends just the focus part
-  if (dndActive()) { config.dnd = false; config.dndSkipUntil = dndWindowEnd() || config.dndSkipUntil; }
+  if (dndActive()) {
+    focusDnd = false;
+    config.dnd = false;
+    config.dndSkipUntil = dndWindowEnd() || config.dndSkipUntil;
+  }
   else { config.dnd = true; config.dndSkipUntil = 0; }
   saveConfig(); sendDnd(); buildMenu();
 }
