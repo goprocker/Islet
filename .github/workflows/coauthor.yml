@@ -1,19 +1,27 @@
 # Adds the owner's two accounts as co-authors to pull requests from anyone else, so the
 # squash commit on main credits them whoever merges (needs the repo's squash default set to
-# "pull request title and description"). Skips the owner's own PRs and bots.
+# "pull request title and description"). Skips the owner's own PRs and bots, except that
+# Dependabot PRs get the lines when the owner approves them: workflows Dependabot triggers
+# only get a read-only token, but the owner's review runs with a writable one.
 # pull_request_target runs this file from main and never checks out the PR's code; the PR
 # body only reaches the shell through an environment variable.
 name: Co-author owner on outside PRs
 on:
   pull_request_target:
     types: [opened, reopened, edited]
+  pull_request_review:
+    types: [submitted]
 permissions:
   pull-requests: write
 jobs:
   coauthor:
     if: >-
-      github.event.pull_request.user.type != 'Bot' &&
-      !contains(fromJSON('["goprocker","gopinath2638"]'), github.event.pull_request.user.login)
+      (github.event_name == 'pull_request_target' &&
+       github.event.pull_request.user.type != 'Bot' &&
+       !contains(fromJSON('["goprocker","gopinath2638"]'), github.event.pull_request.user.login)) ||
+      (github.event_name == 'pull_request_review' &&
+       github.event.pull_request.user.login == 'dependabot[bot]' &&
+       contains(fromJSON('["goprocker","gopinath2638"]'), github.event.review.user.login))
     runs-on: ubuntu-latest
     steps:
       - name: Add the Co-authored-by lines
