@@ -64,17 +64,25 @@ test("a failed lock retries after a wait, then stays locked", windows, () => {
   withAuth(auth => {
     let now = 1000;
     Date.now = () => now;
-    auth.ensureToken();
+    assert.strictEqual(auth.ensureToken(), "");
     assert.strictEqual(calls, 1);
-    auth.ensureToken();
+    assert.strictEqual(auth.ensureToken(), "");
     assert.strictEqual(calls, 1, "no retry straight away");
     now += 60000; fail = false;
-    auth.ensureToken();
+    assert.ok(auth.ensureToken());
     assert.strictEqual(calls, 2, "tried again");
     now += 60000;
     auth.ensureToken();
     assert.strictEqual(calls, 2, "locked now");
   }, { icacls: () => { calls++; if (fail) throw new Error("denied"); } });
+});
+
+test("a new token is removed and unusable when ACL hardening fails", windows, () => {
+  withAuth((auth, home) => {
+    assert.strictEqual(auth.ensureToken(), "");
+    assert.strictEqual(auth.readToken(), "");
+    assert.strictEqual(fs.existsSync(path.join(home, ".islet-hook-token")), false);
+  }, { icacls: () => { throw new Error("denied"); } });
 });
 
 test("a real icacls leaves a throwaway secret usable by this user only", windows, () => {

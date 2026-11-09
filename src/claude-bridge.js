@@ -72,6 +72,8 @@ function validEvent(e) {
 
 let waitMs = () => 8000;
 function start({ onStatus, onPermission, onPermissionGone, permissionWait }) {
+  const token = hookAuth.ensureToken();
+  if (!token) return false;
   if (permissionWait) waitMs = permissionWait;
   // a request answered anywhere (notch, terminal, timeout) means Claude is working again
   const gone = id => {
@@ -82,7 +84,7 @@ function start({ onStatus, onPermission, onPermissionGone, permissionWait }) {
   const server = http.createServer((req, res) => {
     // the hook checks who is listening before it sends anything
     const hello = req.method === "GET" && req.url.match(/^\/hello\?nonce=([0-9a-f]{32})$/);
-    if (hello) { res.writeHead(200, { "Content-Type": "application/json" }).end(JSON.stringify({ proof: hookAuth.sign(hookAuth.ensureToken(), "hello", hello[1]) })); return; }
+    if (hello) { res.writeHead(200, { "Content-Type": "application/json" }).end(JSON.stringify({ proof: hookAuth.sign(token, "hello", hello[1]) })); return; }
     if (req.method !== "POST" || req.url !== "/claude") { res.writeHead(404).end(); return; }
     // one decoder for the whole body: a character split across chunks stays whole
     const decoder = new StringDecoder("utf8");
@@ -95,7 +97,7 @@ function start({ onStatus, onPermission, onPermissionGone, permissionWait }) {
     req.on("end", () => {
       const text = body + decoder.end();
       // only Islet's own hook knows the secret, so other programs and web pages can't fake an event or a card
-      if (!hookAuth.verify(hookAuth.ensureToken(), "event", text, req.headers["x-islet-proof"])) { res.writeHead(401).end(); return; }
+      if (!hookAuth.verify(token, "event", text, req.headers["x-islet-proof"])) { res.writeHead(401).end(); return; }
       let e; try { e = JSON.parse(text); } catch { res.writeHead(400).end(); return; }
       if (!validEvent(e)) { res.writeHead(400).end(); return; }
       const st = statusFor(e.event, e.message);
@@ -123,6 +125,7 @@ function start({ onStatus, onPermission, onPermissionGone, permissionWait }) {
   });
   server.on("error", err => console.warn("claude bridge", err.message));
   server.listen(PORT, "127.0.0.1");
+  return true;
 }
 
 function settle(id, decision, onGone) {

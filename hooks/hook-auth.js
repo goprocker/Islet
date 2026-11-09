@@ -21,23 +21,27 @@ function account(username = os.userInfo().username, domain = process.env.USERDOM
 let locked = "", failed = { path: "", at: 0 };
 function lock() {
   const target = file();
-  if (process.platform !== "win32" || locked === target) return;
-  if (failed.path === target && Date.now() - failed.at < RETRY_MS) return;
+  if (process.platform !== "win32" || locked === target) return true;
+  if (failed.path === target && Date.now() - failed.at < RETRY_MS) return false;
   try {
     execFileSync("icacls", [target, "/inheritance:r", "/remove:g", "*S-1-5-18", "*S-1-5-32-544", "/grant:r", `${account()}:F`], { stdio: "ignore", windowsHide: true });
     locked = target;
+    return true;
   } catch (e) {
     failed = { path: target, at: Date.now() };
     console.warn("couldn't restrict the hook secret", e.message);
+    return false;
   }
 }
 function ensureToken() {
   const have = readToken();
-  if (have) { lock(); return have; }
+  if (have) return lock() ? have : "";
   const token = crypto.randomBytes(32).toString("hex");
   fs.writeFileSync(file(), token, { mode: 0o600 });
-  lock();
-  return token;
+  if (lock()) return token;
+  // A newly-created secret with an unknown ACL must not remain available for use.
+  try { fs.rmSync(file(), { force: true }); } catch {}
+  return "";
 }
 const sign = (token, what, nonce) => crypto.createHmac("sha256", token).update(`${what}:${nonce}`).digest("hex");
 function verify(token, what, nonce, proof) {
