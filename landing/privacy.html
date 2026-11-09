@@ -43,7 +43,7 @@ a{color:inherit}
 <h2>The Islet app</h2>
 <p>Islet has no account, no analytics and no tracking. Its data stays on your PC, and none of it is sent to us. That includes settings, notifications, agent activity, clipboard history and shelf file paths.</p>
 <p>Clipboard history is kept in memory only and never written to disk. The agent hook server listens on your PC only (127.0.0.1).</p>
-<p><strong>Phone drop:</strong> when you open it, Islet starts a temporary server on your local network so your phone can send files. The link holds a random secret, files go straight from your phone to your PC without passing through any outside server, and the server stops when you close Phone drop or after 10 minutes.</p>
+<p><strong>Phone drop:</strong> when you open it, Islet starts a temporary server on your local network so your phone can send files. The QR secret stays in the browser fragment and every list, upload and download uses a one-time signed proof, so captured HTTP requests cannot reveal or replay that reusable capability. File contents still travel over local HTTP, so use Phone drop only on a private network you trust. Files go straight from your phone to your PC without passing through any outside server, and the server stops when you close Phone drop or after 10 minutes.</p>
 <p>The installed app checks GitHub for updates and downloads them from there. GitHub receives your IP address when it does, and this check can't be turned off. Otherwise, the app only goes online for these optional features:</p>
 <ul>
 <li><strong>Lyrics:</strong> sends the song title and artist to lrclib.net.</li>
