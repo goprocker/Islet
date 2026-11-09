@@ -199,7 +199,7 @@ Settings → **Choose a pet…** loads a pet in the Codex Pets format (a `.zip` 
 Get `Islet-Setup-<version>.exe` from the [**latest release**](https://github.com/goprocker/Islet/releases/latest) and run it. It installs for everyone on the PC (Windows asks for admin permission once), adds a Start menu entry and a firewall rule for Phone drop on private networks. From 2.1 on, Islet downloads updates from GitHub Releases by itself and installs them when you quit, or from tray → **Restart to update**.
 
 > [!NOTE]
-> The installer is unsigned for now: code signing is pending with the [SignPath Foundation](https://signpath.org). SmartScreen may warn about it, and **Smart App Control** may block it. If it's blocked, run from source instead.
+> Production releases are Authenticode-signed by **SignPath Foundation**. Islet's updater pins that publisher identity and release CI refuses to publish when signing is unavailable or the certificate subject is unexpected.
 
 ### Run from source
 
