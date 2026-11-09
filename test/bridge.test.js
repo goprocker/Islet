@@ -76,6 +76,8 @@ test("Codex permission requests can be answered from Islet", () => {
   assert.strictEqual(res.code, 0, "the hook response stays open while the notch asks");
   assert.deepStrictEqual(seen, [["cx1", "waiting"]]);
   assert.strictEqual(permissions.length, 1);
+  assert.strictEqual(permissions[0].agent, "codex");
+  assert.strictEqual(permissions[0].project, path.resolve("C:/work/app"));
   assert.strictEqual(permissions[0].detail, "npm test");
   bridge.answer(permissions[0].id, "allow", id => gone.push(id));
   assert.strictEqual(res.code, 200);
@@ -122,4 +124,21 @@ test("a long command is kept well past the old 140 characters", () => {
   const { summarize } = require("../src/claude-bridge");
   const tail = "x".repeat(1000) + "rm -rf build";
   assert.ok(summarize("Bash", { command: tail }).endsWith("rm -rf build"));
+});
+
+test("file approvals show the complete rooted resource path", () => {
+  const { summarize } = require("../src/claude-bridge");
+  assert.strictEqual(summarize("Read", { file_path: "../safe/settings.json" }, "C:/work/app"), path.resolve("C:/work/safe/settings.json"));
+  assert.notStrictEqual(
+    summarize("Read", { file_path: "C:/safe/settings.json" }),
+    summarize("Read", { file_path: "C:/sensitive/settings.json" })
+  );
+});
+
+test("blank or unknown permission input falls back to the agent UI", () => {
+  const { permissions, request } = startBridge({ permissionWait: () => 1000 });
+  const res = request(JSON.stringify({ event: "PermissionRequest", agent: "claude", session: "s", cwd: "C:/work", nonce: "b".repeat(32), tool: "Unknown", toolInput: {} }));
+  assert.strictEqual(res.code, 200);
+  assert.strictEqual(res.writableEnded, true);
+  assert.deepStrictEqual(permissions, []);
 });

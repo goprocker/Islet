@@ -4,8 +4,8 @@
 #
 # Release: bump package.json, commit, then `git tag vX.Y.Z && git push --tags`.
 #
-# SignPath setup (after approval): add repo secret SIGNPATH_API_TOKEN and repo
-# variable SIGNPATH_ORGANIZATION_ID. Until then releases go out unsigned.
+# SignPath setup: add repo secret SIGNPATH_API_TOKEN and repo variable
+# SIGNPATH_ORGANIZATION_ID. A release fails closed when either is unavailable.
 name: Release
 
 on:
@@ -33,6 +33,14 @@ jobs:
       - run: npm test
         shell: bash # expands test/*.test.js itself; PowerShell passed the pattern through and v2.3.2 failed
 
+      - name: Require production signing configuration
+        shell: bash
+        env:
+          SIGNPATH_ORGANIZATION_ID: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+        run: |
+          test -n "$SIGNPATH_API_TOKEN" || { echo "SIGNPATH_API_TOKEN is required" >&2; exit 1; }
+          test -n "$SIGNPATH_ORGANIZATION_ID" || { echo "SIGNPATH_ORGANIZATION_ID is required" >&2; exit 1; }
+
       - name: Build installer
         run: npx electron-builder --win nsis --publish never
 
@@ -49,7 +57,6 @@ jobs:
           path: dist/Islet-Setup-${{ steps.ver.outputs.version }}.exe
 
       - name: Sign with SignPath
-        if: env.SIGNPATH_API_TOKEN != ''
         uses: signpath/github-action-submit-signing-request@v1
         with:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
@@ -62,12 +69,21 @@ jobs:
 
       # Signing changes the file, so the blockmap and latest.yml hashes must be redone.
       - name: Replace installer with signed copy
-        if: env.SIGNPATH_API_TOKEN != ''
         shell: bash
         run: |
           exe="Islet-Setup-${{ steps.ver.outputs.version }}.exe"
           cp "signed/$exe" "dist/$exe"
           node build/rehash.js "dist/$exe"
+
+      - name: Verify expected Windows publisher
+        shell: pwsh
+        run: |
+          $exe = "dist/Islet-Setup-${{ steps.ver.outputs.version }}.exe"
+          $signature = Get-AuthenticodeSignature -LiteralPath $exe
+          if ($signature.Status -ne 'Valid') { throw "Installer signature is $($signature.Status), not Valid" }
+          if ($signature.SignerCertificate.Subject -notmatch '(^|,\s*)CN=SignPath Foundation(,|$)') {
+            throw "Unexpected publisher: $($signature.SignerCertificate.Subject)"
+          }
 
       - name: Publish release
         shell: bash

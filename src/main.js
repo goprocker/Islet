@@ -364,13 +364,13 @@ function readClaude() {
 }
 ipcMain.on("permissionAnswer", (_, id, decision) => bridge.answer(id, decision, gone => send("permissionGone", gone)));
 function startBridge() {
-  bridge.ensureToken(); // the hook needs it from its first run
-  bridge.start({
+  const started = bridge.start({
     onStatus: () => { lastClaude = ""; readClaude(); },
     onPermission: p => send("permission", p),
     onPermissionGone: id => send("permissionGone", id),
     permissionWait: () => Number(config.permissionWaitSeconds ?? 8) * 1000,
   });
+  if (!started) { console.warn("hook bridge disabled: couldn't secure its authentication token"); return; }
   if (welcomePending) return; // the welcome window asks first
   // hooks are installed once automatically; the tray item can remove them
   const flag = path.join(app.getPath("userData"), "hooks-set");

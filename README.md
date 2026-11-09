@@ -199,7 +199,7 @@ Settings → **Choose a pet…** loads a pet in the Codex Pets format (a `.zip` 
 Get `Islet-Setup-<version>.exe` from the [**latest release**](https://github.com/goprocker/Islet/releases/latest) and run it. It installs for everyone on the PC (Windows asks for admin permission once), adds a Start menu entry and a firewall rule for Phone drop on private networks. From 2.1 on, Islet downloads updates from GitHub Releases by itself and installs them when you quit, or from tray → **Restart to update**.
 
 > [!NOTE]
-> The installer is unsigned for now: code signing is pending with the [SignPath Foundation](https://signpath.org). SmartScreen may warn about it, and **Smart App Control** may block it. If it's blocked, run from source instead.
+> Production releases are Authenticode-signed by **SignPath Foundation**. Islet's updater pins that publisher identity and release CI refuses to publish when signing is unavailable or the certificate subject is unexpected.
 
 ### Run from source
 
@@ -339,7 +339,7 @@ Useful page globals: `setOpen(true)`, `render()`.
 
 ## 🔐 Privacy
 
-Everything runs on your PC. Network calls go only to GitHub (update checks in the installed app), lrclib.net (title and artist, when lyrics are on), Open-Meteo (the city name), your ICS link, and Spotify if you connect it. Unpinned clipboard history stays in memory; pinned items and your notes are saved in `%APPDATA%\islet`. The shelf stores file paths only. Search keeps file names in memory and never reads inside files. The hook server listens on `127.0.0.1` only. Phone drop runs a temporary server on your local network behind a random secret link, and stops when you close it or after 10 minutes. Full policy: [islet.loopfound.in/privacy](https://islet.loopfound.in/privacy).
+Everything runs on your PC. Network calls go only to GitHub (update checks in the installed app), lrclib.net (title and artist, when lyrics are on), Open-Meteo (the city name), your ICS link, and Spotify if you connect it. Unpinned clipboard history stays in memory; pinned items and your notes are saved in `%APPDATA%\islet`. The shelf stores file paths only. Search keeps file names in memory and never reads inside files. The hook server listens on `127.0.0.1` only. Phone drop runs a temporary server on your local network and stops when you close it or after 10 minutes. Its QR secret stays in the browser fragment (which HTTP never sends); uploads, lists and downloads use one-time HMAC proofs, so captured LAN traffic cannot reveal or replay the reusable capability. File contents still travel over local HTTP, so use Phone drop only on a private network you trust. Full policy: [islet.loopfound.in/privacy](https://islet.loopfound.in/privacy).
 
 ## 🩺 Troubleshooting
 
