@@ -21,3 +21,9 @@ Examples include:
 - exposure of notification, clipboard, calendar or Spotify data
 
 Problems in Electron, Claude Code, Codex or Windows themselves should go to those projects, unless Islet's use of them causes the problem.
+
+## Windows release signing
+
+Production installers and update payloads must be Authenticode-signed with the publisher identity `SignPath Foundation`. The updater pins that identity in `package.json`, and the release workflow fails before publishing if SignPath credentials are absent, signing fails, or the resulting certificate subject is different.
+
+For a planned certificate rotation, update the pinned `win.publisherName` and the workflow subject check in the same reviewed release, then verify an upgrade from the last trusted version before publishing. For an emergency rollback, remove the affected GitHub release, restore the last trusted signed artifacts and `latest.yml`, and do not weaken or remove publisher verification to make a replacement install.

@@ -72,6 +72,8 @@ function validEvent(e) {
 
 let waitMs = () => 8000;
 function start({ onStatus, onPermission, onPermissionGone, permissionWait }) {
+  const token = hookAuth.ensureToken();
+  if (!token) return false;
   if (permissionWait) waitMs = permissionWait;
   // a request answered anywhere (notch, terminal, timeout) means Claude is working again
   const gone = id => {
@@ -82,7 +84,7 @@ function start({ onStatus, onPermission, onPermissionGone, permissionWait }) {
   const server = http.createServer((req, res) => {
     // the hook checks who is listening before it sends anything
     const hello = req.method === "GET" && req.url.match(/^\/hello\?nonce=([0-9a-f]{32})$/);
-    if (hello) { res.writeHead(200, { "Content-Type": "application/json" }).end(JSON.stringify({ proof: hookAuth.sign(hookAuth.ensureToken(), "hello", hello[1]) })); return; }
+    if (hello) { res.writeHead(200, { "Content-Type": "application/json" }).end(JSON.stringify({ proof: hookAuth.sign(token, "hello", hello[1]) })); return; }
     if (req.method !== "POST" || req.url !== "/claude") { res.writeHead(404).end(); return; }
     // one decoder for the whole body: a character split across chunks stays whole
     const decoder = new StringDecoder("utf8");
@@ -95,7 +97,7 @@ function start({ onStatus, onPermission, onPermissionGone, permissionWait }) {
     req.on("end", () => {
       const text = body + decoder.end();
       // only Islet's own hook knows the secret, so other programs and web pages can't fake an event or a card
-      if (!hookAuth.verify(hookAuth.ensureToken(), "event", text, req.headers["x-islet-proof"])) { res.writeHead(401).end(); return; }
+      if (!hookAuth.verify(token, "event", text, req.headers["x-islet-proof"])) { res.writeHead(401).end(); return; }
       let e; try { e = JSON.parse(text); } catch { res.writeHead(400).end(); return; }
       if (!validEvent(e)) { res.writeHead(400).end(); return; }
       const st = statusFor(e.event, e.message);
@@ -107,6 +109,9 @@ function start({ onStatus, onPermission, onPermissionGone, permissionWait }) {
         for (const [id, p] of pending) if (p.session === e.session) settle(id, null, gone);
       }
       if (e.event !== "PermissionRequest") { res.writeHead(200).end("{}"); return; }
+      const detail = summarize(e.tool, e.toolInput, e.cwd);
+      // If the exact resource cannot be described, leave approval to the agent's own UI.
+      if (!detail) { res.writeHead(200).end("{}"); return; }
       const id = nextId++;
       // The agent holds its approval prompt while we wait, so keep this short.
       const ms = Math.min(Math.max(waitMs(), 0), 24000);
@@ -115,11 +120,12 @@ function start({ onStatus, onPermission, onPermissionGone, permissionWait }) {
       pending.set(id, { res, timer, session: e.session, nonce: e.nonce });
       // hook gave up (Claude Code timed it out or the user answered in the terminal)
       res.on("close", () => { if (pending.has(id) && !res.writableEnded) settle(id, null, gone); });
-      onPermission({ id, session: e.session, project: path.basename(e.cwd || ""), tool: e.tool, detail: summarize(e.tool, e.toolInput) });
+      onPermission({ id, session: e.session, agent: e.agent === "codex" ? "codex" : "claude", project: e.cwd ? path.resolve(e.cwd) : "", tool: e.tool, detail });
     });
   });
   server.on("error", err => console.warn("claude bridge", err.message));
   server.listen(PORT, "127.0.0.1");
+  return true;
 }
 
 function settle(id, decision, onGone) {
@@ -138,11 +144,11 @@ function answer(id, decision, onGone) {
   settle(id, decision === "allow" || decision === "deny" ? decision : null, onGone);
 }
 
-function summarize(tool, input) {
+function summarize(tool, input, cwd = "") {
   if (!input) return "";
   // the command is what gets approved; the agent's description is only its own claim about it
   if (input.command) return String(input.command).slice(0, 2000) + (input.description ? `\n(${String(input.description).slice(0, 140)})` : "");
-  if (input.file_path) return path.basename(input.file_path);
+  if (input.file_path) return path.resolve(cwd || ".", String(input.file_path));
   if (input.url) return input.url;
   if (input.pattern) return input.pattern;
   return "";

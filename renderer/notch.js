@@ -375,7 +375,8 @@ function showPerm() {
   $("perm").hidden = !p;
   if (!p) { if (!hovering) setOpen(false); return; }
   pinned = null;
-  $("permTool").textContent = `Allow ${p.tool}${p.project ? ` in ${p.project}` : ""}?`;
+  const agent = p.agent === "codex" ? "Codex" : "Claude";
+  $("permTool").textContent = `Allow ${agent} ${p.tool}${p.project ? ` in ${p.project}` : ""}?`;
   $("permDetail").textContent = p.detail;
   $("permDetail").parentElement.scrollTop = 0;
   clearTimeout(hoverTimer);

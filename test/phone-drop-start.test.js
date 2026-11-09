@@ -10,7 +10,7 @@ const opts = () => ({ dir: fs.mkdtempSync(os.tmpdir() + "/pds") + "/up", shelf: 
 test("concurrent start calls share one startup and resolve to the same URL", { skip: !lan }, async () => {
   try {
     const [a, b, c] = await Promise.all([pd.start(opts()), pd.start(opts()), pd.start(opts())]);
-    assert.match(a, /^http:\/\/.+:\d+\/[0-9a-f]{32}\/$/);
+    assert.match(a, /^http:\/\/.+:\d+\/[0-9a-f]{16}\/#(?:[0-9a-f]{64})$/);
     assert.strictEqual(b, a);
     assert.strictEqual(c, a);
     assert.strictEqual(await pd.start(opts()), a, "a later call reuses the running session");
