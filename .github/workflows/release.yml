@@ -5,7 +5,8 @@
 # Release: bump package.json, commit, then `git tag vX.Y.Z && git push --tags`.
 #
 # SignPath setup (after approval): add repo secret SIGNPATH_API_TOKEN and repo
-# variable SIGNPATH_ORGANIZATION_ID. Until then releases go out unsigned.
+# variable SIGNPATH_ORGANIZATION_ID. Until then releases go out unsigned; once the
+# token is set, a release fails if signing fails or the publisher is not SignPath Foundation.
 name: Release
 
 on:
@@ -68,6 +69,17 @@ jobs:
           exe="Islet-Setup-${{ steps.ver.outputs.version }}.exe"
           cp "signed/$exe" "dist/$exe"
           node build/rehash.js "dist/$exe"
+
+      - name: Verify expected Windows publisher
+        if: env.SIGNPATH_API_TOKEN != ''
+        shell: pwsh
+        run: |
+          $exe = "dist/Islet-Setup-${{ steps.ver.outputs.version }}.exe"
+          $signature = Get-AuthenticodeSignature -LiteralPath $exe
+          if ($signature.Status -ne 'Valid') { throw "Installer signature is $($signature.Status), not Valid" }
+          if ($signature.SignerCertificate.Subject -notmatch '(^|,\s*)CN=SignPath Foundation(,|$)') {
+            throw "Unexpected publisher: $($signature.SignerCertificate.Subject)"
+          }
 
       - name: Publish release
         shell: bash

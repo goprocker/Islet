@@ -375,7 +375,8 @@ function showPerm() {
   $("perm").hidden = !p;
   if (!p) { if (!hovering) setOpen(false); return; }
   pinned = null;
-  $("permTool").textContent = `Allow ${p.tool}${p.project ? ` in ${p.project}` : ""}?`;
+  const agent = p.agent === "codex" ? "Codex" : "Claude";
+  $("permTool").textContent = `Allow ${agent} ${p.tool}${p.project ? ` in ${p.project}` : ""}?`;
   $("permDetail").textContent = p.detail;
   $("permDetail").parentElement.scrollTop = 0;
   clearTimeout(hoverTimer);
@@ -706,8 +707,8 @@ $("qTiles").onclick = e => {
   quickBusy = true;
   quickDo(kind, kind === "airplane" ? t.getAttribute("aria-pressed") !== "true" : undefined).finally(() => { quickBusy = false; });
 };
-let quickTimer;
 for (const [id, kind, scale] of [["qBright", "bright", 1], ["qVol", "vol", 100]]) {
+  let quickTimer;
   $(id).oninput = () => { $(id + "N").textContent = $(id).value; clearTimeout(quickTimer); quickTimer = setTimeout(() => quickDo(kind, $(id).value / scale), 120); };
 }
 for (const b of document.querySelectorAll("[data-panel]")) b.onclick = () => showPanel(b.dataset.panel, !b.closest(".dock"));

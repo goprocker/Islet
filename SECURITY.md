@@ -21,3 +21,9 @@ Examples include:
 - exposure of notification, clipboard, calendar or Spotify data
 
 Problems in Electron, Claude Code, Codex or Windows themselves should go to those projects, unless Islet's use of them causes the problem.
+
+## Windows release signing
+
+Installers are currently unsigned: signing waits on a code-signing certificate. Once the SignPath secrets are set, the release workflow signs the installer and fails before publishing if signing fails or the certificate subject is not `SignPath Foundation`. Pinning that publisher for updates (`win.publisherName` in `package.json`) should be added only after a signed release has shipped, so users on unsigned builds can still update.
+
+For a planned certificate rotation, update the workflow subject check (and the pinned `win.publisherName`, once added) in the same reviewed release, then verify an upgrade from the last trusted version before publishing. For an emergency rollback, remove the affected GitHub release, restore the last trusted signed artifacts and `latest.yml`, and do not weaken or remove publisher verification to make a replacement install.
