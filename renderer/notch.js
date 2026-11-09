@@ -673,8 +673,8 @@ $("qTiles").onclick = e => {
   quickBusy = true;
   quickDo(kind, kind === "airplane" ? t.getAttribute("aria-pressed") !== "true" : undefined).finally(() => { quickBusy = false; });
 };
-let quickTimer;
 for (const [id, kind, scale] of [["qBright", "bright", 1], ["qVol", "vol", 100]]) {
+  let quickTimer;
   $(id).oninput = () => { $(id + "N").textContent = $(id).value; clearTimeout(quickTimer); quickTimer = setTimeout(() => quickDo(kind, $(id).value / scale), 120); };
 }
 for (const b of document.querySelectorAll("[data-panel]")) b.onclick = () => showPanel(b.dataset.panel, !b.closest(".dock"));
