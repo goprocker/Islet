@@ -39,7 +39,6 @@
       "target": "nsis",
       "artifactName": "Islet-Setup-${version}.${ext}",
       "icon": "assets/logo-apple/icon.ico",
-      "publisherName": "SignPath Foundation",
       "signAndEditExecutable": true
     },
     "nsis": {
