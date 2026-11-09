@@ -10,6 +10,7 @@ const crypto = require("crypto");
 const LIFETIME = 10 * 60 * 1000;
 const MAX_FILE = 2 * 1024 ** 3;
 let server = null, secret = "", stopTimer = null, url = "", starting = null, abortStart = null;
+const connections = new Set();
 
 // the first private IPv4 address of a real adapter (Wi-Fi or Ethernet)
 function lanAddress(ifaces = os.networkInterfaces()) {
@@ -107,6 +108,10 @@ function start({ dir, shelf, onFile }) {
     }
     res.writeHead(404); res.end();
   });
+  srv.on("connection", socket => {
+    connections.add(socket);
+    socket.once("close", () => connections.delete(socket));
+  });
   starting = new Promise((resolve, reject) => {
     // closing a server that is still binding never fires its listen callback, so stop() rejects through here
     abortStart = () => reject(new Error("Phone drop was stopped."));
@@ -128,6 +133,8 @@ function start({ dir, shelf, onFile }) {
 function stop() {
   clearTimeout(stopTimer);
   server?.close();
+  for (const socket of connections) socket.destroy();
+  connections.clear();
   abortStart?.();
   abortStart = null;
   server = null; starting = null; url = ""; secret = "";

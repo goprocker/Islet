@@ -1,5 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert");
+const fs = require("fs");
+const path = require("path");
 const { state, action, TILES } = require("../src/quick-settings");
 
 test("radio states become booleans, a missing radio is null", () => {
@@ -28,4 +30,10 @@ test("actions are whitelisted and normalised", () => {
 
 test("settings tiles map to their ms-settings page, radio tiles never carry a uri", () => {
   for (const t of TILES) assert.strictEqual(!!action(t.id)?.uri, t.kind === "settings");
+});
+
+test("brightness and volume sliders keep independent debounce timers", () => {
+  const source = fs.readFileSync(path.join(__dirname, "../renderer/notch.js"), "utf8");
+  const sliders = source.slice(source.indexOf('for (const [id, kind, scale]'), source.indexOf('for (const b of document.querySelectorAll', source.indexOf('for (const [id, kind, scale]')));
+  assert.match(sliders, /\{\s*let quickTimer;/);
 });
