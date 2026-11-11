@@ -50,6 +50,8 @@ app.on("second-instance", () => (welcomePending ? openWelcome() : openSettings()
 
 // ---- settings (userData/config.json) ----
 const { checkConfig, clock } = require("./config-check");
+const devTools = require("./dev-tools");
+const githubNotify = require("./github-notify");
 const configPath = () => path.join(app.getPath("userData"), "config.json");
 const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true, lyrics: true, permissionWaitSeconds: 8, dnd: false, dndFrom: "", dndTo: "", dndSkipUntil: 0, clipboardHistory: true, volumeHud: true, focusDnd: true, universalSearch: true, weatherCity: "", weatherUnit: "C", downloadsFolder: "", size: "normal", accent: "album", idleHide: false, hideWindowsBanners: true, powerAnim: true, powerAnimStyle: "cinematic", pet: true, userName: "", customPet: "", screenshotShelf: true, agentUpdates: true };
 let config = { ...DEFAULTS };
@@ -620,6 +622,37 @@ ipcMain.on("phoneStop", () => phoneDrop.stop());
 ipcMain.handle("linksGet", () => loadLinks(app.getPath("userData")));
 ipcMain.handle("linksSave", (_, list) => saveLinks(app.getPath("userData"), list));
 ipcMain.on("copyText", (_, t) => { if (typeof t === "string" && t.length <= 100) clipboard.writeText(t); });
+// ---- dev panel: git, local ports, snippets, clipboard decoding (dev-tools.js) ----
+const runOut = (cmd, args, opts = {}) => new Promise(resolve => execFile(cmd, args, { windowsHide: true, timeout: 8000, maxBuffer: 4e6, ...opts }, (err, out) => resolve(err ? null : String(out))));
+ipcMain.handle("devGit", async (_, cwd) => {
+  if (typeof cwd !== "string" || !cwd || !path.isAbsolute(cwd)) return null;
+  try { if (!fs.statSync(cwd).isDirectory()) return null; } catch { return null; }
+  const out = await runOut("git", ["status", "--porcelain=v2", "--branch"], { cwd });
+  if (out === null) return null;
+  return { ...devTools.parseGit(out), repo: path.basename(cwd), cwd };
+});
+let devPorts = [];
+ipcMain.handle("devPorts", async () => {
+  const [net, tasks] = await Promise.all([runOut("netstat", ["-ano", "-p", "tcp"]), runOut("tasklist", ["/fo", "csv", "/nh"])]);
+  const names = devTools.parseTasklist(tasks);
+  devPorts = devTools.parseNetstat(net).map(p => ({ ...p, name: names.get(p.pid) || "" })).filter(p => !devTools.SYSTEM_PROCESS.test(p.name));
+  return devPorts;
+});
+// only a process the panel just listed can be stopped, and never Islet itself
+ipcMain.handle("devKill", async (_, pid) => {
+  if (!devPorts.some(p => p.pid === pid) || pid === process.pid) return false;
+  return (await runOut("taskkill", ["/pid", String(pid), "/t", "/f"])) !== null;
+});
+ipcMain.on("devOpenPort", (_, port) => { if (Number.isInteger(port) && port > 0 && port < 65536) shell.openExternal(`http://localhost:${port}`); });
+ipcMain.handle("snippetsGet", () => devTools.loadSnippets(app.getPath("userData")));
+ipcMain.handle("snippetsSave", (_, list) => devTools.saveSnippets(app.getPath("userData"), list));
+ipcMain.on("copySnippet", (_, t) => { if (typeof t === "string" && t.length <= 4000) { lastClip = t; clipboard.writeText(t).catch(e => console.warn("clipboard", e.message)); } });
+ipcMain.handle("devDecode", async () => devTools.decode(await clipboard.readText()));
+ipcMain.handle("snippetFromClipboard", async () => {
+  const dir = app.getPath("userData"), text = String(await clipboard.readText()).trim();
+  if (!text) return devTools.loadSnippets(dir);
+  return devTools.saveSnippets(dir, [{ name: text.split(/\r?\n/)[0].slice(0, 60), text }, ...devTools.loadSnippets(dir)]);
+});
 ipcMain.on("openLink", (_, url) => { try { if (/^https?:$/.test(new URL(url).protocol)) shell.openExternal(url); } catch {} });
 
 // ---- timer tool: the same timers as the tray menu ----
@@ -968,6 +1001,8 @@ app.whenReady().then(() => {
   startDownloads();
   startScreenshots();
   startAgentUpdates();
+  // GitHub notifications through the gh CLI; quiet when gh isn't installed or signed in
+  if (config.githubNotify !== false) githubNotify.start(list => send("github", list));
   startDevices();
   applyServices(); // remember what the services started with
   setInterval(readClaude, 2000);

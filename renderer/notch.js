@@ -132,6 +132,7 @@ function endToast() {
 $("notch").querySelector(".toastv").addEventListener("click", () => {
   if (current?.update) window.bridge.installUpdate();
   else if (current?.link) window.bridge.joinMeeting(current.link);
+  else if (current?.open) window.bridge.openLink(current.open);
   else if (current?.id) window.bridge.openNotification(current.id);
   endToast();
 });
@@ -693,7 +694,7 @@ function drawHello() {
 
 // ---- tools: one panel at a time, in the tall view with the dock under it ----
 const PANELS = [...document.querySelectorAll(".panel")].map(p => p.id);
-const OPENED = { dashPanel: () => { refreshQuick(); drawHello(); }, phonePanel: startPhone, linksPanel: loadLinks, clockPanel: drawClocks, timerPanel: drawTimer, weatherPanel: drawWeather, unitsPanel: drawUnits, colorPanel: drawColors, sysPanel: drawSys, aiPanel: drawAi };
+const OPENED = { dashPanel: () => { refreshQuick(); drawHello(); }, phonePanel: startPhone, linksPanel: loadLinks, clockPanel: drawClocks, timerPanel: drawTimer, weatherPanel: drawWeather, unitsPanel: drawUnits, colorPanel: drawColors, sysPanel: drawSys, aiPanel: drawAi, devPanel: drawDev };
 let openPanel = null;
 // toggle: a second click on the button that opened it closes it (the dock only switches)
 function showPanel(id, toggle = true) {
@@ -1012,6 +1013,55 @@ async function drawSys() {
     return d;
   }));
 }
+
+// ---- Dev: git for the project an agent works in, local servers, snippets, clipboard decoding ----
+const el = (tag, props = {}, ...kids) => { const e = Object.assign(document.createElement(tag), props); e.append(...kids); return e; };
+function drawDev() { drawGit(); drawPorts(); drawSnippets(); drawDecode(); }
+async function drawGit() {
+  // the project of the session shown in the pill, else the newest one with a folder
+  const s = [shown(), ...sessions].find(x => x?.cwd);
+  const g = s ? await window.bridge.devGit(s.cwd) : null;
+  $("gitRepo").textContent = g ? g.repo : "";
+  if (!g) {
+    $("gitLine").textContent = s ? "Not a git repository" : "Start Claude Code or Codex in a project to see its git status";
+    $("gitFiles").replaceChildren();
+    return;
+  }
+  const sync = [g.ahead ? `↑${g.ahead}` : "", g.behind ? `↓${g.behind}` : ""].filter(Boolean).join(" ") || "in sync";
+  $("gitLine").replaceChildren(el("b", { textContent: g.branch }), el("span", { textContent: ` · ${sync} · ${g.files.length ? `${g.files.length} changed` : "clean"}` }));
+  $("gitFiles").replaceChildren(...g.files.slice(0, 30).map(f => el("li", { title: f.file }, el("i", { textContent: f.code, className: `c${f.code === "?" ? "N" : f.code}` }), el("span", { textContent: f.file }))));
+}
+async function drawPorts() {
+  const list = await window.bridge.devPorts();
+  $("portsList").replaceChildren(...(list.length ? list.map(p => {
+    const open = el("button", { className: "link", textContent: "Open", title: `Open localhost:${p.port}`, onclick: () => window.bridge.devOpenPort(p.port) });
+    const kill = el("button", { className: "link stop", textContent: "Stop", title: `End ${p.name || "process"} (${p.pid})` });
+    kill.onclick = async () => { kill.disabled = true; await window.bridge.devKill(p.pid); drawPorts(); };
+    return el("li", {}, el("b", { textContent: `:${p.port}` }), el("span", { textContent: p.name.replace(/\.exe$/i, "") || `pid ${p.pid}` }), open, kill);
+  }) : [el("li", { className: "none", textContent: "No dev servers running" })]));
+}
+$("portsRefresh").onclick = drawPorts;
+let snippets = [];
+async function drawSnippets() {
+  snippets = await window.bridge.snippetsGet();
+  $("snipList").replaceChildren(...snippets.map((sn, i) => {
+    const copy = el("button", { className: "snip", title: sn.text }, el("b", { textContent: sn.name }), el("code", { textContent: sn.text }));
+    copy.onclick = () => { window.bridge.copySnippet(sn.text); copy.classList.add("copied"); setTimeout(() => copy.classList.remove("copied"), 900); };
+    const del = el("button", { className: "link", textContent: "×", title: "Remove" });
+    del.onclick = async () => { snippets.splice(i, 1); await window.bridge.snippetsSave(snippets); drawSnippets(); };
+    return el("li", {}, copy, del);
+  }));
+}
+$("snipAdd").onclick = async () => { await window.bridge.snippetFromClipboard(); drawSnippets(); };
+async function drawDecode() {
+  const d = await window.bridge.devDecode();
+  $("decTitle").textContent = d ? d.title : "";
+  $("decText").textContent = d ? d.text : "Copy JSON, a JWT, Base64, a timestamp or a URL-encoded string to decode it here.";
+  $("decText").classList.toggle("none", !d);
+}
+window.bridge.onGithub(list => {
+  for (const n of list.slice(0, 3)) toast({ app: "GitHub", badge: "⌥", color: "#24292f", title: n.title, body: `${n.reason} · ${n.repo}`, open: n.url, ms: 7000 });
+});
 
 // ---- AI coding: every Claude Code and Codex session with its last actions ----
 function drawAi() {

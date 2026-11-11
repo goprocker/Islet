@@ -632,3 +632,33 @@ button.link:hover { background: var(--secondary); }
 .notch:not(.playing) #wave { display: none; }
 .rowtime { flex: none; font-size: 12px; font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .notch.playing .rowtime { display: none; }
+
+/* ---- Dev panel: git, ports, snippets, clipboard decoding ---- */
+.dev { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.dev .dcol { display: flex; flex-direction: column; gap: 6px; min-height: 0; min-width: 0; }
+.dev h4 { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.dev h4 small { text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dev h4 .link { margin-left: auto; text-transform: none; letter-spacing: 0; font-weight: 400; }
+.gitline { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gitline b { color: var(--text); font-family: "Cascadia Code", Consolas, monospace; font-weight: 600; }
+.dev ul { flex: 0 1 auto; gap: 2px; }
+.gitfiles { max-height: 34%; }
+.gitfiles li, .ports li { display: flex; align-items: center; gap: 8px; font-size: 11.5px; padding: 3px 8px; border-radius: 6px; background: var(--card); box-shadow: inset 0 0 0 1px var(--border); min-width: 0; }
+.gitfiles li span, .ports li span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: "Cascadia Code", Consolas, monospace; font-size: 11px; }
+.gitfiles i { font-style: normal; font-weight: 700; width: 10px; text-align: center; font-family: "Cascadia Code", Consolas, monospace; }
+.gitfiles .cM { color: var(--warn); } .gitfiles .cA, .gitfiles .cN { color: var(--ok); } .gitfiles .cD { color: #ff453a; } .gitfiles .cR, .gitfiles .cU { color: #0a84ff; }
+.ports li b { font-family: "Cascadia Code", Consolas, monospace; color: var(--accent); min-width: 44px; }
+.ports li .stop:hover { color: #ff453a; }
+.ports li.none, .decoded.none { color: var(--muted); background: none; box-shadow: none; font-family: inherit; }
+.snips { flex: 1 1 auto; max-height: 52%; }
+.snips li { display: flex; align-items: center; gap: 2px; }
+.snips .snip { flex: 1; min-width: 0; height: auto; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 4px 8px; border-radius: 6px; background: var(--card); box-shadow: inset 0 0 0 1px var(--border); text-align: left; font: inherit; color: var(--text); transition: box-shadow .2s, background .2s; }
+.snips .snip:hover { background: var(--secondary); }
+.snips .snip b { font-size: 11.5px; font-weight: 600; }
+.snips .snip code { font-family: "Cascadia Code", Consolas, monospace; font-size: 10.5px; color: var(--muted); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.snips .snip.copied { box-shadow: inset 0 0 0 1px var(--ok); }
+.snips .snip.copied b::after { content: " · Copied"; color: var(--ok); font-weight: 400; }
+.decoded { flex: 1; min-height: 40px; overflow: auto; margin: 0; padding: 6px 8px; border-radius: 6px; background: var(--card); box-shadow: inset 0 0 0 1px var(--border); font: 10.5px/1.45 "Cascadia Code", Consolas, monospace; color: #d4d4d8; white-space: pre-wrap; word-break: break-all; user-select: text; }
+.dev h4, .gitline { flex: none; }
+.dev li button.link { width: auto; flex: none; display: inline-block; padding: 2px 6px; }
+.dev .snips li button.snip { width: auto; display: flex; white-space: normal; }
