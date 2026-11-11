@@ -728,8 +728,16 @@ let openPanel = null;
 function showPanel(id, toggle = true) {
   if (toggle && id === openPanel) id = null;
   if (openPanel === "phonePanel" && id !== "phonePanel") window.bridge.phoneStop();
+  const was = openPanel;
   openPanel = id;
-  for (const p of PANELS) $(p).hidden = p !== id;
+  for (const p of PANELS) { $(p).hidden = p !== id; $(p).classList.remove("leaving"); }
+  // tool to tool: the old panel stays a moment and fades out under the new one
+  if (was && id && was !== id && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    const old = $(was);
+    old.hidden = false;
+    old.classList.add("leaving");
+    setTimeout(() => { if (openPanel !== was) { old.classList.remove("leaving"); old.hidden = true; } }, 150);
+  }
   for (const b of document.querySelectorAll("[data-panel]")) b.setAttribute("aria-pressed", b.dataset.panel === id);
   notch.classList.toggle("dash", !!id);
   if (id) OPENED[id]?.();
