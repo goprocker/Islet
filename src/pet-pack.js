@@ -58,9 +58,10 @@ function unpack(file) {
   if (!/\.zip$/i.test(file)) return { dir: path.dirname(file) };
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "islet-pet-"));
   try {
-    // paths travel in the environment, never in the command text, so spaces and quotes are safe
+    // paths travel in the environment, never in the command text, so spaces and quotes are safe;
+    // PSModulePath is dropped because one inherited from PowerShell 7 makes 5.1 load the wrong Expand-Archive
     try {
-      execFileSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", UNZIP], { windowsHide: true, timeout: 30000, stdio: "pipe", env: { ...process.env, ISLET_ZIP: file, ISLET_OUT: tmp } });
+      execFileSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", UNZIP], { windowsHide: true, timeout: 30000, stdio: "pipe", env: { ...process.env, PSModulePath: undefined, ISLET_ZIP: file, ISLET_OUT: tmp } });
     } catch (e) {
       throw new Error(e.status === 3 ? "That zip is too big to be a pet." : "Couldn't unpack that zip.");
     }
