@@ -6,7 +6,7 @@ const api = p => fetch("https://api.github.com/repos/goprocker/Islet" + p, { hea
 (async () => {
   try {
     const [repo, rels] = await Promise.all([api(""), api("/releases?per_page=100")]);
-    const downloads = rels.flatMap(r => r.assets).filter(a => a.name.endsWith(".exe")).reduce((n, a) => n + a.download_count, 0);
+    const downloads = rels.flatMap(r => r.assets).filter(a => a.name.startsWith("Islet-Setup-") && a.name.endsWith(".exe")).reduce((n, a) => n + a.download_count, 0);
     fs.mkdirSync("public", { recursive: true });
     fs.writeFileSync("public/stats.json", JSON.stringify({ downloads, stars: repo.stargazers_count, forks: repo.forks_count }));
     console.log("stats baked:", downloads, "downloads,", repo.stargazers_count, "stars,", repo.forks_count, "forks");

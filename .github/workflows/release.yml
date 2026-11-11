@@ -1,6 +1,7 @@
 # Builds the Windows installer from a version tag, signs it through the
 # SignPath Foundation when its secrets are set, and publishes the GitHub
-# release with the three files auto-update needs (.exe, .blockmap, latest.yml).
+# release: the installer people download (Islet-Setup), and for auto-update a copy
+# named Islet-Update with its .blockmap and latest.yml, so updates aren't counted as downloads.
 #
 # Release: bump package.json, commit, then `git tag vX.Y.Z && git push --tags`.
 #
@@ -81,6 +82,11 @@ jobs:
             throw "Unexpected publisher: $($signature.SignerCertificate.Subject)"
           }
 
+      # auto-update downloads Islet-Update-X.exe (same bytes), so only real downloads count
+      - name: Separate the auto-update copy
+        shell: bash
+        run: node build/update-asset.js dist "${{ steps.ver.outputs.version }}"
+
       - name: Publish release
         shell: bash
         env:
@@ -88,5 +94,6 @@ jobs:
         run: |
           v="${{ steps.ver.outputs.version }}"
           exe="dist/Islet-Setup-$v.exe"
-          gh release create "v$v" "$exe" "$exe.blockmap" dist/latest.yml \
+          upd="dist/Islet-Update-$v.exe"
+          gh release create "v$v" "$exe" "$exe.blockmap" "$upd" "$upd.blockmap" dist/latest.yml \
             --title "Islet $v" --generate-notes
