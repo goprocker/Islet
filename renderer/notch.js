@@ -344,6 +344,27 @@ function renderBuild(now) {
   return true;
 }
 
+// ---- what an agent is doing right now, in the closed pill ----
+// working: its latest action while it's fresh; waiting: "Needs you", and the notch peeks again
+// every 90 seconds (3 times at most) until someone answers
+const AGENT_FRESH_MS = 60000, NUDGE_MS = 90000, NUDGES = 3;
+let nudge = { key: "", at: 0, count: 0 };
+function renderAgentNow(now, busy) {
+  const el = $("pillAgent");
+  const s = sessions.find(x => x.status === "waiting") || sessions.find(x => x.status === "working" && now - x.time < AGENT_FRESH_MS);
+  if (s?.status === "waiting") {
+    if (nudge.key !== s.key) nudge = { key: s.key, at: now, count: 0 };
+    else if (now - nudge.at > NUDGE_MS && nudge.count < NUDGES && !perms.length) { nudge.at = now; nudge.count++; peek(4000); }
+  } else nudge.key = "";
+  el.hidden = !s || busy;
+  if (el.hidden) return false;
+  const who = s.agent === "codex" ? "Codex" : "Claude";
+  el.dataset.status = s.status;
+  el.textContent = s.status === "waiting" ? `${who} needs you` : s.actions[0]?.action || `${who} is working`;
+  el.title = `${who} · ${s.project}`;
+  return true;
+}
+
 // ---- Claude ----
 const STATUS = { working: "Working", waiting: "Needs you", done: "Done" };
 const keyOf = s => s.key; // agent + full project folder, set in main.js
@@ -537,7 +558,8 @@ function render() {
   $("side").classList.toggle("join", !!joinable);
   sideLink = joinable;
   $("pillChip").textContent = chip;
-  notch.classList.toggle("wide", !!chip || renderBuild(now));
+  const building = renderBuild(now), agentNow = renderAgentNow(now, !!chip || building);
+  notch.classList.toggle("wide", !!chip || building || agentNow);
 
   const s = shown();
   if (s) {
