@@ -77,6 +77,23 @@ body {
 .notch:not(.eq) .pill #mini { display: none; } /* nothing playing, or a silent player: no flat line of dashes */
 .chip { margin-left: auto; font-size: 11px; font-variant-numeric: tabular-nums; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px; }
 .chip:empty { display: none; }
+/* a test or build an agent runs: spinner, then a tick or a cross */
+.build { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; max-width: 120px; overflow: hidden; }
+.build[hidden] { display: none; }
+.build b { font-weight: inherit; overflow: hidden; text-overflow: ellipsis; }
+.build i { flex: none; width: 10px; height: 10px; border-radius: 50%; box-sizing: border-box; }
+.build[data-state="running"] { color: rgba(255,255,255,.75); }
+.build[data-state="running"] i { border: 1.5px solid rgba(255,255,255,.25); border-top-color: #fff; animation: buildSpin .8s linear infinite; }
+.build[data-state="pass"] { color: #34c759; }
+.build[data-state="fail"] { color: #ff453a; }
+.build[data-state="pass"] i, .build[data-state="fail"] i { width: auto; height: auto; font-style: normal; animation: buildPop .35s cubic-bezier(.3,1.6,.5,1); }
+.build[data-state="pass"] i::before { content: "✓"; }
+.build[data-state="fail"] i::before { content: "✕"; }
+.build:not([hidden]) ~ .chip { margin-left: 6px; }
+.build:not([hidden]) ~ .chip:empty + .dot { margin-left: 6px; }
+@keyframes buildSpin { to { transform: rotate(360deg); } }
+@keyframes buildPop { from { transform: scale(0); } }
+@media (prefers-reduced-motion: reduce) { .build i { animation: none !important; } }
 .chip:empty + .dot { margin-left: auto; }
 
 /* toast (notifications, battery, timer) */

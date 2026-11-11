@@ -368,6 +368,7 @@ function startBridge() {
     onStatus: () => { lastClaude = ""; readClaude(); },
     onPermission: p => send("permission", p),
     onPermissionGone: id => send("permissionGone", id),
+    onBuild: b => send("build", b),
     permissionWait: () => Number(config.permissionWaitSeconds ?? 8) * 1000,
   });
   if (!started) { console.warn("hook bridge disabled: couldn't secure its authentication token"); return; }
@@ -382,6 +383,11 @@ function startBridge() {
   const codexFlag = path.join(app.getPath("userData"), "codex-hooks-set");
   if (!fs.existsSync(codexFlag) && bridge.installed()) {
     try { bridge.install(); fs.writeFileSync(codexFlag, "1"); } catch (e) { console.warn("codex hook install", e.message); }
+  }
+  // test/build status came later still: add the PreToolUse hook for people who kept the others
+  const buildFlag = path.join(app.getPath("userData"), "build-hooks-set");
+  if (!fs.existsSync(buildFlag) && bridge.installedBefore()) {
+    try { bridge.install(); fs.writeFileSync(buildFlag, "1"); } catch (e) { console.warn("build hook install", e.message); }
   }
 }
 // clicked notification: open its link, or bring up the app that sent it

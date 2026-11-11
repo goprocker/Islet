@@ -320,6 +320,29 @@ window.bridge.onMedia(d => {
   render();
 });
 
+// ---- Tests and builds an agent runs ----
+// "running" shows until the result arrives (or 10 minutes pass); a result shows for 8 seconds
+const BUILD_SHOW_MS = 8000, BUILD_STALE_MS = 10 * 60000;
+let build = null;
+window.bridge.onBuild(b => {
+  build = { ...b, at: Date.now() };
+  if (b.state === "pass") doneAt = Date.now(); // the pet cheers
+  if (b.state === "fail") lastToastAt = Date.now(); // the pet startles
+  if (b.state !== "running") peek(4000);
+  renderBuild(Date.now());
+});
+function renderBuild(now) {
+  const el = $("pillBuild");
+  const age = build ? now - build.at : Infinity;
+  const on = !!build && age < (build.state === "running" ? BUILD_STALE_MS : BUILD_SHOW_MS);
+  el.hidden = !on;
+  if (!on) return false;
+  el.dataset.state = build.state;
+  el.querySelector("b").textContent = build.label;
+  el.title = `${build.label}${build.project ? ` in ${build.project}` : ""}`;
+  return true;
+}
+
 // ---- Claude ----
 const STATUS = { working: "Working", waiting: "Needs you", done: "Done" };
 const keyOf = s => s.key; // agent + full project folder, set in main.js
@@ -513,7 +536,7 @@ function render() {
   $("side").classList.toggle("join", !!joinable);
   sideLink = joinable;
   $("pillChip").textContent = chip;
-  notch.classList.toggle("wide", !!chip);
+  notch.classList.toggle("wide", !!chip || renderBuild(now));
 
   const s = shown();
   if (s) {
