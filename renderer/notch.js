@@ -132,6 +132,7 @@ function endToast() {
 $("notch").querySelector(".toastv").addEventListener("click", () => {
   if (current?.update) window.bridge.installUpdate();
   else if (current?.link) window.bridge.joinMeeting(current.link);
+  else if (current?.open) window.bridge.openLink(current.open);
   else if (current?.id) window.bridge.openNotification(current.id);
   endToast();
 });
@@ -219,7 +220,10 @@ navigator.getBattery?.().then(b => {
 });
 
 // ---- timer + calendar ----
-window.bridge.onTimer(end => { timerEnd = end; render(); });
+let timerTotal = 0; // length of the running timer, for the focus bar
+window.bridge.onTimer(end => { timerTotal = end ? Math.max(0, end - Date.now()) : 0; timerEnd = end; render(); });
+// a Pomodoro focus round is running: results stay in the pill instead of opening the notch
+const focusing = (now = Date.now()) => timerEnd > now && /focus/i.test(timerLabel);
 // a focus phase that ends (Pomodoro moves on to a break, or a focus timer runs out) grows the pet's plant
 let plantUntil = 0, plantedEnd = 0; // plantedEnd: the timer that already grew one
 const PLANT_MS = 10000;
@@ -314,7 +318,7 @@ window.bridge.onMedia(d => {
     if (art) accentFrom(art);
     else {
       accentRequest++; // the cover still loading no longer applies
-      if (theme.accent === "album") document.documentElement.style.removeProperty("--accent");
+      if (theme.accent === "album") noArtAccent();
     }
   }
   render();
@@ -328,7 +332,7 @@ window.bridge.onBuild(b => {
   build = { ...b, at: Date.now() };
   if (b.state === "pass") doneAt = Date.now(); // the pet cheers
   if (b.state === "fail") lastToastAt = Date.now(); // the pet startles
-  if (b.state !== "running") peek(4000);
+  if (b.state !== "running" && !focusing()) peek(4000);
   renderBuild(Date.now());
 });
 function renderBuild(now) {
@@ -340,6 +344,27 @@ function renderBuild(now) {
   el.dataset.state = build.state;
   el.querySelector("b").textContent = build.label;
   el.title = `${build.label}${build.project ? ` in ${build.project}` : ""}`;
+  return true;
+}
+
+// ---- what an agent is doing right now, in the closed pill ----
+// working: its latest action while it's fresh; waiting: "Needs you", and the notch peeks again
+// every 90 seconds (3 times at most) until someone answers
+const AGENT_FRESH_MS = 60000, NUDGE_MS = 90000, NUDGES = 3;
+let nudge = { key: "", at: 0, count: 0 };
+function renderAgentNow(now, busy) {
+  const el = $("pillAgent");
+  const s = sessions.find(x => x.status === "waiting") || sessions.find(x => x.status === "working" && now - x.time < AGENT_FRESH_MS);
+  if (s?.status === "waiting") {
+    if (nudge.key !== s.key) nudge = { key: s.key, at: now, count: 0 };
+    else if (now - nudge.at > NUDGE_MS && nudge.count < NUDGES && !perms.length) { nudge.at = now; nudge.count++; peek(4000); }
+  } else nudge.key = "";
+  el.hidden = !s || busy;
+  if (el.hidden) return false;
+  const who = s.agent === "codex" ? "Codex" : "Claude";
+  el.dataset.status = s.status;
+  el.textContent = s.status === "waiting" ? `${who} needs you` : s.actions[0]?.action || `${who} is working`;
+  el.title = `${who} · ${s.project}`;
   return true;
 }
 
@@ -420,6 +445,11 @@ window.bridge.onPermissionGone(id => {
 
 $("cProject").onclick =() => { const s = shown(); if (s?.cwd) window.bridge.openProject(s.cwd); };
 
+// nothing playing: the wallpaper's colour, else the default grey
+function noArtAccent() {
+  if (theme.wallpaper) accentFrom(theme.wallpaper);
+  else document.documentElement.style.removeProperty("--accent");
+}
 // tint the notch with the album art's dominant colour
 let accentRequest = 0; // only the newest cover may set it
 function accentFrom(src) {
@@ -536,7 +566,11 @@ function render() {
   $("side").classList.toggle("join", !!joinable);
   sideLink = joinable;
   $("pillChip").textContent = chip;
-  notch.classList.toggle("wide", !!chip || renderBuild(now));
+  // focus round: a thin bar along the bottom of the pill fills up as the round goes
+  notch.classList.toggle("focusing", focusing(now));
+  if (focusing(now) && timerTotal) notch.style.setProperty("--focus-p", `${Math.min(100, 100 * (1 - (timerEnd - now) / timerTotal)).toFixed(2)}%`);
+  const building = renderBuild(now), agentNow = renderAgentNow(now, !!chip || building);
+  notch.classList.toggle("wide", !!chip || building || agentNow);
 
   const s = shown();
   if (s) {
@@ -693,14 +727,22 @@ function drawHello() {
 
 // ---- tools: one panel at a time, in the tall view with the dock under it ----
 const PANELS = [...document.querySelectorAll(".panel")].map(p => p.id);
-const OPENED = { dashPanel: () => { refreshQuick(); drawHello(); }, phonePanel: startPhone, linksPanel: loadLinks, clockPanel: drawClocks, timerPanel: drawTimer, weatherPanel: drawWeather, unitsPanel: drawUnits, colorPanel: drawColors, sysPanel: drawSys, aiPanel: drawAi };
+const OPENED = { dashPanel: () => { refreshQuick(); drawHello(); }, phonePanel: startPhone, linksPanel: loadLinks, clockPanel: drawClocks, timerPanel: drawTimer, weatherPanel: drawWeather, unitsPanel: drawUnits, colorPanel: drawColors, sysPanel: drawSys, aiPanel: drawAi, devPanel: drawDev };
 let openPanel = null;
 // toggle: a second click on the button that opened it closes it (the dock only switches)
 function showPanel(id, toggle = true) {
   if (toggle && id === openPanel) id = null;
   if (openPanel === "phonePanel" && id !== "phonePanel") window.bridge.phoneStop();
+  const was = openPanel;
   openPanel = id;
-  for (const p of PANELS) $(p).hidden = p !== id;
+  for (const p of PANELS) { $(p).hidden = p !== id; $(p).classList.remove("leaving"); }
+  // tool to tool: the old panel stays a moment and fades out under the new one
+  if (was && id && was !== id && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    const old = $(was);
+    old.hidden = false;
+    old.classList.add("leaving");
+    setTimeout(() => { if (openPanel !== was) { old.classList.remove("leaving"); old.hidden = true; } }, 150);
+  }
   for (const b of document.querySelectorAll("[data-panel]")) b.setAttribute("aria-pressed", b.dataset.panel === id);
   notch.classList.toggle("dash", !!id);
   if (id) OPENED[id]?.();
@@ -767,6 +809,8 @@ async function runSearch() {
 function chooseSearch(i) {
   const h = searchHits[i];
   if (!h) return;
+  // one of Islet's own tools: switch to it right here, the notch stays open
+  if (h.id.startsWith("tool:") && PANELS.includes(h.id.slice(5))) return showPanel(h.id.slice(5), false);
   window.bridge.searchRun(h.id);
   showPanel(null); setOpen(false);
 }
@@ -860,7 +904,7 @@ window.bridge.onTheme(t => {
   theme = t;
   if (t.accent !== "album") document.documentElement.style.setProperty("--accent", t.accent);
   else if (track?.art) accentFrom(track.art);
-  else document.documentElement.style.removeProperty("--accent");
+  else noArtAccent();
   render();
 });
 
@@ -1012,6 +1056,65 @@ async function drawSys() {
     return d;
   }));
 }
+
+// ---- Dev: git for the project an agent works in, local servers, snippets, clipboard decoding ----
+const el = (tag, props = {}, ...kids) => { const e = Object.assign(document.createElement(tag), props); e.append(...kids); return e; };
+function drawDev() { drawGit(); drawPorts(); drawSnippets(); drawDecode(); }
+async function drawGit() {
+  // the project of the session shown in the pill, else the newest one with a folder
+  const s = [shown(), ...sessions].find(x => x?.cwd);
+  const g = s ? await window.bridge.devGit(s.cwd) : null;
+  $("gitRepo").textContent = g ? g.repo : "";
+  if (!g) {
+    $("gitLine").textContent = s ? "Not a git repository" : "Start Claude Code or Codex in a project to see its git status";
+    $("gitFiles").replaceChildren();
+    return;
+  }
+  const sync = [g.ahead ? `↑${g.ahead}` : "", g.behind ? `↓${g.behind}` : ""].filter(Boolean).join(" ") || "in sync";
+  $("gitLine").replaceChildren(el("b", { textContent: g.branch }), el("span", { textContent: ` · ${sync} · ${g.files.length ? `${g.files.length} changed` : "clean"}` }));
+  $("gitFiles").replaceChildren(...g.files.slice(0, 30).map(f => el("li", { title: f.file }, el("i", { textContent: f.code, className: `c${f.code === "?" ? "N" : f.code}` }), el("span", { textContent: f.file }))));
+}
+async function drawPorts() {
+  const list = await window.bridge.devPorts();
+  $("portsList").replaceChildren(...(list.length ? list.map(p => {
+    const open = el("button", { className: "link", textContent: "Open", title: `Open localhost:${p.port}`, onclick: () => window.bridge.devOpenPort(p.port) });
+    const kill = el("button", { className: "link stop", textContent: "Stop", title: `End ${p.name || "process"} (${p.pid})` });
+    kill.onclick = async () => { kill.disabled = true; await window.bridge.devKill(p.pid); drawPorts(); };
+    return el("li", {}, el("b", { textContent: `:${p.port}` }), el("span", { textContent: p.name.replace(/\.exe$/i, "") || `pid ${p.pid}` }), open, kill);
+  }) : [el("li", { className: "none", textContent: "No dev servers running" })]));
+}
+$("portsRefresh").onclick = drawPorts;
+let snippets = [];
+async function drawSnippets() {
+  snippets = await window.bridge.snippetsGet();
+  $("snipList").replaceChildren(...snippets.map((sn, i) => {
+    const copy = el("button", { className: "snip", title: sn.text }, el("b", { textContent: sn.name }), el("code", { textContent: sn.text }));
+    copy.onclick = () => { window.bridge.copySnippet(sn.text); copy.classList.add("copied"); setTimeout(() => copy.classList.remove("copied"), 900); };
+    const del = el("button", { className: "link", textContent: "×", title: "Remove" });
+    del.onclick = async () => { snippets.splice(i, 1); await window.bridge.snippetsSave(snippets); drawSnippets(); };
+    return el("li", {}, copy, del);
+  }));
+}
+$("snipAdd").onclick = async () => { await window.bridge.snippetFromClipboard(); drawSnippets(); };
+async function drawDecode() {
+  const d = await window.bridge.devDecode();
+  $("decTitle").textContent = d ? d.title : "";
+  $("decText").textContent = d ? d.text : "Copy JSON, a JWT, Base64, a timestamp or a URL-encoded string to decode it here.";
+  $("decText").classList.toggle("none", !d);
+}
+// dock: a tool's name appears above it after a short hover
+for (const b of document.querySelectorAll(".dock button")) {
+  let t = 0;
+  b.addEventListener("mouseenter", () => { clearTimeout(t); t = setTimeout(() => b.classList.add("tip"), 350); });
+  b.addEventListener("mouseleave", () => { clearTimeout(t); b.classList.remove("tip"); });
+  b.addEventListener("click", () => { clearTimeout(t); b.classList.remove("tip"); });
+}
+// the search palette picked one of Islet's tools
+window.bridge.onOpenPanel(id => { if (PANELS.includes(id)) { setOpen(true); showPanel(id, false); } });
+window.bridge.onGithub(list => {
+  if (dndOn || focusing()) return; // Do Not Disturb and focus rounds keep GitHub quiet
+  for (const n of list.slice(0, 3)) toast({ app: "GitHub", badge: "⌥", color: "#24292f", title: n.title, body: `${n.reason} · ${n.repo}`, open: n.url, ms: 7000 });
+});
 
 // ---- AI coding: every Claude Code and Codex session with its last actions ----
 function drawAi() {
