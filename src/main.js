@@ -591,6 +591,9 @@ async function shelfAdd(paths) {
 }
 function saveShelf() {
   shelf = shelf.filter(f => fs.existsSync(f.path)).slice(-12);
+  // icons live exactly as long as their file is on the shelf (removed, evicted or deleted on disk)
+  const live = new Set(shelf.map(f => f.path));
+  for (const p of dragIcons.keys()) if (!live.has(p)) dragIcons.delete(p);
   fs.writeFileSync(shelfPath(), JSON.stringify(shelf.map(f => f.path)));
   send("shelf", shelf);
 }
