@@ -7,7 +7,7 @@
     let s;
     try {
       const [repo, rels] = await Promise.all(["", "/releases?per_page=100"].map(p => fetch("https://api.github.com/repos/goprocker/Islet" + p).then(r => r.ok ? r.json() : Promise.reject())));
-      s = { downloads: rels.flatMap(r => r.assets).filter(a => a.name.endsWith(".exe")).reduce((n, a) => n + a.download_count, 0), stars: repo.stargazers_count, forks: repo.forks_count };
+      s = { downloads: rels.flatMap(r => r.assets).filter(a => a.name.startsWith("Islet-Setup-") && a.name.endsWith(".exe")).reduce((n, a) => n + a.download_count, 0), stars: repo.stargazers_count, forks: repo.forks_count };
     } catch {
       const r = await fetch("stats.json");
       if (!r.ok) throw 0;
