@@ -318,7 +318,7 @@ window.bridge.onMedia(d => {
     if (art) accentFrom(art);
     else {
       accentRequest++; // the cover still loading no longer applies
-      if (theme.accent === "album") document.documentElement.style.removeProperty("--accent");
+      if (theme.accent === "album") noArtAccent();
     }
   }
   render();
@@ -445,6 +445,11 @@ window.bridge.onPermissionGone(id => {
 
 $("cProject").onclick =() => { const s = shown(); if (s?.cwd) window.bridge.openProject(s.cwd); };
 
+// nothing playing: the wallpaper's colour, else the default grey
+function noArtAccent() {
+  if (theme.wallpaper) accentFrom(theme.wallpaper);
+  else document.documentElement.style.removeProperty("--accent");
+}
 // tint the notch with the album art's dominant colour
 let accentRequest = 0; // only the newest cover may set it
 function accentFrom(src) {
@@ -804,6 +809,8 @@ async function runSearch() {
 function chooseSearch(i) {
   const h = searchHits[i];
   if (!h) return;
+  // one of Islet's own tools: switch to it right here, the notch stays open
+  if (h.id.startsWith("tool:") && PANELS.includes(h.id.slice(5))) return showPanel(h.id.slice(5), false);
   window.bridge.searchRun(h.id);
   showPanel(null); setOpen(false);
 }
@@ -897,7 +904,7 @@ window.bridge.onTheme(t => {
   theme = t;
   if (t.accent !== "album") document.documentElement.style.setProperty("--accent", t.accent);
   else if (track?.art) accentFrom(track.art);
-  else document.documentElement.style.removeProperty("--accent");
+  else noArtAccent();
   render();
 });
 
@@ -1095,6 +1102,15 @@ async function drawDecode() {
   $("decText").textContent = d ? d.text : "Copy JSON, a JWT, Base64, a timestamp or a URL-encoded string to decode it here.";
   $("decText").classList.toggle("none", !d);
 }
+// dock: a tool's name appears above it after a short hover
+for (const b of document.querySelectorAll(".dock button")) {
+  let t = 0;
+  b.addEventListener("mouseenter", () => { clearTimeout(t); t = setTimeout(() => b.classList.add("tip"), 350); });
+  b.addEventListener("mouseleave", () => { clearTimeout(t); b.classList.remove("tip"); });
+  b.addEventListener("click", () => { clearTimeout(t); b.classList.remove("tip"); });
+}
+// the search palette picked one of Islet's tools
+window.bridge.onOpenPanel(id => { if (PANELS.includes(id)) { setOpen(true); showPanel(id, false); } });
 window.bridge.onGithub(list => {
   if (dndOn || focusing()) return; // Do Not Disturb and focus rounds keep GitHub quiet
   for (const n of list.slice(0, 3)) toast({ app: "GitHub", badge: "⌥", color: "#24292f", title: n.title, body: `${n.reason} · ${n.repo}`, open: n.url, ms: 7000 });

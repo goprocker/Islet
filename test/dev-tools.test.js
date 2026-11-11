@@ -91,3 +91,11 @@ test("github: the first poll is silent, later ones announce", () => {
   } finally { global.setTimeout = realSetTimeout; }
   assert.deepEqual(got, ["2"]);
 });
+
+test("every tool in the search palette opens a panel that exists", () => {
+  const { TOOLS } = require("../src/search");
+  const html = fs.readFileSync(path.join(__dirname, "..", "renderer", "index.html"), "utf8");
+  for (const t of TOOLS) assert.match(html, new RegExp(`class="panel" id="${t.panel}"`), t.panel);
+  const docked = [...html.matchAll(/data-panel="(\w+)"/g)].map(m => m[1]);
+  for (const p of new Set(docked)) assert.ok(TOOLS.some(t => t.panel === p), `${p} is in the dock but not in search`);
+});

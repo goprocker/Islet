@@ -496,6 +496,8 @@ ipcMain.handle("search", (_, q) => {
   const items = [
     ...appIndex.map(a => ({ id: "app:" + (a.appId || a.file), title: a.name, sub: "App", kind: "app", file: a.file, appId: a.appId })),
     ...universalSearch.COMMANDS.map(c => ({ ...c, kind: "command" })),
+    ...universalSearch.TOOLS.map(c => ({ ...c, kind: "tool" })),
+    ...devTools.loadSnippets(app.getPath("userData")).map((sn, i) => ({ id: "snip:" + i, title: sn.name, sub: "Snippet: copy", kind: "snip", text: sn.text })),
     ...(config.clipboardHistory ? clipStore().view().map((c, i) => ({ id: "clip:" + i, title: oneLine(c.text), sub: "Clipboard: copy again", kind: "clip", text: clipStore().text(i) })) : []),
     ...notes.map((l, i) => ({ id: "note:" + i, title: oneLine(l), sub: "Note: copy line", kind: "note", text: l })),
   ];
@@ -548,6 +550,7 @@ ipcMain.on("searchRun", (_, id) => {
   }
   else if (r.text !== undefined) { lastClip = r.text; clipboard.writeText(r.text).catch(e => console.warn("clipboard", e.message)); send("searchDone", "Copied"); }
   else if (r.uri) shell.openExternal(r.uri);
+  else if (r.panel) send("openPanel", r.panel);
   else if (r.islet) openSettings();
   else if (r.radio) toggleRadio(r.radio);
 });
@@ -766,9 +769,18 @@ ipcMain.handle("welcome:finish", (_, v) => {
 });
 
 // ---- look: size, accent colour, hide when idle ----
+// a tiny copy of the desktop wallpaper: with album colours on and nothing playing, the
+// notch takes its accent from the wallpaper instead of plain grey
+function wallpaperThumb() {
+  try {
+    const file = path.join(app.getPath("appData"), "Microsoft", "Windows", "Themes", "TranscodedWallpaper");
+    const img = nativeImage.createFromBuffer(fs.readFileSync(file));
+    return img.isEmpty() ? "" : img.resize({ width: 24, height: 24 }).toDataURL();
+  } catch { return ""; }
+}
 function sendTheme() {
   if (win && !win.isDestroyed()) win.webContents.setZoomFactor(scale());
-  send("theme", { accent: /^#[0-9a-f]{6}$/i.test(config.accent) ? config.accent : "album", idleHide: !!config.idleHide, pet: config.pet !== false, powerAnim: config.powerAnim !== false, powerAnimStyle: config.powerAnimStyle === "subtle" ? "subtle" : "cinematic", name: displayName(), petPack: loadPet(config.customPet) });
+  send("theme", { wallpaper: config.accent === "album" ? wallpaperThumb() : "", accent: /^#[0-9a-f]{6}$/i.test(config.accent) ? config.accent : "album", idleHide: !!config.idleHide, pet: config.pet !== false, powerAnim: config.powerAnim !== false, powerAnimStyle: config.powerAnimStyle === "subtle" ? "subtle" : "cinematic", name: displayName(), petPack: loadPet(config.customPet) });
 }
 // the name the pet and the dashboard greet you by: the one from settings, else the Windows account name
 function displayName() {
