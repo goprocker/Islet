@@ -1,8 +1,8 @@
 // run by the Netlify build: bakes the GitHub counts into public/stats.json so visitors never hit the API rate limit
 // on any failure no file is written and stats.js falls back to asking GitHub directly
 import fs from "node:fs";
-// our own test downloads (2.3.5 once, 2.3.6 twice), left out of the public count
-const OWN = { "Islet-Setup-2.3.5.exe": 1, "Islet-Setup-2.3.6.exe": 2 };
+// our own test downloads (2.3.5 once, 2.3.6 three times), left out of the public count
+const OWN = { "Islet-Setup-2.3.5.exe": 1, "Islet-Setup-2.3.6.exe": 3 };
 const api = p => fetch("https://api.github.com/repos/goprocker/Islet" + p, { headers: { "User-Agent": "islet-site-build" } }).then(r => r.ok ? r.json() : Promise.reject(new Error(p + " " + r.status)));
 
 (async () => {

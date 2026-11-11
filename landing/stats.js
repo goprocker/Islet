@@ -1,6 +1,6 @@
 // download, star and fork counts, live from GitHub; falls back to stats.json baked at deploy time; any failure leaves the line hidden
-// our own test downloads (2.3.5 once, 2.3.6 twice), left out of the public count
-const OWN = { "Islet-Setup-2.3.5.exe": 1, "Islet-Setup-2.3.6.exe": 2 };
+// our own test downloads (2.3.5 once, 2.3.6 three times), left out of the public count
+const OWN = { "Islet-Setup-2.3.5.exe": 1, "Islet-Setup-2.3.6.exe": 3 };
 (async () => {
   const els = document.querySelectorAll("[data-stats]");
   if (!els.length) return;
