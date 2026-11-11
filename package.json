@@ -1,6 +1,6 @@
 {
   "name": "islet",
-  "version": "2.3.5",
+  "version": "2.3.6",
   "description": "Islet: a Dynamic-Island style notch for Windows: Spotify now playing + latest Claude Code activity",
   "main": "src/main.js",
   "license": "MIT",
@@ -27,6 +27,9 @@
       "renderer/**",
       "assets/logo-apple/icon.ico",
       "LICENSE"
+    ],
+    "extraResources": [
+      { "from": "Islet-Guide.pdf", "to": "Islet-Guide.pdf" }
     ],
     "publish": [
       {
