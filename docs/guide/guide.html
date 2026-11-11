@@ -90,14 +90,14 @@ pre.t { padding: 3mm 4mm; margin: 1.5mm 0 1.5mm; font-size: 8pt; }
     <div><b>04</b>Tech stack</div><div><b>05</b>Architecture</div><div><b>06</b>How each part works</div>
     <div><b>07</b>Repository map</div><div><b>08</b>Install and run</div><div><b>09</b>Using Islet</div>
     <div><b>10</b>Claude Code and Codex</div><div><b>11</b>Settings</div><div><b>12</b>Build, test, debug</div>
-    <div><b>13</b>Privacy, troubleshooting, uninstall</div><div><b>14</b>What's new in 2.0, 2.2 and 2.3</div>
+    <div><b>13</b>Privacy, troubleshooting, uninstall</div><div><b>14</b>What's new in 2.0 to 2.3, and for coding</div>
     <div><b>15</b>Islet in plain English</div><div><b>16</b>Words you need</div><div><b>17</b>Follow the data</div>
     <div><b>18</b>Read the code yourself</div><div><b>19</b>Engineering ideas it shows</div><div><b>20</b>Hard problems and limits</div>
     <div><b>21</b>Interview questions and answers</div><div><b>22</b>Cheat sheet and practice</div>
   </div>
   <div class="stats">
     <div><b>8</b><small>data sources</small></div><div><b>20</b><small>settings</small></div>
-    <div><b>13</b><small>notch states</small></div><div><b>347</b><small>passing tests</small></div>
+    <div><b>13</b><small>notch states</small></div><div><b>359</b><small>passing tests</small></div>
   </div>
   <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
 </section>
@@ -564,6 +564,31 @@ node_modules\electron\dist\electron.exe . --remote-debugging-port=9333</pre>
   <ul style="font-size:9.5pt">
     <li><b>New module</b> <code>missed.js</code> (listed in <code>build.files</code>); <code>weather.fromCache</code> / <code>toCache</code>; <code>lyrics.follower</code> sends <code>false</code> for "no lyrics".</li>
     <li><b>Tests</b>: 312 → 323 (347 on <code>main</code>, which adds a clock in the pill, release pop-ups, Phone drop and control fixes, and security hardening: approval cards show the full path and agent, and Phone drop proves each request with a one-time HMAC instead of sending the QR secret).</li>
+  </ul>
+  <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<section class="page">
+  <div class="kick">SECTION 14 · CODING</div>
+  <h1>New for coding</h1>
+  <div class="lead">The notch now follows your coding work: what the agent is doing, your repo, your dev servers and your clipboard.</div>
+  <figure style="margin:0"><img src="../tools/tool-dev.png" style="width:100%;display:block;border-radius:3mm"><figcaption style="font-size:7.5pt;color:#6e6e73;margin-top:1mm">The Dev panel (<code>&lt;/&gt;</code> in the dock): git, ports, snippets and a decoded clipboard.</figcaption></figure>
+  <h2>In the app</h2>
+  <ul style="font-size:9.5pt">
+    <li><b>Agent activity in the pill</b>: while Claude Code or Codex works, the closed pill shows its latest step ("Editing notch.js"). When it needs you, the pill says "Claude needs you" and the notch peeks again every 90 s, three times at most.</li>
+    <li><b>Dev panel, Git</b>: branch, ahead/behind and changed files for the folder the current agent session works in.</li>
+    <li><b>Dev panel, Ports</b>: local dev servers with Open and Stop. Windows services are hidden, and only a process the panel just listed can be stopped.</li>
+    <li><b>Snippets</b>: commands copied with one click; "+ From clipboard" saves a new one.</li>
+    <li><b>Clipboard decoding</b>: JWT (with expiry), JSON, Unix timestamps, ISO dates, Base64 and URL encoding.</li>
+    <li><b>GitHub notifications</b> pop out of the notch through the <code>gh</code> CLI's own sign-in; silent without <code>gh</code>, and <code>"githubNotify": false</code> turns them off.</li>
+    <li><b>Focus</b>: a thin progress bar under the pill during a Pomodoro round; build and GitHub pop-ups wait, an agent that needs you still peeks.</li>
+    <li><b>Search and dock</b>: Alt+Space jumps to any tool and copies saved snippets; hovering a dock icon shows its name; with nothing playing, the accent comes from the wallpaper.</li>
+    <li><b>Motion</b>: spring easing on open and close, panels cross-fade, a springy press on dock buttons. Reduced motion turns it all off.</li>
+  </ul>
+  <h2>Worth knowing</h2>
+  <ul style="font-size:9.5pt">
+    <li>Git follows the agent's folder, not the focused editor; build status only sees commands an agent runs.</li>
+    <li><b>Tests</b>: 347 → 359 (<code>dev-tools.test.js</code>, <code>build-status.test.js</code>). Importing a zipped pet now also works when Islet starts from PowerShell 7.</li>
   </ul>
   <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
 </section>
