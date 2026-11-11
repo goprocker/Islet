@@ -10,6 +10,14 @@
   status = 302
   force = true
 
+# the owner's own link: the Islet-Update copy (same file), which the site's download count ignores,
+# so test installs don't count. Not linked anywhere on the site.
+[[redirects]]
+  from = "/own"
+  to = "https://github.com/goprocker/Islet/releases/download/v2.3.6/Islet-Update-2.3.6.exe"
+  status = 302
+  force = true
+
 # old links to an earlier version get the current one
 [[redirects]]
   from = "/Islet-Setup-2.3.1.exe"
