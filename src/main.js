@@ -256,23 +256,57 @@ ipcMain.on("like", async () => {
 
 // ---- Claude Code: every session active in the last 30 min ----
 const projectsDir = path.join(os.homedir(), ".claude", "projects");
-function recentTranscripts() {
-  const found = [];
-  const walk = dir => {
-    let entries = [];
-    try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
-    for (const e of entries) {
-      const p = path.join(dir, e.name);
-      if (e.isDirectory()) walk(p);
-      else if (e.name.endsWith(".jsonl")) {
-        let m;
-        try { m = fs.statSync(p).mtimeMs; } catch { continue; } // deleted or locked since readdir
-        if (Date.now() - m < 30 * 60 * 1000) found.push({ p, m });
+const RECENT_MS = 30 * 60 * 1000, FULL_SCAN_MS = 30 * 1000;
+// paths active in the last 30 min, from the last full walk; between walks only these are re-stat'd
+let transcriptCandidates = new Set(), lastFullScan = 0;
+async function statTranscript(p) {
+  try { const s = await fs.promises.stat(p); return { p, m: s.mtimeMs, size: s.size, ino: s.ino }; } catch { return null; } // deleted or locked
+}
+async function recentTranscripts(full) {
+  if (full || Date.now() - lastFullScan > FULL_SCAN_MS) {
+    lastFullScan = Date.now();
+    const files = [];
+    const walk = async dir => {
+      let entries = [];
+      try { entries = await fs.promises.readdir(dir, { withFileTypes: true }); } catch { return; }
+      for (const e of entries) {
+        const p = path.join(dir, e.name);
+        if (e.isDirectory()) await walk(p);
+        else if (e.name.endsWith(".jsonl")) files.push(p);
       }
+    };
+    await walk(projectsDir);
+    transcriptCandidates = new Set(files);
+  }
+  const found = [];
+  const list = [...transcriptCandidates];
+  for (let i = 0; i < list.length; i += 64) { // bounded concurrency, yields between batches
+    for (const t of await Promise.all(list.slice(i, i + 64).map(statTranscript))) {
+      if (t && Date.now() - t.m < RECENT_MS) found.push(t);
     }
-  };
-  walk(projectsDir);
+  }
+  // keep only recent files as candidates until the next full walk picks up older ones again
+  transcriptCandidates = new Set(found.map(t => t.p));
   return found.sort((a, b) => b.m - a.m);
+}
+// parsed tail per transcript, reused while its identity, size and mtime are unchanged
+const sessionCache = new Map();
+async function transcriptEntries(t) {
+  const hit = sessionCache.get(t.p);
+  if (hit && hit.m === t.m && hit.size === t.size && hit.ino === t.ino) return hit.entries;
+  let text;
+  try {
+    const len = Math.min(t.size, 256 * 1024), b = Buffer.alloc(len);
+    const fh = await fs.promises.open(t.p, "r");
+    try { await fh.read(b, 0, len, t.size - len); } finally { await fh.close(); }
+    text = b.toString("utf8");
+  } catch { sessionCache.delete(t.p); return null; }
+  const entries = [];
+  for (const l of text.split("\n").reverse()) {
+    try { const e = JSON.parse(l); if (e.type === "assistant" || e.type === "user") entries.push(e); } catch {}
+  }
+  sessionCache.set(t.p, { m: t.m, size: t.size, ino: t.ino, entries });
+  return entries;
 }
 function describe(block) {
   const i = typeof block.input === "string" ? { command: block.input } : block.input || {};
@@ -299,19 +333,9 @@ function describe(block) {
     default: return `Used ${block.name}`;
   }
 }
-function readSession(t) {
-  let text;
-  try {
-    const size = fs.statSync(t.p).size, len = Math.min(size, 256 * 1024);
-    const fd = fs.openSync(t.p, "r"), b = Buffer.alloc(len);
-    fs.readSync(fd, b, 0, len, size - len); fs.closeSync(fd);
-    text = b.toString("utf8");
-  } catch { return null; }
-  const entries = [];
-  for (const l of text.split("\n").reverse()) {
-    try { const e = JSON.parse(l); if (e.type === "assistant" || e.type === "user") entries.push(e); } catch {}
-  }
-  if (!entries.length) return null;
+// status is worked out on every call from cached entries, so time-based waiting/done still change
+function readSession(t, entries) {
+  if (!entries?.length) return null;
   const sessionId = path.basename(t.p, ".jsonl");
   // status from the very last entry + how long the transcript has been quiet:
   // a tool call nobody answered for a while usually means a permission prompt
@@ -359,15 +383,32 @@ function codexSessions() {
   return out;
 }
 let lastClaude = "";
-function readClaude() {
-  const sessions = bridge.pickSessions([...recentTranscripts().slice(0, 12).map(readSession), ...codexSessions()].filter(Boolean));
-  const key = JSON.stringify(sessions);
-  if (key !== lastClaude) { lastClaude = key; send("claude", sessions); }
+// one refresh at a time: calls during a run (hook bursts, the 2 s poll) fold into a single rerun
+let claudeRun = null, claudeAgain = null;
+function readClaude({ force = false, full = false } = {}) {
+  if (claudeRun) {
+    claudeAgain = { force: force || !!claudeAgain?.force, full: full || !!claudeAgain?.full };
+    return claudeRun;
+  }
+  claudeRun = (async () => {
+    const recent = (await recentTranscripts(full)).slice(0, 12);
+    for (const p of sessionCache.keys()) if (!recent.some(t => t.p === p)) sessionCache.delete(p);
+    const claude = await Promise.all(recent.map(async t => readSession(t, await transcriptEntries(t))));
+    const sessions = bridge.pickSessions([...claude, ...codexSessions()].filter(Boolean));
+    const key = JSON.stringify(sessions);
+    if (force || key !== lastClaude) { lastClaude = key; send("claude", sessions); }
+  })().catch(e => console.warn("claude sessions", e.message)).finally(() => {
+    claudeRun = null;
+    const again = claudeAgain; claudeAgain = null;
+    if (again) readClaude(again);
+  });
+  return claudeRun;
 }
 ipcMain.on("permissionAnswer", (_, id, decision) => bridge.answer(id, decision, gone => send("permissionGone", gone)));
 function startBridge() {
   const started = bridge.start({
-    onStatus: () => { lastClaude = ""; readClaude(); },
+    // a session we don't know yet (new or resumed transcript) needs a full walk to be found
+    onStatus: session => readClaude({ force: true, full: !bridge.codex.has(session) && ![...transcriptCandidates].some(p => path.basename(p, ".jsonl") === session) }),
     onPermission: p => send("permission", p),
     onPermissionGone: id => send("permissionGone", id),
     onBuild: b => send("build", b),
@@ -1006,7 +1047,7 @@ app.whenReady().then(() => {
   powerMonitor.on("resume", () => { helpers.resume("asleep"); startDevices(); });
   win.webContents.on("did-finish-load", () => {
     sendPower();
-    lastClaude = ""; iconFor = null; lastMediaLine = ""; readClaude(); refreshSpotifyExtras(); send("timerLabel", timerLabel); send("timer", timerEnd); send("stopwatch", stopwatchStart); sendDnd(true); send("shelf", shelf); sendTheme(); lyricsNow.resend();
+    iconFor = null; lastMediaLine = ""; readClaude({ force: true }); refreshSpotifyExtras(); send("timerLabel", timerLabel); send("timer", timerEnd); send("stopwatch", stopwatchStart); sendDnd(true); send("shelf", shelf); sendTheme(); lyricsNow.resend();
     sendClips();
     send("devices", btDevices);
     send("notes", loadNotes(app.getPath("userData")));
