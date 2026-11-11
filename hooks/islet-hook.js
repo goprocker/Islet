@@ -38,6 +38,13 @@ process.stdin.on("end", () => {
   hello.end();
 });
 
+// the end of what a shell command printed, so Islet can show a test or build result
+function output(r) {
+  if (r === undefined || r === null) return "";
+  const text = typeof r === "string" ? r : [r.stdout, r.stderr, r.output].filter(x => typeof x === "string").join("\n");
+  return text.slice(-4000);
+}
+
 function post(input, token, nonce) {
   const body = JSON.stringify({
     event,
@@ -51,6 +58,7 @@ function post(input, token, nonce) {
     toolInput: input.tool_input || null,
     prompt: typeof input.prompt === "string" ? input.prompt.slice(0, 300) : "",
     lastMessage: typeof input.last_assistant_message === "string" ? input.last_assistant_message.slice(0, 300) : "",
+    output: output(input.tool_response),
   });
   const req = http.request(
     { host: "127.0.0.1", port: PORT, path: "/claude", method: "POST", timeout: WAIT, headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body), "X-Islet-Proof": auth.sign(token, "event", body) } },

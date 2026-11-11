@@ -6,11 +6,12 @@ const fs = require("fs");
 const path = require("path");
 const os = require("os");
 const hookAuth = require("../hooks/hook-auth");
+const build = require("./build-status");
 
 const PORT = 47321;
 const SETTINGS = path.join(os.homedir(), ".claude", "settings.json");
 const HOOK = path.join(__dirname, "..", "hooks", "islet-hook.js");
-const EVENTS = ["PermissionRequest", "Notification", "Stop", "UserPromptSubmit", "PostToolUse", "SessionEnd"];
+const EVENTS = ["PermissionRequest", "Notification", "Stop", "UserPromptSubmit", "PreToolUse", "PostToolUse", "SessionEnd"];
 const MARK = "islet-hook.js";
 const CODEX_DIR = path.join(os.homedir(), ".codex");
 const CODEX_HOOKS = path.join(CODEX_DIR, "hooks.json");
@@ -61,7 +62,7 @@ function statusFor(event, message) {
 }
 
 // what the hook sends; anything else gets a 400 and changes nothing
-const TEXT = ["cwd", "transcript", "message", "tool", "prompt", "lastMessage", "nonce"];
+const TEXT = ["cwd", "transcript", "message", "tool", "prompt", "lastMessage", "nonce", "output"];
 function validEvent(e) {
   if (!e || typeof e !== "object" || Array.isArray(e)) return false;
   if (typeof e.event !== "string" || !e.event || typeof e.session !== "string" || !e.session) return false;
@@ -71,7 +72,20 @@ function validEvent(e) {
 }
 
 let waitMs = () => 8000;
-function start({ onStatus, onPermission, onPermissionGone, permissionWait }) {
+// a test or build the agent runs in its shell: "running" before, then "pass" / "fail"
+const SHELL = /^(bash|shell|exec_command|local_shell|powershell)$/i;
+function buildEvent(e) {
+  if ((e.event !== "PreToolUse" && e.event !== "PostToolUse") || !SHELL.test(e.tool || "")) return null;
+  const cmd = Array.isArray(e.toolInput?.command) ? e.toolInput.command.join(" ") : e.toolInput?.command;
+  const k = build.kind(cmd);
+  if (!k) return null;
+  const base = { session: e.session, kind: k, project: e.cwd ? path.basename(path.resolve(e.cwd)) : "" };
+  if (e.event === "PreToolUse") return { ...base, state: "running", label: k === "test" ? "Running tests" : "Building" };
+  const r = build.result(e.output);
+  return { ...base, state: r.ok ? "pass" : "fail", label: build.label(k, r), passed: r.passed, failed: r.failed };
+}
+
+function start({ onStatus, onPermission, onPermissionGone, onBuild, permissionWait }) {
   const token = hookAuth.ensureToken();
   if (!token) return false;
   if (permissionWait) waitMs = permissionWait;
@@ -103,6 +117,8 @@ function start({ onStatus, onPermission, onPermissionGone, permissionWait }) {
       const st = statusFor(e.event, e.message);
       status.set(e.session, { status: st, at: Date.now() });
       if (e.agent === "codex") trackCodex(e, st);
+      const b = onBuild && buildEvent(e);
+      if (b) onBuild(b);
       onStatus(e.session, st);
       // any new activity in a session answers its open permission card elsewhere
       if (e.event !== "PermissionRequest") {
@@ -181,6 +197,8 @@ function hasHooks(t) {
   return t.events.every(ev => JSON.stringify(s.hooks?.[ev] || []).includes(MARK));
 }
 function installed() { return hasHooks(targets()[0]); }
+// set up by an older Islet: every hook it added then is still there
+function installedBefore() { return hasHooks({ ...targets()[0], events: EVENTS.filter(ev => ev !== "PreToolUse") }); }
 // drop only Islet's own handlers; a group shared with another tool keeps the rest
 // (and its matcher), and is removed only once nothing is left in it
 const withoutIslet = groups => groups.flatMap(g => {
@@ -198,7 +216,7 @@ function install() {
     for (const ev of t.events) {
       const list = withoutIslet(s.hooks[ev] || []);
       list.push({
-        ...(ev === "PostToolUse" ? { matcher: "*" } : {}),
+        ...(ev === "PostToolUse" ? { matcher: "*" } : ev === "PreToolUse" ? { matcher: "Bash" } : {}),
         hooks: [{ type: "command", command: `node "${HOOK}" ${ev}${t.arg}`, timeout: ev === "PermissionRequest" ? 30 : 5 }],
       });
       s.hooks[ev] = list;
@@ -218,4 +236,4 @@ function uninstall() {
   }
 }
 
-module.exports = { start, answer, status, codex, install, uninstall, installed, pickSessions, summarize, ensureToken: hookAuth.ensureToken };
+module.exports = { start, answer, status, codex, install, uninstall, installed, installedBefore, buildEvent, pickSessions, summarize, ensureToken: hookAuth.ensureToken };

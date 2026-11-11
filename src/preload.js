@@ -60,6 +60,7 @@ contextBridge.exposeInMainWorld("bridge", {
   shelfOpen: p => ipcRenderer.send("shelfOpen", p),
   shelfDrag: p => ipcRenderer.send("shelfDrag", p),
   onPermission: on("permission"),
+  onBuild: on("build"),
   onPermissionGone: on("permissionGone"),
   answerPermission: (id, decision) => ipcRenderer.send("permissionAnswer", id, decision),
   control: cmd => ipcRenderer.send("control", cmd),
