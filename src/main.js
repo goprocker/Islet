@@ -50,6 +50,8 @@ app.on("second-instance", () => (welcomePending ? openWelcome() : openSettings()
 
 // ---- settings (userData/config.json) ----
 const { checkConfig, clock } = require("./config-check");
+const devTools = require("./dev-tools");
+const githubNotify = require("./github-notify");
 const configPath = () => path.join(app.getPath("userData"), "config.json");
 const DEFAULTS = { spotifyClientId: "", calendarIcsUrl: "", displayId: null, notifications: true, hideInFullscreen: true, lyrics: true, permissionWaitSeconds: 8, dnd: false, dndFrom: "", dndTo: "", dndSkipUntil: 0, clipboardHistory: true, volumeHud: true, focusDnd: true, universalSearch: true, weatherCity: "", weatherUnit: "C", downloadsFolder: "", size: "normal", accent: "album", idleHide: false, hideWindowsBanners: true, powerAnim: true, powerAnimStyle: "cinematic", pet: true, userName: "", customPet: "", screenshotShelf: true, agentUpdates: true };
 let config = { ...DEFAULTS };
@@ -494,6 +496,8 @@ ipcMain.handle("search", (_, q) => {
   const items = [
     ...appIndex.map(a => ({ id: "app:" + (a.appId || a.file), title: a.name, sub: "App", kind: "app", file: a.file, appId: a.appId })),
     ...universalSearch.COMMANDS.map(c => ({ ...c, kind: "command" })),
+    ...universalSearch.TOOLS.map(c => ({ ...c, kind: "tool" })),
+    ...devTools.loadSnippets(app.getPath("userData")).map((sn, i) => ({ id: "snip:" + i, title: sn.name, sub: "Snippet: copy", kind: "snip", text: sn.text })),
     ...(config.clipboardHistory ? clipStore().view().map((c, i) => ({ id: "clip:" + i, title: oneLine(c.text), sub: "Clipboard: copy again", kind: "clip", text: clipStore().text(i) })) : []),
     ...notes.map((l, i) => ({ id: "note:" + i, title: oneLine(l), sub: "Note: copy line", kind: "note", text: l })),
   ];
@@ -546,6 +550,7 @@ ipcMain.on("searchRun", (_, id) => {
   }
   else if (r.text !== undefined) { lastClip = r.text; clipboard.writeText(r.text).catch(e => console.warn("clipboard", e.message)); send("searchDone", "Copied"); }
   else if (r.uri) shell.openExternal(r.uri);
+  else if (r.panel) send("openPanel", r.panel);
   else if (r.islet) openSettings();
   else if (r.radio) toggleRadio(r.radio);
 });
@@ -620,6 +625,37 @@ ipcMain.on("phoneStop", () => phoneDrop.stop());
 ipcMain.handle("linksGet", () => loadLinks(app.getPath("userData")));
 ipcMain.handle("linksSave", (_, list) => saveLinks(app.getPath("userData"), list));
 ipcMain.on("copyText", (_, t) => { if (typeof t === "string" && t.length <= 100) clipboard.writeText(t); });
+// ---- dev panel: git, local ports, snippets, clipboard decoding (dev-tools.js) ----
+const runOut = (cmd, args, opts = {}) => new Promise(resolve => execFile(cmd, args, { windowsHide: true, timeout: 8000, maxBuffer: 4e6, ...opts }, (err, out) => resolve(err ? null : String(out))));
+ipcMain.handle("devGit", async (_, cwd) => {
+  if (typeof cwd !== "string" || !cwd || !path.isAbsolute(cwd)) return null;
+  try { if (!fs.statSync(cwd).isDirectory()) return null; } catch { return null; }
+  const out = await runOut("git", ["status", "--porcelain=v2", "--branch"], { cwd });
+  if (out === null) return null;
+  return { ...devTools.parseGit(out), repo: path.basename(cwd), cwd };
+});
+let devPorts = [];
+ipcMain.handle("devPorts", async () => {
+  const [net, tasks] = await Promise.all([runOut("netstat", ["-ano", "-p", "tcp"]), runOut("tasklist", ["/fo", "csv", "/nh"])]);
+  const names = devTools.parseTasklist(tasks);
+  devPorts = devTools.parseNetstat(net).map(p => ({ ...p, name: names.get(p.pid) || "" })).filter(p => !devTools.SYSTEM_PROCESS.test(p.name));
+  return devPorts;
+});
+// only a process the panel just listed can be stopped, and never Islet itself
+ipcMain.handle("devKill", async (_, pid) => {
+  if (!devPorts.some(p => p.pid === pid) || pid === process.pid) return false;
+  return (await runOut("taskkill", ["/pid", String(pid), "/t", "/f"])) !== null;
+});
+ipcMain.on("devOpenPort", (_, port) => { if (Number.isInteger(port) && port > 0 && port < 65536) shell.openExternal(`http://localhost:${port}`); });
+ipcMain.handle("snippetsGet", () => devTools.loadSnippets(app.getPath("userData")));
+ipcMain.handle("snippetsSave", (_, list) => devTools.saveSnippets(app.getPath("userData"), list));
+ipcMain.on("copySnippet", (_, t) => { if (typeof t === "string" && t.length <= 4000) { lastClip = t; clipboard.writeText(t).catch(e => console.warn("clipboard", e.message)); } });
+ipcMain.handle("devDecode", async () => devTools.decode(await clipboard.readText()));
+ipcMain.handle("snippetFromClipboard", async () => {
+  const dir = app.getPath("userData"), text = String(await clipboard.readText()).trim();
+  if (!text) return devTools.loadSnippets(dir);
+  return devTools.saveSnippets(dir, [{ name: text.split(/\r?\n/)[0].slice(0, 60), text }, ...devTools.loadSnippets(dir)]);
+});
 ipcMain.on("openLink", (_, url) => { try { if (/^https?:$/.test(new URL(url).protocol)) shell.openExternal(url); } catch {} });
 
 // ---- timer tool: the same timers as the tray menu ----
@@ -733,9 +769,18 @@ ipcMain.handle("welcome:finish", (_, v) => {
 });
 
 // ---- look: size, accent colour, hide when idle ----
+// a tiny copy of the desktop wallpaper: with album colours on and nothing playing, the
+// notch takes its accent from the wallpaper instead of plain grey
+function wallpaperThumb() {
+  try {
+    const file = path.join(app.getPath("appData"), "Microsoft", "Windows", "Themes", "TranscodedWallpaper");
+    const img = nativeImage.createFromBuffer(fs.readFileSync(file));
+    return img.isEmpty() ? "" : img.resize({ width: 24, height: 24 }).toDataURL();
+  } catch { return ""; }
+}
 function sendTheme() {
   if (win && !win.isDestroyed()) win.webContents.setZoomFactor(scale());
-  send("theme", { accent: /^#[0-9a-f]{6}$/i.test(config.accent) ? config.accent : "album", idleHide: !!config.idleHide, pet: config.pet !== false, powerAnim: config.powerAnim !== false, powerAnimStyle: config.powerAnimStyle === "subtle" ? "subtle" : "cinematic", name: displayName(), petPack: loadPet(config.customPet) });
+  send("theme", { wallpaper: config.accent === "album" ? wallpaperThumb() : "", accent: /^#[0-9a-f]{6}$/i.test(config.accent) ? config.accent : "album", idleHide: !!config.idleHide, pet: config.pet !== false, powerAnim: config.powerAnim !== false, powerAnimStyle: config.powerAnimStyle === "subtle" ? "subtle" : "cinematic", name: displayName(), petPack: loadPet(config.customPet) });
 }
 // the name the pet and the dashboard greet you by: the one from settings, else the Windows account name
 function displayName() {
@@ -968,6 +1013,8 @@ app.whenReady().then(() => {
   startDownloads();
   startScreenshots();
   startAgentUpdates();
+  // GitHub notifications through the gh CLI; quiet when gh isn't installed or signed in
+  if (config.githubNotify !== false) githubNotify.start(list => send("github", list));
   startDevices();
   applyServices(); // remember what the services started with
   setInterval(readClaude, 2000);

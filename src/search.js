@@ -115,4 +115,15 @@ const COMMANDS = [
   { id: "islet-settings", title: "Islet settings", sub: "Open Islet's settings", keywords: ["preferences", "options", "notch"], islet: "settings" },
 ];
 
-module.exports = { scanFiles, withFiles, score, rank, appsFromLinks, appsFromStartApps, scanStartMenu, COMMANDS };
+// Islet's own tools: typing a name opens that panel in the notch
+const TOOLS = [
+  ["dashPanel", "Home", ["dashboard", "quick settings"]], ["phonePanel", "Phone drop", ["send", "transfer", "qr"]],
+  ["linksPanel", "Links", ["bookmarks", "sites"]], ["clockPanel", "World clock", ["time zone", "clock"]],
+  ["clipPanel", "Clipboard", ["history", "copy"]], ["notesPanel", "Notes", ["note", "write"]],
+  ["timerPanel", "Timer and focus", ["pomodoro", "stopwatch", "focus"]], ["shelfPanel", "File shelf", ["files", "drop"]],
+  ["weatherPanel", "Weather", ["forecast", "rain"]], ["unitsPanel", "Units", ["convert", "currency"]],
+  ["colorPanel", "Colour picker", ["color", "hex", "eyedropper"]], ["sysPanel", "System", ["cpu", "memory", "ram", "disk"]],
+  ["aiPanel", "AI coding", ["claude", "codex", "agent"]], ["devPanel", "Dev", ["git", "ports", "snippets", "jwt", "json", "decode"]],
+].map(([panel, title, keywords]) => ({ id: "tool:" + panel, title, sub: "Islet tool", keywords, panel }));
+
+module.exports = { scanFiles, withFiles, score, rank, appsFromLinks, appsFromStartApps, scanStartMenu, COMMANDS, TOOLS };
