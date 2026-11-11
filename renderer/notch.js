@@ -220,7 +220,10 @@ navigator.getBattery?.().then(b => {
 });
 
 // ---- timer + calendar ----
-window.bridge.onTimer(end => { timerEnd = end; render(); });
+let timerTotal = 0; // length of the running timer, for the focus bar
+window.bridge.onTimer(end => { timerTotal = end ? Math.max(0, end - Date.now()) : 0; timerEnd = end; render(); });
+// a Pomodoro focus round is running: results stay in the pill instead of opening the notch
+const focusing = (now = Date.now()) => timerEnd > now && /focus/i.test(timerLabel);
 // a focus phase that ends (Pomodoro moves on to a break, or a focus timer runs out) grows the pet's plant
 let plantUntil = 0, plantedEnd = 0; // plantedEnd: the timer that already grew one
 const PLANT_MS = 10000;
@@ -329,7 +332,7 @@ window.bridge.onBuild(b => {
   build = { ...b, at: Date.now() };
   if (b.state === "pass") doneAt = Date.now(); // the pet cheers
   if (b.state === "fail") lastToastAt = Date.now(); // the pet startles
-  if (b.state !== "running") peek(4000);
+  if (b.state !== "running" && !focusing()) peek(4000);
   renderBuild(Date.now());
 });
 function renderBuild(now) {
@@ -558,6 +561,9 @@ function render() {
   $("side").classList.toggle("join", !!joinable);
   sideLink = joinable;
   $("pillChip").textContent = chip;
+  // focus round: a thin bar along the bottom of the pill fills up as the round goes
+  notch.classList.toggle("focusing", focusing(now));
+  if (focusing(now) && timerTotal) notch.style.setProperty("--focus-p", `${Math.min(100, 100 * (1 - (timerEnd - now) / timerTotal)).toFixed(2)}%`);
   const building = renderBuild(now), agentNow = renderAgentNow(now, !!chip || building);
   notch.classList.toggle("wide", !!chip || building || agentNow);
 
@@ -1082,6 +1088,7 @@ async function drawDecode() {
   $("decText").classList.toggle("none", !d);
 }
 window.bridge.onGithub(list => {
+  if (dndOn || focusing()) return; // Do Not Disturb and focus rounds keep GitHub quiet
   for (const n of list.slice(0, 3)) toast({ app: "GitHub", badge: "⌥", color: "#24292f", title: n.title, body: `${n.reason} · ${n.repo}`, open: n.url, ms: 7000 });
 });
 

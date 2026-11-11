@@ -669,3 +669,6 @@ button.link:hover { background: var(--secondary); }
 .agentnow:not([hidden]) ~ .chip:empty + .dot { margin-left: 6px; }
 @keyframes agentIn { from { opacity: 0; transform: translateY(3px); } }
 .notch.talking:not(.open) .agentnow { display: none; } /* the cat is already saying it */
+/* Pomodoro focus round: a thin progress bar under the closed pill */
+.pill { position: relative; }
+.notch.focusing:not(.open):not(.toast) .pill::after { content: ""; position: absolute; left: 22px; right: 22px; bottom: 3px; height: 2px; border-radius: 1px; background: linear-gradient(90deg, var(--claude) var(--focus-p, 0%), #ffffff1a var(--focus-p, 0%)); pointer-events: none; transition: opacity .3s; }
