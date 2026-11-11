@@ -22,8 +22,8 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   await js(`window.bridge.hover(true); 1`); // the window takes the mouse while we drive it
   await shot("pill");
   await js(`setOpen(true); 1`); await wait(1200); await shot("open");
-  for (const p of ["dashPanel", "phonePanel", "linksPanel", "clockPanel", "clipPanel", "notesPanel", "timerPanel", "shelfPanel", "weatherPanel", "unitsPanel", "sysPanel", "aiPanel"]) {
-    await js(`showPanel("${p}", false); 1`); await wait(p === "phonePanel" || p === "sysPanel" ? 1500 : 800);
+  for (const p of ["dashPanel", "phonePanel", "linksPanel", "clockPanel", "clipPanel", "notesPanel", "timerPanel", "shelfPanel", "weatherPanel", "unitsPanel", "sysPanel", "aiPanel", "devPanel"]) {
+    await js(`showPanel("${p}", false); 1`); await wait(p === "phonePanel" || p === "sysPanel" || p === "devPanel" ? 1500 : 800);
     await shot("tool-" + p.replace("Panel", ""));
   }
   await js(`showPanel(null); setOpen(false); window.bridge.hover(false); 1`);
