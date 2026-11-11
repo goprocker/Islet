@@ -1014,6 +1014,8 @@ function buildMenu() {
     ...(bannersMissed ? [{ label: `Windows banners still on for ${bannersMissed} apps (registry write blocked)`, enabled: false }] : []),
     { label: "Settings…", click: openSettings },
     { label: "Open settings file", click: () => shell.openPath(configPath()) },
+    // the guide ships beside app.asar (extraResources); from source it is at the repo root
+    { label: "User guide (PDF)", click: () => shell.openPath(app.isPackaged ? path.join(process.resourcesPath, "Islet-Guide.pdf") : path.resolve(__dirname, "..", "Islet-Guide.pdf")) },
     { label: "Start with Windows", type: "checkbox", checked: login(), click: () => { setLogin(!login()); buildMenu(); } },
     { type: "separator" },
     { label: "Quit", click: () => { app.isQuitting = true; app.quit(); } },
