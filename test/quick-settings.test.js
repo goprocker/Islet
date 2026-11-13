@@ -37,3 +37,9 @@ test("brightness and volume sliders keep independent debounce timers", () => {
   const sliders = source.slice(source.indexOf('for (const [id, kind, scale]'), source.indexOf('for (const b of document.querySelectorAll', source.indexOf('for (const [id, kind, scale]')));
   assert.match(sliders, /\{\s*let quickTimer;/);
 });
+
+test("airplane mode on turns the radios off, and off turns them back on", () => {
+  assert.strictEqual(action("airplane", true).radios, "off");
+  assert.strictEqual(action("airplane", false).radios, "on");
+  assert.deepStrictEqual(action("wifi"), { kind: "wifi" });
+});
