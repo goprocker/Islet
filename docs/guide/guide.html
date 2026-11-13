@@ -75,7 +75,7 @@ pre.t { padding: 3mm 4mm; margin: 1.5mm 0 1.5mm; font-size: 8pt; }
   <p style="color:#6e6e73">Music, Claude Code and Codex activity, notifications, battery and more,<br>in one small black pill at the top of your screen.</p>
   <div class="meta">
     <div><small>MADE BY</small><b>Gopinath</b></div>
-    <div><small>VERSION</small><b>2.3.6</b></div>
+    <div><small>VERSION</small><b>2.3.61</b></div>
     <div><small>PLATFORM</small><b>Windows 10 / 11</b></div>
     <div><small>BUILT WITH</small><b>Electron 45</b></div>
   </div>
@@ -97,7 +97,7 @@ pre.t { padding: 3mm 4mm; margin: 1.5mm 0 1.5mm; font-size: 8pt; }
   </div>
   <div class="stats">
     <div><b>8</b><small>data sources</small></div><div><b>20</b><small>settings</small></div>
-    <div><b>13</b><small>notch states</small></div><div><b>359</b><small>passing tests</small></div>
+    <div><b>13</b><small>notch states</small></div><div><b>375</b><small>passing tests</small></div>
   </div>
   <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
 </section>
@@ -226,7 +226,7 @@ pre.t { padding: 3mm 4mm; margin: 1.5mm 0 1.5mm; font-size: 8pt; }
     <tr><td>Registry</td><td>HKCU Notifications\Settings</td><td>Turning Windows' banners off and back on</td></tr>
     <tr><td>Network</td><td>fetch()</td><td>lrclib.net, Open-Meteo, your ICS link, optional Spotify Web API</td></tr>
     <tr><td>Agent hooks</td><td>HTTP server on 127.0.0.1:47321</td><td>Claude Code and Codex hooks post events</td></tr>
-    <tr><td>Tests</td><td>node --test</td><td>51 files, 359 tests</td></tr>
+    <tr><td>Tests</td><td>node --test</td><td>56 files, 375 tests</td></tr>
     <tr><td>Packaging</td><td>electron-builder 26 (NSIS)</td><td>One-click per-user installer</td></tr></table>
   <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
 </section>
@@ -389,7 +389,7 @@ npm start</pre>
   <p style="margin-top:3mm;font-size:9pt;color:#6e6e73">If config.json can't be read (for example during a hand edit), Islet keeps the current settings and leaves the file as it is.</p>
   <div class="kick">SECTION 12</div>
   <h1>Build, test, debug</h1>
-  <pre>npm test        # node --test test/*.test.js  (51 files, 359 tests)
+  <pre>npm test        # node --test test/*.test.js  (56 files, 375 tests)
 npm run dist    # NSIS installer, run from PowerShell
 
 # inspect the notch with Chrome DevTools
@@ -543,9 +543,18 @@ node_modules\electron\dist\electron.exe . --remote-debugging-port=9333</pre>
 </section>
 
 <section class="page">
-  <div class="kick">SECTION 14 · 2.3.5</div>
-  <h1>What's new in 2.3.5</h1>
-  <div class="lead">2.3.5 ships the coding features (next page), release pop-ups and two performance fixes, on top of 2.3.4's new look and 18 pet moods.</div>
+  <div class="kick">SECTION 14 · 2.3.61</div>
+  <h1>What's new in 2.3.61</h1>
+  <div class="lead">2.3.61 is a fix release: two security fixes, crash and data-loss fixes, and two new Units kinds. 2.3.5 brought the coding features (next page).</div>
+  <h2>Fixed in 2.3.61</h2>
+  <ul style="font-size:9.5pt">
+    <li><b>Security</b>: every window stays on its own page and opens no new ones, and a session's project folder opens only if an agent reported it (never a file).</li>
+    <li><b>Phone drop</b> no longer crashes on a malformed request, or when its upload folder can't be created.</li>
+    <li><b>Notes and Links</b> say "Not saved" when a save fails and keep your text; the old file is never damaged.</li>
+    <li><b>Airplane mode</b> tile works again (the radios were switched the wrong way).</li>
+    <li><b>Approvals</b>: hooks from before 2.3.2 had only 5 s to answer; Islet raises them to 30 s on start.</li>
+    <li><b>Units</b>: new Area and Pressure kinds.</li>
+  </ul>
   <h2>New in 2.3.5</h2>
   <ul style="font-size:9.5pt">
     <li><b>Coding</b>: agent activity, build status and the Dev panel in the notch (see the next page).</li>
@@ -559,11 +568,8 @@ node_modules\electron\dist\electron.exe . --remote-debugging-port=9333</pre>
     <li><b>New look</b>: the zinc palette of shadcn/ui, thin borders instead of grey blocks, white "on" tiles, and Lucide outline icons in the dock, the tools and Quick Settings.</li>
     <li><b>Settings</b>: sections down the left, one shown at a time (the last one opens next time; the arrow keys move between them), switches, outline buttons and a small "Saved." note.</li>
     <li><b>Pet moods</b>: love, happy, charge, rush, zen, sleepy, cold, hot and hello join the old nine, each with a sprite row, a line and an emote that works for any pet.</li>
-    <li><b>Weather</b> shows the last forecast right away after a restart, and says how old it is.</li>
     <li><b>Do Not Disturb</b>: when it ends, one pop-up says what came in meanwhile ("5 notifications from WhatsApp, Teams and 1 more").</li>
-    <li><b>Battery</b>: the status column shows Windows' estimate ("Full in 1h 5m", "3h 10m left").</li>
   </ul>
-  <figure style="margin:2mm auto 0;width:42%"><img src="../tools/settings.png" style="width:100%;display:block;border-radius:3mm"><figcaption style="font-size:7.5pt;color:#6e6e73;margin-top:1mm">The settings window: one section at a time, picked on the left.</figcaption></figure>
   <h2>Around the code</h2>
   <ul style="font-size:9.5pt">
     <li><b>New module</b> <code>missed.js</code> (listed in <code>build.files</code>); <code>weather.fromCache</code> / <code>toCache</code>; <code>lyrics.follower</code> sends <code>false</code> for "no lyrics".</li>
@@ -776,7 +782,7 @@ if (gen === generation &amp;&amp; text !== null) onEvent(nextEvent(text));</pre>
   <h2>Security</h2>
   <div class="qa"><div><b>What's the security model?</b><p>Page isolated from Node, fixed bridge API, server on loopback only, every external input validated, outside text set with <code>textContent</code>, and link schemes allowlisted.</p></div><div><b>What's the weakest point?</b><p>The hook and listener use mutual HMAC proof keyed by <code>~/.islet-hook-token</code>. Other callers cannot forge messages without that secret; a process running as the same Windows user can read it and impersonate a hook.</p></div><div><b>Could a malicious notification attack the app?</b><p>Its text is only ever shown as text. Clicking it opens a URL only if the scheme is on the allowlist; otherwise it opens the sending app.</p></div></div>
   <h2>Testing and process</h2>
-  <div class="qa"><div><b>How is it tested?</b><p>359 tests in 51 files using Node's built-in <code>node --test</code>, with no extra dependencies. Mostly logic: calendar rules, time zones, lyrics, hook install, and races. Fakes replace the network and <code>http.createServer</code>.</p></div><div><b>How do you test time zones?</b><p>The calendar tests run with the host set to different zones, such as Asia/Kolkata and UTC, including daylight-saving changes.</p></div><div><b>What isn't tested?</b><p>The real screen and mouse, and the PowerShell helpers. I check those by hand, and through Chrome DevTools using <code>--remote-debugging-port=9333</code>.</p></div><div><b>Did you use AI to build this?</b><p>Answer truthfully; the commit history publicly shows Claude and Codex as co-authors. A strong answer says what you decided, how you checked the result, and which bugs you found. This guide is there so you can back that up.</p></div></div>
+  <div class="qa"><div><b>How is it tested?</b><p>375 tests in 56 files using Node's built-in <code>node --test</code>, with no extra dependencies. Mostly logic: calendar rules, time zones, lyrics, hook install, and races. Fakes replace the network and <code>http.createServer</code>.</p></div><div><b>How do you test time zones?</b><p>The calendar tests run with the host set to different zones, such as Asia/Kolkata and UTC, including daylight-saving changes.</p></div><div><b>What isn't tested?</b><p>The real screen and mouse, and the PowerShell helpers. I check those by hand, and through Chrome DevTools using <code>--remote-debugging-port=9333</code>.</p></div><div><b>Did you use AI to build this?</b><p>Answer truthfully. A strong answer says what you decided, how you checked the result, and which bugs you found. This guide is there so you can back that up.</p></div></div>
   <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
 </section>
 
