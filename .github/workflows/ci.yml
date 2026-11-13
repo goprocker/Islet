@@ -20,5 +20,7 @@ jobs:
       - run: npm ci
       - name: Packaging check
         run: node scripts/check-build-files.js
+      - name: Website download version
+        run: node scripts/site-version.js
       - name: Tests
         run: npm test
