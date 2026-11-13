@@ -574,7 +574,7 @@ ipcMain.handle("quickSet", async (_, kind, value) => {
   if (!a) return quickState();
   if (a.uri) { shell.openExternal(a.uri); return quickState(); }
   if (a.kind === "wifi" || a.kind === "bluetooth") await runScript("radios.ps1", ["toggle", a.kind]);
-  else if (a.kind === "airplane") await runScript("radios.ps1", ["set", "all", a.on ? "on" : "off"]);
+  else if (a.kind === "airplane") await runScript("radios.ps1", ["set", "all", a.radios]);
   else if (a.kind === "captions") await runScript("quickset.ps1", ["captions"]);
   else if (a.kind === "vol") await runScript("quickset.ps1", ["vol", String(a.value)]);
   else if (a.kind === "mute") await runScript("quickset.ps1", ["mute", a.on ? "on" : "off"]);
