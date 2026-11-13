@@ -24,6 +24,17 @@ test("text is clamped and non-strings are stored as empty", () => {
   assert.strictEqual(loadNotes(d), "");
 });
 
-test("a write failure doesn't throw", () => {
-  assert.doesNotThrow(() => saveNotes(path.join(tmp(), "no", "such", "dir"), "hi"));
+test("a write failure throws and keeps the stored text", () => {
+  const d = tmp();
+  saveNotes(d, "kept");
+  fs.mkdirSync(path.join(d, "notes.txt.tmp"));
+  assert.throws(() => saveNotes(d, "lost?"));
+  assert.strictEqual(loadNotes(d), "kept");
+  fs.rmdirSync(path.join(d, "notes.txt.tmp"));
+  saveNotes(d, "retried");
+  assert.strictEqual(loadNotes(d), "retried");
+});
+
+test("a folder that doesn't exist throws instead of pretending to save", () => {
+  assert.throws(() => saveNotes(path.join(tmp(), "no", "such", "dir"), "hi"));
 });

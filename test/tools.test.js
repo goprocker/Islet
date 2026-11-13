@@ -41,3 +41,11 @@ test("phone drop picks a private LAN address and safe file names", () => {
   fs.writeFileSync(path.join(dir, "a.txt"), "");
   assert.strictEqual(path.basename(freePath(dir, "a.txt")), "a (2).txt");
 });
+
+test("links: a failed save throws and keeps the stored list", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "islet-links-"));
+  saveLinks(dir, [{ url: "https://a.com" }]);
+  fs.mkdirSync(path.join(dir, "links.json.tmp"));
+  assert.throws(() => saveLinks(dir, [{ url: "https://b.com" }]));
+  assert.deepStrictEqual(loadLinks(dir).map(l => l.url), ["https://a.com/"]);
+});
