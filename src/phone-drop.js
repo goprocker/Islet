@@ -71,7 +71,9 @@ function start({ dir, shelf, onFile, lifetime = LIFETIME }) {
   secret = crypto.randomBytes(32).toString("hex");
   nonces.clear();
   const srv = server = http.createServer((req, res) => {
-    const u = new URL(req.url, "http://x"), parts = u.pathname.split("/").filter(Boolean);
+    let u;
+    try { u = new URL(req.url, "http://x"); } catch { res.writeHead(400); return res.end(); }
+    const parts = u.pathname.split("/").filter(Boolean);
     if (parts[0] !== session) { res.writeHead(404); return res.end(); }
     if (req.method === "GET" && parts.length === 1) {
       res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
@@ -91,9 +93,13 @@ function start({ dir, shelf, onFile, lifetime = LIFETIME }) {
     }
     if (req.method === "POST" && parts[1] === "up") {
       if (Number(req.headers["content-length"]) > MAX_FILE) { res.writeHead(413); return res.end(); }
-      fs.mkdirSync(dir, { recursive: true });
-      const p = freePath(dir, safeName(u.searchParams.get("name")));
-      const tmp = path.join(dir, `.upload-${crypto.randomBytes(6).toString("hex")}.part`);
+      // a missing, blocked or read-only upload folder fails this one request, not the server
+      let p, tmp;
+      try {
+        fs.mkdirSync(dir, { recursive: true });
+        p = freePath(dir, safeName(u.searchParams.get("name")));
+        tmp = path.join(dir, `.upload-${crypto.randomBytes(6).toString("hex")}.part`);
+      } catch { req.resume(); res.writeHead(500); return res.end(); }
       let size = 0, done = false;
       const out = fs.createWriteStream(tmp, { flags: "wx" });
       const fail = code => {
