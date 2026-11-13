@@ -9,6 +9,8 @@
     speed: { label: "Speed", units: { "m/s": 1, "km/h": 1 / 3.6, mph: 0.44704, knot: 0.514444 } },
     data: { label: "Data", units: { B: 1, KB: 1024, MB: 1024 ** 2, GB: 1024 ** 3, TB: 1024 ** 4 } },
     time: { label: "Time", units: { s: 1, min: 60, h: 3600, day: 86400, week: 604800 } },
+    area: { label: "Area", units: { "mm²": 0.000001, "cm²": 0.0001, "m²": 1, "km²": 1000000, "in²": 0.00064516, "ft²": 0.09290304, acre: 4046.8564224, hectare: 10000 } },
+    pressure: { label: "Pressure", units: { Pa: 1, kPa: 1000, bar: 100000, psi: 6894.757293168, atm: 101325 } },
   };
 
   const toC = { c: v => v, f: v => (v - 32) * 5 / 9, k: v => v - 273.15 };
