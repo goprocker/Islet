@@ -71,7 +71,9 @@ function start({ dir, shelf, onFile, lifetime = LIFETIME }) {
   secret = crypto.randomBytes(32).toString("hex");
   nonces.clear();
   const srv = server = http.createServer((req, res) => {
-    const u = new URL(req.url, "http://x"), parts = u.pathname.split("/").filter(Boolean);
+    let u;
+    try { u = new URL(req.url, "http://x"); } catch { res.writeHead(400); return res.end(); }
+    const parts = u.pathname.split("/").filter(Boolean);
     if (parts[0] !== session) { res.writeHead(404); return res.end(); }
     if (req.method === "GET" && parts.length === 1) {
       res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
