@@ -43,6 +43,15 @@ jobs:
         shell: bash
         run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
 
+      # a tag pushed without bumping package.json would republish the old version under the new tag
+      - name: Tag matches package.json
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        run: |
+          if [ "${GITHUB_REF_NAME}" != "v${{ steps.ver.outputs.version }}" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} but package.json says ${{ steps.ver.outputs.version }}"; exit 1
+          fi
+
       - name: Upload unsigned installer
         id: unsigned
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
