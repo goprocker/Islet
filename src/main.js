@@ -432,6 +432,8 @@ function startBridge() {
   if (!fs.existsSync(codexFlag) && bridge.installed()) {
     try { bridge.install(); fs.writeFileSync(codexFlag, "1"); } catch (e) { console.warn("codex hook install", e.message); }
   }
+  // hooks from before 2.3.2 gave permission requests only 5 s; raise Islet's own to 30 s
+  bridge.fixPermissionTimeouts();
   // test/build status came later still: add the PreToolUse hook for people who kept the others
   const buildFlag = path.join(app.getPath("userData"), "build-hooks-set");
   if (!fs.existsSync(buildFlag) && bridge.installedBefore()) {

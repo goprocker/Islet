@@ -82,3 +82,41 @@ test("Codex permission hooks wait long enough for an Islet decision", () => {
     assert.match(handler.command, /PermissionRequest codex$/);
   });
 });
+
+// an install from before 2.3.2: Islet's PermissionRequest handler has a 5 s timeout,
+// and the same group holds another tool's handler that must not change
+const oldCodex = JSON.stringify({
+  hooks: {
+    PermissionRequest: [{ hooks: [
+      { type: "command", command: "other-tool approve", timeout: 5 },
+      { type: "command", command: 'node "C:/x/hooks/islet-hook.js" PermissionRequest codex', timeout: 5 },
+    ] }],
+    Stop: [{ hooks: [{ type: "command", command: 'node "C:/x/hooks/islet-hook.js" Stop codex', timeout: 5 }] }],
+  },
+}, null, 2);
+
+test("an upgrade raises only Islet's old 5 s permission timeout, in both files", () => {
+  const oldClaude = oldCodex.replace(/ codex/g, "");
+  withHome({ ".codex/hooks.json": oldCodex, ".claude/settings.json": oldClaude }, (bridge, read) => {
+    assert.strictEqual(bridge.fixPermissionTimeouts().length, 2);
+    for (const [file, before] of [[".codex/hooks.json", oldCodex], [".claude/settings.json", oldClaude]]) {
+      const after = JSON.parse(read(file)), want = JSON.parse(before);
+      want.hooks.PermissionRequest[0].hooks[1].timeout = 30;
+      assert.deepStrictEqual(after, want, file);
+      assert.strictEqual(read(file + ".islet-backup"), before, "the old file is kept as a backup");
+    }
+  });
+});
+
+test("current hooks and unreadable files are left alone by the timeout fix", () => {
+  withHome({ ".codex/config.toml": "", ".claude/settings.json": "{invalid" }, (bridge, read) => {
+    assert.deepStrictEqual(bridge.fixPermissionTimeouts(), []);
+    assert.strictEqual(read(".claude/settings.json"), "{invalid");
+  });
+  withHome({ ".codex/config.toml": "" }, (bridge, read) => {
+    bridge.install();
+    const before = read(".codex/hooks.json");
+    assert.deepStrictEqual(bridge.fixPermissionTimeouts(), []);
+    assert.strictEqual(read(".codex/hooks.json"), before);
+  });
+});

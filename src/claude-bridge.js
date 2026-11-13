@@ -217,12 +217,38 @@ function install() {
       const list = withoutIslet(s.hooks[ev] || []);
       list.push({
         ...(ev === "PostToolUse" ? { matcher: "*" } : ev === "PreToolUse" ? { matcher: "Bash" } : {}),
-        hooks: [{ type: "command", command: `node "${HOOK}" ${ev}${t.arg}`, timeout: ev === "PermissionRequest" ? 30 : 5 }],
+        hooks: [{ type: "command", command: `node "${HOOK}" ${ev}${t.arg}`, timeout: ev === "PermissionRequest" ? PERMISSION_TIMEOUT : 5 }],
       });
       s.hooks[ev] = list;
     }
     fs.writeFileSync(t.file, JSON.stringify(s, null, 2));
   }
+}
+// Older Islet versions gave the PermissionRequest hook a 5 s timeout, shorter than the time
+// Islet waits for an answer, so the agent dropped the hook before a notch decision arrived.
+// Raise only Islet's own handler; everything else in the file stays as it is. Runs on every
+// start; a file that can't be read is skipped and tried again next time. Returns the files fixed.
+const PERMISSION_TIMEOUT = 30;
+function fixPermissionTimeouts() {
+  const fixed = [];
+  for (const t of targets()) {
+    if (!fs.existsSync(t.file)) continue;
+    let s;
+    try { s = readJson(t.file); } catch (e) { console.warn("hook timeout check", e.message); continue; }
+    let changed = false;
+    for (const g of s.hooks?.PermissionRequest || []) {
+      for (const h of Array.isArray(g?.hooks) ? g.hooks : []) {
+        if (h && JSON.stringify(h).includes(MARK) && !(h.timeout >= PERMISSION_TIMEOUT)) { h.timeout = PERMISSION_TIMEOUT; changed = true; }
+      }
+    }
+    if (!changed) continue;
+    try {
+      fs.copyFileSync(t.file, t.file + ".islet-backup");
+      fs.writeFileSync(t.file, JSON.stringify(s, null, 2));
+      fixed.push(t.file);
+    } catch (e) { console.warn("hook timeout fix", e.message); }
+  }
+  return fixed;
 }
 function uninstall() {
   for (const { t, s } of targets().map(t => ({ t, s: readJson(t.file) }))) {
@@ -236,4 +262,4 @@ function uninstall() {
   }
 }
 
-module.exports = { start, answer, status, codex, install, uninstall, installed, installedBefore, buildEvent, pickSessions, summarize, ensureToken: hookAuth.ensureToken };
+module.exports = { start, answer, status, codex, install, uninstall, fixPermissionTimeouts, installed, installedBefore, buildEvent, pickSessions, summarize, ensureToken: hookAuth.ensureToken };
