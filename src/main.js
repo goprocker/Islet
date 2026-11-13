@@ -509,7 +509,9 @@ async function pollClipboard() {
 }
 ipcMain.on("copyClip", (_, i) => { const t = clipStore().text(i); if (t !== undefined) { lastClip = t; clipboard.writeText(t).catch(e => console.warn("clipboard", e.message)); } });
 ipcMain.on("pinClip", (_, i) => { clipStore().togglePin(i); sendClips(); });
-ipcMain.on("saveNotes", (_, text) => saveNotes(app.getPath("userData"), text));
+// saves answer { ok, value } or { ok: false, error } so the panel can say when an edit wasn't stored
+const saveResult = (what, fn) => { try { return { ok: true, value: fn() }; } catch (e) { console.warn(what, e.message); return { ok: false, error: e.code || e.message }; } };
+ipcMain.handle("saveNotes", (_, text) => saveResult("notes", () => saveNotes(app.getPath("userData"), text)));
 ipcMain.on("clearClips", () => { clipStore().clear(); sendClips(); });
 
 // ---- universal search: Alt+Space finds apps, Wi-Fi / Bluetooth, clipboard items and notes ----
@@ -574,7 +576,7 @@ ipcMain.handle("quickSet", async (_, kind, value) => {
   if (!a) return quickState();
   if (a.uri) { shell.openExternal(a.uri); return quickState(); }
   if (a.kind === "wifi" || a.kind === "bluetooth") await runScript("radios.ps1", ["toggle", a.kind]);
-  else if (a.kind === "airplane") await runScript("radios.ps1", ["set", "all", a.on ? "on" : "off"]);
+  else if (a.kind === "airplane") await runScript("radios.ps1", ["set", "all", a.radios]);
   else if (a.kind === "captions") await runScript("quickset.ps1", ["captions"]);
   else if (a.kind === "vol") await runScript("quickset.ps1", ["vol", String(a.value)]);
   else if (a.kind === "mute") await runScript("quickset.ps1", ["mute", a.on ? "on" : "off"]);
@@ -667,7 +669,7 @@ ipcMain.on("phoneStop", () => phoneDrop.stop());
 
 // ---- links: saved sites, and web searches opened in the browser ----
 ipcMain.handle("linksGet", () => loadLinks(app.getPath("userData")));
-ipcMain.handle("linksSave", (_, list) => saveLinks(app.getPath("userData"), list));
+ipcMain.handle("linksSave", (_, list) => saveResult("links", () => saveLinks(app.getPath("userData"), list)));
 ipcMain.on("copyText", (_, t) => { if (typeof t === "string" && t.length <= 100) clipboard.writeText(t); });
 // ---- dev panel: git, local ports, snippets, clipboard decoding (dev-tools.js) ----
 const runOut = (cmd, args, opts = {}) => new Promise(resolve => execFile(cmd, args, { windowsHide: true, timeout: 8000, maxBuffer: 4e6, ...opts }, (err, out) => resolve(err ? null : String(out))));

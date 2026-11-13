@@ -98,7 +98,7 @@
         <p class="empty" id="shelfEmpty">Drop files here to hold them, then drag them out anywhere.</p>
       </section>
       <section class="panel" id="notesPanel" hidden aria-label="Quick notes">
-        <header><b>Notes</b><button class="link" id="notesClear">Clear</button></header>
+        <header><b>Notes</b><button class="saveErr" id="notesErr" role="alert" title="Click to try again" hidden></button><button class="link" id="notesClear">Clear</button></header>
         <textarea id="notesText" maxlength="20000" placeholder="Jot something down" spellcheck="false" aria-label="Quick notes"></textarea>
       </section>
       <section class="panel" id="phonePanel" hidden aria-label="Phone drop">
@@ -106,7 +106,7 @@
         <div class="phone"><img id="phoneQr" alt="QR code for Phone drop" hidden><div><p id="phoneMsg">Starting…</p><code id="phoneUrl"></code><p class="dsub">Scan with your phone camera. Files you send land on the shelf and in Downloads\Islet drop, and shelf files can be taken back. Stops after 10 minutes.</p></div></div>
       </section>
       <section class="panel" id="linksPanel" hidden aria-label="Links">
-        <header><b>Links</b><span class="dsub">Search the web or open a saved site</span></header>
+        <header><b>Links</b><span class="dsub">Search the web or open a saved site</span><span class="saveErr" id="linksErr" role="alert" hidden></span></header>
         <form class="lsearch" id="linkSearch"><input id="linkQ" type="search" placeholder="Search" autocomplete="off" spellcheck="false" aria-label="Search the web"><select id="linkEngine" aria-label="Search with"><option value="https://www.google.com/search?q=">Google</option><option value="https://www.youtube.com/results?search_query=">YouTube</option><option value="https://github.com/search?q=">GitHub</option><option value="https://stackoverflow.com/search?q=">Stack Overflow</option></select></form>
         <ul class="lgrid" id="linkList"></ul>
         <form class="ladd" id="linkAdd"><input id="linkUrl" type="url" placeholder="Paste a link to save it" autocomplete="off" aria-label="Link to save"><button class="link">Save</button></form>
