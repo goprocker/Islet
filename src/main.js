@@ -15,6 +15,7 @@ const pomodoro = require("./pomodoro");
 const { clipHistory } = require("./clip-history");
 const { loadNotes, saveNotes } = require("./notes");
 const windowGuard = require("./window-guard");
+const { projectToOpen } = require("./open-project");
 const universalSearch = require("./search");
 const quickSettings = require("./quick-settings");
 const downloads = require("./downloads");
@@ -385,7 +386,7 @@ function codexSessions() {
   }
   return out;
 }
-let lastClaude = "";
+let lastClaude = "", knownCwds = new Set();
 // one refresh at a time: calls during a run (hook bursts, the 2 s poll) fold into a single rerun
 let claudeRun = null, claudeAgain = null;
 function readClaude({ force = false, full = false } = {}) {
@@ -399,6 +400,7 @@ function readClaude({ force = false, full = false } = {}) {
     const claude = await Promise.all(recent.map(async t => readSession(t, await transcriptEntries(t))));
     const sessions = bridge.pickSessions([...claude, ...codexSessions()].filter(Boolean));
     const key = JSON.stringify(sessions);
+    knownCwds = new Set(sessions.map(s => s.cwd).filter(Boolean));
     if (force || key !== lastClaude) { lastClaude = key; send("claude", sessions); }
   })().catch(e => console.warn("claude sessions", e.message)).finally(() => {
     claudeRun = null;
@@ -450,7 +452,8 @@ ipcMain.on("openNotification", (_, id) => {
   else if (t.aumid && !/\\/.test(t.aumid)) spawn("explorer.exe", [`shell:AppsFolder\\${t.aumid}`], { detached: true }).on("error", e => console.warn("open", e.message));
   else if (t.aumid) spawn(t.aumid.replace(/^\{[^}]+\}\\/, process.env.WINDIR + "\\System32\\"), [], { detached: true }).on("error", e => console.warn("open", e.message));
 });
-ipcMain.on("openProject", (_, cwd) => { if (cwd && fs.existsSync(cwd)) shell.openPath(cwd); });
+// only folders a session reported (knownCwds, filled by readClaude) are opened
+ipcMain.on("openProject", (_, cwd) => { const dir = projectToOpen(cwd, knownCwds); if (dir) shell.openPath(dir); });
 
 // ---- Do Not Disturb: manual switch, or a daily window like 22:00 -> 07:00 ----
 // the daily window: when it is on right now, the time it ends (ms), else 0
