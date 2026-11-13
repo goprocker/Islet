@@ -855,8 +855,15 @@ $("clipClear").onclick = () => window.bridge.clearClips();
 // ---- notes: saved half a second after typing stops ----
 let notesSave;
 window.bridge.onNotes(t => { if (document.activeElement !== $("notesText")) $("notesText").value = t; });
-$("notesText").oninput = () => { clearTimeout(notesSave); notesSave = setTimeout(() => window.bridge.saveNotes($("notesText").value), 500); };
-$("notesClear").onclick = () => { $("notesText").value = ""; window.bridge.saveNotes(""); };
+// a failed save says so and keeps the text in the box; the next edit (or a click on the message) tries again
+const saveError = (id, r) => { $(id).hidden = r.ok; if (!r.ok) $(id).textContent = `Not saved (${r.error})`; return r.ok; };
+async function saveNotesNow() {
+  clearTimeout(notesSave);
+  saveError("notesErr", await window.bridge.saveNotes($("notesText").value));
+}
+$("notesText").oninput = () => { clearTimeout(notesSave); notesSave = setTimeout(saveNotesNow, 500); };
+$("notesErr").onclick = saveNotesNow;
+$("notesClear").onclick = () => { $("notesText").value = ""; saveNotesNow(); };
 
 window.bridge.onShelf(files => {
   $("shelfEmpty").hidden = files.length > 0;
@@ -930,13 +937,19 @@ function drawLinks() {
     b.append(Object.assign(document.createElement("i"), { textContent: favicon(l.url) }), Object.assign(document.createElement("span"), { textContent: l.title }));
     b.onclick = () => window.bridge.openLink(l.url);
     x.className = "lx"; x.textContent = "×"; x.title = "Remove"; x.setAttribute("aria-label", `Remove ${l.title}`);
-    x.onclick = async () => { links = await window.bridge.linksSave(links.filter((_, k) => k !== i)); drawLinks(); };
+    x.onclick = () => saveLinksNow(links.filter((_, k) => k !== i));
     li.append(b, x);
     return li;
   }));
 }
 $("linkSearch").onsubmit = e => { e.preventDefault(); const q = $("linkQ").value.trim(); if (q) { window.bridge.openLink($("linkEngine").value + encodeURIComponent(q)); $("linkQ").value = ""; } };
-$("linkAdd").onsubmit = async e => { e.preventDefault(); const url = $("linkUrl").value.trim(); if (!url) return; links = await window.bridge.linksSave([...links, { url }]); $("linkUrl").value = ""; drawLinks(); };
+// the list and the input change only once the save is on disk
+async function saveLinksNow(next) {
+  const r = await window.bridge.linksSave(next);
+  if (!saveError("linksErr", r)) return false;
+  links = r.value; drawLinks(); return true;
+}
+$("linkAdd").onsubmit = async e => { e.preventDefault(); const url = $("linkUrl").value.trim(); if (!url) return; if (await saveLinksNow([...links, { url }])) $("linkUrl").value = ""; };
 
 // ---- world clock: your time and the cities you add (kept in this window's storage) ----
 const CITIES = { "Chennai": "Asia/Kolkata", "Dubai": "Asia/Dubai", "Singapore": "Asia/Singapore", "Tokyo": "Asia/Tokyo", "Sydney": "Australia/Sydney", "London": "Europe/London", "Berlin": "Europe/Berlin", "New York": "America/New_York", "Chicago": "America/Chicago", "San Francisco": "America/Los_Angeles", "São Paulo": "America/Sao_Paulo" };

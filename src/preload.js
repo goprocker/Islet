@@ -60,7 +60,7 @@ contextBridge.exposeInMainWorld("bridge", {
   onDndSummary: on("dndSummary"),
   copyClip: i => ipcRenderer.send("copyClip", i),
   onNotes: on("notes"),
-  saveNotes: t => ipcRenderer.send("saveNotes", t),
+  saveNotes: t => ipcRenderer.invoke("saveNotes", t),
   pinClip: i => ipcRenderer.send("pinClip", i),
   clearClips: () => ipcRenderer.send("clearClips"),
   onShelf: on("shelf"),

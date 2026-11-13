@@ -21,10 +21,17 @@ function loadLinks(dir) {
   } catch { return []; }
 }
 
-// returns the list as stored; a write error is logged, never thrown
+// write to a temp file and rename it over the old one, so a failed save never damages what was stored
+function writeAtomic(f, data) {
+  const tmp = f + ".tmp";
+  try { fs.writeFileSync(tmp, data); fs.renameSync(tmp, f); }
+  catch (e) { try { fs.rmSync(tmp, { force: true }); } catch {} throw e; }
+}
+
+// returns the list as stored; throws when it couldn't be written, keeping the old file
 function saveLinks(dir, list) {
   const out = (Array.isArray(list) ? list : []).map(clean).filter(Boolean).slice(0, MAX);
-  try { fs.writeFileSync(file(dir), JSON.stringify(out, null, 1)); } catch (e) { console.warn("links", e.message); }
+  writeAtomic(file(dir), JSON.stringify(out, null, 1));
   return out;
 }
 
