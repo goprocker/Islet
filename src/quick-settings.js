@@ -31,7 +31,9 @@ function state(radios, levels) {
 // what the panel may ask main to do; anything else is dropped. Returns a normalised action or null.
 function action(kind, value) {
   if (kind === "wifi" || kind === "bluetooth" || kind === "captions") return { kind };
-  if (kind === "airplane" || kind === "mute") return { kind, on: !!value };
+  // airplane mode on means every radio off, so radios.ps1 gets the opposite state
+  if (kind === "airplane") return { kind, on: !!value, radios: value ? "off" : "on" };
+  if (kind === "mute") return { kind, on: !!value };
   if (kind === "vol") { const v = num(value); return v === null ? null : { kind, value: clamp(v, 0, 1) }; }
   if (kind === "bright") { const v = num(value); return v === null ? null : { kind, value: Math.round(clamp(v, 0, 100)) }; }
   const tile = TILES.find(t => t.id === kind && t.kind === "settings");
