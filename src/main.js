@@ -14,6 +14,7 @@ const weather = require("./weather");
 const pomodoro = require("./pomodoro");
 const { clipHistory } = require("./clip-history");
 const { loadNotes, saveNotes } = require("./notes");
+const windowGuard = require("./window-guard");
 const universalSearch = require("./search");
 const quickSettings = require("./quick-settings");
 const downloads = require("./downloads");
@@ -109,7 +110,9 @@ function createWindow() {
   win.setVisibleOnAllWorkspaces(true);
   // click-through until the page reports the notch's box; then the window takes the notch's shape (applyShape)
   win.setIgnoreMouseEvents(true, { forward: true });
-  win.loadFile(path.join(__dirname, "..", "renderer", "index.html"));
+  const notchPage = path.join(__dirname, "..", "renderer", "index.html");
+  windowGuard.guard(win, notchPage);
+  win.loadFile(notchPage);
   win.once("ready-to-show", () => win.showInactive());
   // Alt+F4 would destroy the notch while the app keeps running; only the tray's Quit closes it
   win.on("close", e => { if (!app.isQuitting) e.preventDefault(); });
@@ -737,7 +740,9 @@ function openSettings() {
     width: 780, height: 620, title: "Islet settings", icon: APP_ICON, backgroundColor: "#0b0b0c", autoHideMenuBar: true,
     webPreferences: { preload: path.join(__dirname, "..", "settings", "preload.js") },
   });
-  settingsWin.loadFile(path.join(__dirname, "..", "settings", "settings.html"));
+  const settingsPage = path.join(__dirname, "..", "settings", "settings.html");
+  windowGuard.guard(settingsWin, settingsPage);
+  settingsWin.loadFile(settingsPage);
 }
 const settingsView = () => ({ ...config, hooks: bridge.installed(), login: login(), petName: loadPet(config.customPet)?.name || "" });
 // custom pet: pick a Codex Pets pack (.zip or pet.json) the user downloaded; it is checked and copied into userData/pets
@@ -794,7 +799,9 @@ function openWelcome() {
     width: 560, height: 660, title: "Welcome to Islet", icon: APP_ICON, backgroundColor: "#0b0b0c", autoHideMenuBar: true,
     webPreferences: { preload: path.join(__dirname, "..", "settings", "welcome-preload.js") },
   });
-  welcomeWin.loadFile(path.join(__dirname, "..", "settings", "welcome.html"));
+  const welcomePage = path.join(__dirname, "..", "settings", "welcome.html");
+  windowGuard.guard(welcomeWin, welcomePage);
+  welcomeWin.loadFile(welcomePage);
 }
 ipcMain.handle("welcome:load", () => ({
   agents: [".claude", ".codex"].some(d => fs.existsSync(path.join(os.homedir(), d))),
