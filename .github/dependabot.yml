@@ -14,3 +14,13 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+
+  - package-ecosystem: "npm"
+    directory: "/landing"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "npm"
+    directory: "/launch-film"
+    schedule:
+      interval: "weekly"
