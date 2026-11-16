@@ -126,6 +126,7 @@
         <header><b>Timer and focus</b><span class="dsub" id="timerSub">Pick a length</span></header>
         <div class="tbig"><strong id="timerBig">0:00</strong><small id="timerWhat">No timer running</small></div>
         <div class="chips" id="timerChips"><button data-min="5">5 min</button><button data-min="15">15 min</button><button data-min="25">25 min</button><button data-min="50">50 min</button><button data-min="pomodoro">Pomodoro</button><button data-min="0">Cancel</button><button id="swBtn">Stopwatch</button></div>
+        <p class="fstats" id="focusStats"></p>
       </section>
       <section class="panel" id="weatherPanel" hidden aria-label="Weather">
         <header><b id="wPlace">Weather</b><span class="dsub" id="wMeta"></span></header>
@@ -156,18 +157,27 @@
       </section>
       <section class="panel" id="devPanel" hidden aria-label="Dev tools">
         <header><b>Dev</b><span class="dsub" id="devSub">Git, ports, snippets and the clipboard</span></header>
+        <div class="dtabs" id="devTabs" role="tablist">
+          <button role="tab" data-tab="git">Git <small id="tabGitN"></small></button>
+          <button role="tab" data-tab="ports">Ports <small id="tabPortsN"></small></button>
+          <button role="tab" data-tab="snips">Snippets</button>
+          <button role="tab" data-tab="clip">Clipboard</button>
+        </div>
         <div class="dev">
-          <div class="dcol">
-            <h4>Git <small id="gitRepo"></small></h4>
-            <div class="gitline" id="gitLine"></div>
+          <div class="dsec" data-tab="git">
+            <div class="dhead"><span class="gitline" id="gitLine"></span><small id="gitRepo"></small></div>
             <ul class="gitfiles" id="gitFiles"></ul>
-            <h4>Ports <button class="link" id="portsRefresh" title="Look again">Refresh</button></h4>
+          </div>
+          <div class="dsec" data-tab="ports" hidden>
+            <div class="dhead"><span>Local dev servers</span><button class="link" id="portsRefresh" title="Look again">Refresh</button></div>
             <ul class="ports" id="portsList"></ul>
           </div>
-          <div class="dcol">
-            <h4>Snippets <button class="link" id="snipAdd" title="Save the clipboard as a snippet">+ From clipboard</button></h4>
+          <div class="dsec" data-tab="snips" hidden>
+            <div class="dhead"><span>Click to copy</span><button class="link" id="snipAdd" title="Save the clipboard as a snippet">+ From clipboard</button></div>
             <ul class="snips" id="snipList"></ul>
-            <h4>Clipboard <small id="decTitle"></small></h4>
+          </div>
+          <div class="dsec" data-tab="clip" hidden>
+            <div class="dhead"><span id="decTitle">Decoded</span></div>
             <pre class="decoded" id="decText"></pre>
           </div>
         </div>

@@ -12,6 +12,7 @@ const bridge = require("./claude-bridge");
 const lyrics = require("./lyrics");
 const weather = require("./weather");
 const pomodoro = require("./pomodoro");
+const focusLog = require("./focus-log");
 const { clipHistory } = require("./clip-history");
 const { loadNotes, saveNotes } = require("./notes");
 const windowGuard = require("./window-guard");
@@ -1027,8 +1028,28 @@ function startDevices() {
 
 // ---- timer + pomodoro ----
 let timerEnd = 0, timerDone, timerLabel = "Timer", pomo = null;
+// Focus Mode 2.0 (#226): what this Pomodoro session focused, and the daily log in userData/focus.json
+let focusSession = null, phaseStart = 0;
+const focusPath = () => path.join(app.getPath("userData"), "focus.json");
+function readFocus() { try { return focusLog.clean(JSON.parse(fs.readFileSync(focusPath(), "utf8"))); } catch { return { days: {} }; } }
+function logFocus(minutes, round) {
+  if (minutes < 1 && !round) return;
+  const log = focusLog.add(readFocus(), minutes, round);
+  try { fs.writeFileSync(focusPath() + ".tmp", JSON.stringify(log)); fs.renameSync(focusPath() + ".tmp", focusPath()); } catch {}
+  if (focusSession) { focusSession.min += Math.round(minutes); if (round) focusSession.rounds++; }
+}
+const focusStats = () => focusLog.statsLine(focusLog.stats(readFocus()));
+// leaving a Pomodoro early: count the focus minutes done so far, then one line about the whole session
+function endFocusSession() {
+  if (!pomo) return;
+  if (pomo.phase === "focus" && phaseStart) logFocus((Date.now() - phaseStart) / 60000, false);
+  const line = focusLog.summary(focusSession);
+  if (line) send("focusEvent", { kind: "summary", body: line, stats: focusStats() });
+  focusSession = null;
+}
 function runTimer(min, label) {
   timerEnd = min ? Date.now() + min * 60000 : 0;
+  phaseStart = min ? Date.now() : 0;
   timerLabel = label;
   focusDnd = pomodoro.wantsDnd(pomo, config.focusDnd && min);
   sendDnd();
@@ -1037,12 +1058,21 @@ function runTimer(min, label) {
   if (!min) return;
   // a pomodoro moves straight to its next phase; the page shows "Time's up" itself, a plain timer is just marked finished afterwards
   timerDone = setTimeout(() => {
-    if (pomo) { pomo = pomodoro.next(pomo); runTimer(pomo.min, pomo.label); }
+    if (pomo) {
+      const done = pomo;
+      if (done.phase === "focus") logFocus(done.min, true);
+      pomo = pomodoro.next(pomo);
+      send("focusEvent", done.phase === "focus"
+        ? { kind: "break", title: `${done.label} done`, body: `${pomo.label}, ${pomo.min} min. ${focusLog.breakTip(done.round)}`, stats: focusStats() }
+        : { kind: "focus", title: "Break's over", body: `${pomo.label} starts now, ${pomo.min} min.`, stats: focusStats() });
+      runTimer(pomo.min, pomo.label);
+    }
     else { timerEnd = 0; buildMenu(); }
   }, min * 60000 + (pomo ? 0 : 2000));
 }
-function setTimer(min) { pomo = null; runTimer(min, "Timer"); }
-function startPomodoro() { pomo = pomodoro.next(null); runTimer(pomo.min, pomo.label); }
+function setTimer(min) { endFocusSession(); pomo = null; runTimer(min, "Timer"); }
+function startPomodoro() { endFocusSession(); focusSession = { rounds: 0, min: 0 }; pomo = pomodoro.next(null); runTimer(pomo.min, pomo.label); }
+ipcMain.handle("focusStats", focusStats);
 
 // ---- stopwatch ----
 let stopwatchStart = 0;

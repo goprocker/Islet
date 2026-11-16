@@ -21,6 +21,8 @@ contextBridge.exposeInMainWorld("bridge", {
   onCalendar: on("calendar"),
   onTimer: on("timer"),
   onTimerLabel: on("timerLabel"),
+  onFocusEvent: on("focusEvent"),
+  focusStats: () => ipcRenderer.invoke("focusStats"),
   onStopwatch: on("stopwatch"),
   onSpotifyIcon: on("spotifyIcon"),
   onSystem: on("system"),

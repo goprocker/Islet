@@ -618,7 +618,8 @@ function render() {
     soon = true;
   } else if (timerEnd && timerEnd <= now) {
     timerEnd = 0;
-    toast({ app: "Timer", badge: "⏱", color: "#5e5ce6", title: "Time's up", body: `${timerLabel} has finished.` });
+    // Pomodoro phases say it themselves (focusEvent), with the break tip
+    if (!/^(Focus \d|Break|Long break)/.test(timerLabel)) toast({ app: "Timer", badge: "⏱", color: "#5e5ce6", title: "Time's up", body: `${timerLabel} has finished.` });
   }
   // a running stopwatch counts up when no timer is on
   if (!side && stopwatchStart) {
@@ -814,7 +815,7 @@ function drawHello() {
 
 // ---- tools: one panel at a time, in the tall view with the dock under it ----
 const PANELS = [...document.querySelectorAll(".panel")].map(p => p.id);
-const OPENED = { dashPanel: () => { prefetchQuick(); drawHello(); closeMixer(); }, phonePanel: startPhone, linksPanel: loadLinks, clockPanel: drawClocks, timerPanel: drawTimer, weatherPanel: drawWeather, unitsPanel: drawUnits, colorPanel: drawColors, sysPanel: drawSys, aiPanel: drawAi, devPanel: drawDev };
+const OPENED = { dashPanel: () => { prefetchQuick(); drawHello(); closeMixer(); }, phonePanel: startPhone, linksPanel: loadLinks, clockPanel: drawClocks, timerPanel: () => { drawTimer(); drawFocusStats(); }, weatherPanel: drawWeather, unitsPanel: drawUnits, colorPanel: drawColors, sysPanel: drawSys, aiPanel: drawAi, devPanel: drawDev };
 let openPanel = null;
 // toggle: a second click on the button that opened it closes it (the dock only switches)
 function showPanel(id, toggle = true) {
@@ -1130,6 +1131,30 @@ $("timerChips").onclick = e => {
   else window.bridge.timerStart(b.dataset.min === "pomodoro" ? "pomodoro" : Number(b.dataset.min));
 };
 
+// Focus Mode 2.0 (#226): break reminders, the session summary and today's focus time
+function drawFocusStats(line) {
+  if (line) $("focusStats").textContent = line;
+  else window.bridge.focusStats().then(l => { $("focusStats").textContent = l; });
+}
+window.bridge.onFocusEvent(e => {
+  drawFocusStats(e.stats);
+  const svg = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/></svg>';
+  if (e.kind === "summary") toast({ id: "focus", app: "Focus", svg, color: "#5e5ce6", title: "Focus session done", body: `${e.body} ${e.stats}.` });
+  else toast({ id: "focus", app: "Focus", svg, color: e.kind === "break" ? "#30d158" : "#5e5ce6", title: e.title, body: e.body });
+  if (e.kind === "break") peek(5000);
+});
+
+// Dev panel tabs: one section at a time; the last one opens next time
+function devTab(name) {
+  for (const b of $("devTabs").children) b.setAttribute("aria-selected", b.dataset.tab === name);
+  for (const sct of document.querySelectorAll("#devPanel .dsec")) sct.hidden = sct.dataset.tab !== name;
+  try { localStorage.setItem("devTab", name); } catch {}
+}
+$("devTabs").onclick = e => { const b = e.target.closest("button"); if (b) devTab(b.dataset.tab); };
+let savedDevTab = "git";
+try { savedDevTab = localStorage.getItem("devTab") || "git"; } catch {}
+devTab(savedDevTab);
+
 // ---- weather: now, the next hours and the next days ----
 function drawWeather() {
   const ok = wx && !wx.error;
@@ -1229,15 +1254,17 @@ async function drawGit() {
   $("gitRepo").textContent = g ? g.repo : "";
   if (!g) {
     $("gitLine").textContent = s ? "Not a git repository" : "Start Claude Code or Codex in a project to see its git status";
-    $("gitFiles").replaceChildren();
+    $("gitFiles").replaceChildren(); $("tabGitN").textContent = "";
     return;
   }
   const sync = [g.ahead ? `↑${g.ahead}` : "", g.behind ? `↓${g.behind}` : ""].filter(Boolean).join(" ") || "in sync";
   $("gitLine").replaceChildren(el("b", { textContent: g.branch }), el("span", { textContent: ` · ${sync} · ${g.files.length ? `${g.files.length} changed` : "clean"}` }));
+  $("tabGitN").textContent = g.files.length || "";
   $("gitFiles").replaceChildren(...g.files.slice(0, 30).map(f => el("li", { title: f.file }, el("i", { textContent: f.code, className: `c${f.code === "?" ? "N" : f.code}` }), el("span", { textContent: f.file }))));
 }
 async function drawPorts() {
   const list = await window.bridge.devPorts();
+  $("tabPortsN").textContent = list.length || "";
   $("portsList").replaceChildren(...(list.length ? list.map(p => {
     const open = el("button", { className: "link", textContent: "Open", title: `Open localhost:${p.port}`, onclick: () => window.bridge.devOpenPort(p.port) });
     const kill = el("button", { className: "link stop", textContent: "Stop", title: `End ${p.name || "process"} (${p.pid})` });

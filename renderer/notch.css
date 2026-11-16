@@ -717,7 +717,7 @@ button.link:hover { background: var(--secondary); }
 .gitfiles li span, .ports li span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--mono); font-size: 11px; }
 .gitfiles i { font-style: normal; font-weight: 700; width: 10px; text-align: center; font-family: var(--mono); }
 .gitfiles .cM { color: var(--warn); } .gitfiles .cA, .gitfiles .cN { color: var(--ok); } .gitfiles .cD { color: #ff453a; } .gitfiles .cR, .gitfiles .cU { color: #0a84ff; }
-.ports li b { font-family: var(--mono); color: var(--accent); min-width: 44px; }
+.ports li b { font-family: var(--mono); color: var(--text); min-width: 52px; }
 .ports li .stop:hover { color: #ff453a; }
 .ports li.none, .decoded.none { color: var(--muted); background: none; box-shadow: none; font-family: inherit; }
 .snips { flex: 1 1 auto; max-height: 52%; }
@@ -745,10 +745,7 @@ button.link:hover { background: var(--secondary); }
 /* dock buttons: a springy press */
 .dock button { transition: background .15s, color .15s, transform .35s var(--spring); }
 .dock button:active { transform: scale(.9); transition-duration: .08s; }
-.dev .gitfiles { max-height: 50px; }
-.dev .snips { max-height: 64px; }
 .gitfiles li, .ports li { padding: 2px 8px; }
-.dev .dcol { gap: 4px; }
 /* dock: hovering a tool for a moment shows its name above it */
 .dock button.tip span { width: auto; height: auto; overflow: visible; clip-path: none; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); white-space: nowrap; padding: 2px 8px; border-radius: 6px; background: var(--secondary); box-shadow: 0 0 0 1px var(--border), 0 4px 12px #0008; color: var(--text); font-size: 10.5px; font-weight: 600; pointer-events: none; z-index: 40; animation: tipIn .22s var(--spring); }
 @keyframes tipIn { from { opacity: 0; transform: translate(-50%, 4px) scale(.94); } }
@@ -771,3 +768,23 @@ button.link:hover { background: var(--secondary); }
   .qtiles button::before, .qmixbtn::before, .qmixer li button::before { animation: none !important; }
   .qtiles button:hover, .qtiles button:active, .qmixbtn:active, .qmixer li button:active { transform: none; }
 }
+#focusStats { margin: 10px 0 0; font-size: 12px; color: var(--muted); text-align: center; }
+/* Dev panel: one section at a time behind tabs, each with the full height */
+.dtabs { display: flex; gap: 4px; padding: 2px; margin-bottom: 8px; border-radius: 8px; background: var(--card); box-shadow: inset 0 0 0 1px var(--border); flex: none; }
+.dtabs button { flex: 1; width: auto; height: 26px; border-radius: 6px; font-size: 12px; font-weight: 500; color: var(--muted); background: none; transition: background .15s, color .15s; }
+.dtabs button:hover { color: var(--text); }
+.dtabs button[aria-selected="true"] { background: var(--secondary); color: var(--text); box-shadow: inset 0 0 0 1px var(--border); }
+.dtabs button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.dtabs small { font-size: 10px; line-height: 16px; min-width: 16px; padding: 0 5px; border-radius: 8px; background: var(--border); color: var(--text); }
+.dtabs small:empty { display: none; }
+.dev { display: flex; flex-direction: column; }
+.dev .dsec { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 6px; }
+.dev .dsec[hidden] { display: none; }
+.dev .dhead { display: flex; align-items: center; gap: 8px; flex: none; font-size: 12px; color: var(--muted); min-width: 0; }
+.dev .dhead small { margin-left: auto; color: var(--muted); }
+.dev .dhead .link { margin-left: auto; width: auto; }
+.dev ul, .dev .gitfiles, .dev .snips { flex: 1 1 auto; max-height: none; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+.dev .gitfiles li, .dev .ports li { padding: 4px 10px; font-size: 12px; }
+.dev .gitfiles li span, .dev .ports li span { font-size: 12px; }
+.dev .snips .snip { padding: 6px 10px; }
+.dev .decoded { font-size: 11.5px; padding: 8px 10px; }
