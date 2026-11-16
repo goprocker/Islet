@@ -976,9 +976,33 @@ function drawClips() {
     b.title = "Copy again · right-click to " + (pin ? "unpin" : "pin");
     b.onclick = () => { window.bridge.copyClip(i); b.textContent = "Copied"; setTimeout(() => (b.textContent = label), 900); };
     b.oncontextmenu = e => { e.preventDefault(); window.bridge.pinClip(i); };
-    li.append(b);
+    const more = document.createElement("button");
+    more.className = "lx clipMore"; more.title = "Actions: clean, convert, format"; more.setAttribute("aria-label", "Actions");
+    more.innerHTML = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72"/><path d="m14 7 3 3"/><path d="M5 6v4M19 14v4M10 2v2M7 8H3M21 16h-4M11 3H9"/></svg>';
+    more.onclick = () => toggleClipActs(li, i);
+    li.className = "clipRow";
+    li.append(b, more);
     return li;
   }));
+}
+// Clipboard Actions: the wand shows chips for the transforms that fit this item; a chip copies the result
+async function toggleClipActs(li, i) {
+  const open = li.querySelector(".clipActs");
+  document.querySelectorAll("#clipList .clipActs").forEach(x => x.remove());
+  if (open) return;
+  const acts = await window.bridge.clipActions(i), box = document.createElement("div");
+  box.className = "clipActs";
+  if (!acts.length) box.append(Object.assign(document.createElement("span"), { textContent: "Nothing to change here" }));
+  box.append(...acts.map(a => {
+    const c = document.createElement("button");
+    c.textContent = a.label;
+    c.onclick = async () => {
+      const ok = await window.bridge.runClipAction(i, a.id);
+      toast({ hud: "clip", app: "Clipboard", svg: hudSvg('<path d="M5 12.5l4.5 4.5L19 7.5"/>'), color: "#3a3a3c", title: ok ? a.label + ": copied" : "Couldn't " + a.label.toLowerCase(), ms: 1600 });
+    };
+    return c;
+  }));
+  li.append(box);
 }
 window.bridge.onClipboard(list => { clipItems = list; drawClips(); });
 $("clipSearch").oninput = drawClips;

@@ -74,6 +74,8 @@ contextBridge.exposeInMainWorld("bridge", {
   saveNotes: t => ipcRenderer.invoke("saveNotes", t),
   pinClip: i => ipcRenderer.send("pinClip", i),
   clearClips: () => ipcRenderer.send("clearClips"),
+  clipActions: i => ipcRenderer.invoke("clipActions", i),
+  runClipAction: (i, id) => ipcRenderer.invoke("runClipAction", i, id),
   onShelf: on("shelf"),
   // dropped File objects -> real paths (File.path was removed from Electron)
   shelfAddFiles: files => ipcRenderer.send("shelfAdd", [...files].map(f => webUtils.getPathForFile(f)).filter(Boolean)),

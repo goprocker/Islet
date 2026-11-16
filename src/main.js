@@ -14,6 +14,7 @@ const weather = require("./weather");
 const pomodoro = require("./pomodoro");
 const focusLog = require("./focus-log");
 const { clipHistory } = require("./clip-history");
+const clipActions = require("./clip-actions");
 const { loadNotes, saveNotes } = require("./notes");
 const windowGuard = require("./window-guard");
 const { projectToOpen } = require("./open-project");
@@ -536,6 +537,16 @@ ipcMain.on("pinClip", (_, i) => { clipStore().togglePin(i); sendClips(); });
 // saves answer { ok, value } or { ok: false, error } so the panel can say when an edit wasn't stored
 const saveResult = (what, fn) => { try { return { ok: true, value: fn() }; } catch (e) { console.warn(what, e.message); return { ok: false, error: e.code || e.message }; } };
 ipcMain.handle("saveNotes", (_, text) => saveResult("notes", () => saveNotes(app.getPath("userData"), text)));
+// Clipboard Actions: offer and run transforms on the full text of an item (the view is cut to 160 chars)
+ipcMain.handle("clipActions", (_, i) => clipActions.available(clipStore().text(i)));
+ipcMain.handle("runClipAction", async (_, i, id) => {
+  const r = clipActions.run(id, clipStore().text(i));
+  if (r === null || r.length > 20000) return false;
+  lastClip = r;
+  await clipboard.writeText(r);
+  clipStore().add(r); sendClips();
+  return true;
+});
 ipcMain.on("clearClips", () => { clipStore().clear(); sendClips(); });
 
 // ---- universal search: Alt+Space finds apps, Wi-Fi / Bluetooth, clipboard items and notes ----
