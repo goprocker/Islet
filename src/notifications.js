@@ -39,7 +39,7 @@ function textValue(raw) {
 function texts(xml) {
   const out = [];
   // a CDATA section may itself contain "</text>"
-  for (const m of xml.matchAll(/<text\b([^>]*?)(?:\/>|>((?:<!\[CDATA\[[\s\S]*?\]\]>|[^<]|<(?!\/text>|!\[CDATA\[))*)<\/text>)/g)) {
+  for (const m of xml.matchAll(/<text\b([^>]*?)(?:\/>|>((?:<!\[CDATA\[(?:[^\]]|\](?!\]>))*\]\]>|[^<]|<(?!\/text>|!\[CDATA\[))*)<\/text>)/g)) {
     if (/\bplacement\s*=\s*["']attribution["']/.test(m[1])) continue;
     const t = textValue(m[2] || "").trim();
     if (t) out.push(t);
