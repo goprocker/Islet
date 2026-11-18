@@ -81,7 +81,9 @@ test("an aborted authenticated upload leaves no partial file", { skip: !lan }, a
       s.write(`POST ${target} HTTP/1.1\r\nHost:x\r\n${headers}Content-Length: 100\r\n\r\nPARTIAL`);
       setTimeout(() => s.destroy(), 100);
     });
+    // the partial file is removed once the server sees the abort; a slow CI runner can take a while
     await new Promise(r => setTimeout(r, 400));
+    for (let t = 0; t < 30 && fs.readdirSync(d).length; t++) await new Promise(r => setTimeout(r, 100));
     assert.deepStrictEqual(fs.readdirSync(d), []);
     assert.strictEqual(calls, 0);
   } finally { pd.stop(); }
