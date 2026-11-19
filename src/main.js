@@ -1232,7 +1232,9 @@ function buildMenu() {
     // play one of the custom pet's stage scenes now (notch.js SCENES), to see it without waiting for its trigger
     { label: "Play pet animation", submenu: [["Run across", "run"], ["Peek-a-boo", "peek"], ["Agent finished", "victory"], ["Agent needs you", "wave"],
       ["Music dance", "dance"], ["Sleepy", "sleep"], ["Low battery", "tired"], ["Charging zoom", "zoom"], ["Focus plant", "carry"], ["Jump out", "jumpout"],
-      ["Coding: typing", "typing"], ["Coding: thinking", "thinking"], ["Tests running", "testing"], ["Tests passed", "pass"], ["Tests failed", "fail"], ["CI failed: bug hunt", "bughunt"], ["Shipped", "ship"]]
+      ["Coding: typing", "typing"], ["Coding: thinking", "thinking"], ["Tests running", "testing"], ["Tests passed", "pass"], ["Tests failed", "fail"], ["CI failed: bug hunt", "bughunt"], ["Shipped", "ship"],
+      ["Ooze from the notch", "ooze"], ["Cold: shiver", "shiver"], ["Hot day", "heat"], ["Meeting rush", "rush"], ["Loved song", "hearts"], ["Focus: meditate", "meditate"],
+      ["Good morning", "morning"], ["Music jam", "jam"], ["Idle: stretch", "stretch"], ["Idle: look about", "lookabout"], ["Idle: yawn", "yawn"]]
       .map(([label, id]) => ({ label, click: () => send("petScene", id) })) },
     { label: "Start with Windows", type: "checkbox", checked: login(), click: () => { setLogin(!login()); buildMenu(); } },
     { type: "separator" },

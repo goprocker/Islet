@@ -670,6 +670,25 @@ button.saveErr { cursor: pointer; }
 .stagefx .bug { font-size: 10px; }
 .stagefx .rocket { font-size: 12px; animation: launch 2.2s cubic-bezier(.5,0,.8,.4) forwards; }
 @keyframes launch { from { translate: 0 0; rotate: -45deg; } 15% { translate: -1px 1px; } 20% { translate: 1px 0; } to { translate: 60px -50px; rotate: -45deg; opacity: .2; } }
+/* ---- mood scene props and particles ---- */
+/* the ink puddle Clawd melts out of and back into: glossy black, ripples out */
+.stagefx .puddle { width: 26px; height: 5px; border-radius: 50%; background: radial-gradient(ellipse at 50% 30%, #3a3a40, #000 70%);
+  box-shadow: 0 0 0 1px #ffffff14, inset 0 1px 0 #ffffff30; animation: puddle 1.5s ease-out forwards; }
+@keyframes puddle { from { scale: .2 1; opacity: 0; } 20% { scale: 1.15 1; opacity: 1; } 60% { scale: 1 1; opacity: 1; } to { scale: 1.4 .6; opacity: 0; } }
+.stagefx .snow { color: #cfe8ff; font-size: 7px; animation: snow 2.4s linear forwards; }
+@keyframes snow { from { translate: 0 0; opacity: 0; } 15% { opacity: 1; } to { translate: 8px 34px; rotate: 180deg; opacity: .2; } }
+.stagefx .sun { font-size: 12px; color: #ffcc33; filter: drop-shadow(0 0 5px #ffb300); animation: sun 5.5s ease-in-out forwards; }
+@keyframes sun { from { opacity: 0; rotate: 0deg; } 15% { opacity: 1; } 85% { opacity: 1; } to { opacity: 0; rotate: 90deg; } }
+.stagefx .alarm { font-size: 10px; animation: ring 1.6s ease-in-out forwards; }
+@keyframes ring { 0%, 100% { opacity: 0; } 10%, 90% { opacity: 1; } 20%, 40%, 60%, 80% { rotate: -18deg; } 30%, 50%, 70% { rotate: 18deg; } }
+.stagefx .heart { color: #ff6b8b; font-size: 8px; text-shadow: 0 0 4px #ff6b8b; animation: codeUp 1.6s ease-out forwards; }
+.stagefx .star { color: #c9b8ff; font-size: 7px; animation: codeUp 2s ease-out forwards; }
+.stagefx .steam { color: #ffffff88; font-size: 9px; animation: codeUp 1.4s ease-out forwards; }
+.stagefx .note { color: #7cc4ff; font-size: 9px; animation: codeUp 1.5s ease-out forwards; }
+.stagefx .note:nth-child(2n) { color: #c9b8ff; }
+/* zen: a soft purple glow; morning: a coffee cup in hand */
+.pet.stage.glow { filter: drop-shadow(0 0 5px #c9b8ff); }
+.pet.stage.coffee::after { content: "☕"; position: absolute; right: -8px; bottom: 3px; font-size: 9px; }
 /* a soft ground shadow under Clawd, on the pill's floor */
 .stageshadow { position: absolute; left: 0; bottom: 1px; width: 18px; height: 3px; border-radius: 50%; z-index: 5; pointer-events: none;
   background: radial-gradient(closest-side, rgba(255,255,255,.35), transparent); opacity: 0; display: none; }

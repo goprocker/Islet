@@ -715,7 +715,7 @@ function updatePet(now, busy) {
     likedAt, doneAt, plugAt, openedAt, meetingAt: event?.start || 0, dnd: dndOn, hour: new Date(now).getHours(),
     tempC: wx && !wx.error ? (wx.unit === "F" ? (wx.temp - 32) * 5 / 9 : wx.temp) : NaN });
   window.Pet.paint(pets, mood, theme.petPack);
-  petShow(now, mood);
+  petShow(now, mood, busy);
   // hello once the name has arrived; then a word on each new mood (not the 4-second pop-up startle), or a chat after a quiet spell
   if (!saidMood) { if (theme.name !== undefined) { saidMood = mood; petSay(mood, true); } }
   else if (mood !== saidMood && mood !== "alert" && mood !== "hello") { saidMood = mood; petSay(mood); } // a startle or a hello on opening is too brief for words
@@ -727,7 +727,7 @@ function updatePet(now, busy) {
 // code = running, dance = jumping, alert = waving, sick = failed. fx: [t, kind, count] particles (spark, dust, zz, drop).
 const SW = 56, SH = 60, STAGE_W = 340, STAGE_H = 78;
 const FLOOR = STAGE_H - SH - 2, BELOW = STAGE_H + 4, C = STAGE_W / 2 - SW / 2, OUT_L = -SW - 8, OUT_R = STAGE_W + 8;
-const SQ = { land: [1.2, .8], lift: [.86, 1.14], crouch: [1.12, .86], settle: [.96, 1.04] };
+const SQ = { land: [1.2, .8], lift: [.86, 1.14], crouch: [1.12, .86], settle: [.96, 1.04], flat: [1.5, .12] };
 const k = (t, x, y, o = {}) => ({ t, x, y, ...o });
 // a jump: crouch (anticipation), stretch up, hang, squash on landing, overshoot and settle
 const hop = (t, x, h, gap = .04) => [k(t - gap * 1.6, x, FLOOR, { e: "ease-out" }), k(t - gap * 1.1, x, FLOOR, { sq: "crouch", e: "cubic-bezier(.3,.6,.5,1)" }), k(t - gap * .6, x, FLOOR - h * .5, { sq: "lift", e: "cubic-bezier(.2,.6,.4,1)" }),
@@ -803,8 +803,59 @@ function petCue(name, tries = 30) {
   if (tries > 0) cueTimer = setTimeout(() => petCue(name, tries - 1), 500);
 }
 // which scene a new mood plays; any other lively mood gets the plain run
-const MOOD_SCENE = { happy: "victory", ask: "wave", dance: "dance", sleep: "sleep", sleepy: "sleep", sick: "tired", charge: "zoom", plant: "carry",
-  alert: "run", hello: "run", love: "victory" };
+// ---- more scenes: melting in and out of the notch, weather, feelings, and small idle moments ----
+const melt = (t, x) => [k(t, x, FLOOR + 30, { f: 1, sq: "flat" }), k(t + .1, x, FLOOR + 8, { sq: "crouch", e: "cubic-bezier(.3,1.4,.5,1)" }), k(t + .16, x, FLOOR, { sq: "lift" }), k(t + .2, x, FLOOR, { sq: "settle" }), k(t + .23, x, FLOOR)];
+const sink = (t, x) => [k(t, x, FLOOR, { sq: "settle" }), k(t + .06, x, FLOOR + 2, { sq: "land" }), k(t + .16, x, FLOOR + 30, { sq: "flat", e: "ease-in" })];
+Object.assign(SCENES, {
+  // oozes up out of the notch's floor like ink, looks around, then melts back into it
+  ooze: () => ({ ms: 5000, path: [...melt(0, C), k(.5, C, FLOOR, { f: -1 }), k(.62, C, FLOOR, { f: 1 }), ...sink(.8, C)],
+    moods: [[0, "idle"], [.3, "alert"], [.6, "idle"]], fx: [[0, "puddle", 1], [.8, "puddle", 1]] }),
+  // cold: shivers in the middle while snow falls
+  shiver: () => ({ ms: 6000, path: [...melt(0, C), ...shake(.3, C, 14, 2, .02), ...shake(.6, C, 10, 2, .02), ...sink(.82, C)],
+    moods: [[0, "cold"]], fx: [.05, .15, .25, .35, .45, .55, .65, .75].map(t => [t, "snow", 3]) }),
+  // hot: drags along under a sun, wiping sweat, sinks into the cool notch
+  heat: () => ({ ms: 6500, path: [k(0, OUT_L, FLOOR + 3, { f: 1 }), k(.55, STAGE_W * .5, FLOOR + 3, { e: "ease-out" }), k(.62, STAGE_W * .5, FLOOR + 5, { sq: "land" }), ...sink(.8, STAGE_W * .5)],
+    moods: [[0, "hot"]], fx: [[.05, "sun", 1], [.3, "drop", 1], [.5, "drop", 1], [.7, "drop", 1], [.8, "puddle", 1]] }),
+  // a meeting soon: rushes back and forth with an alarm clock ringing
+  rush: () => ({ ms: 5000, path: [k(0, OUT_L, FLOOR, { f: 1 }), k(.2, STAGE_W * .7, FLOOR), k(.25, STAGE_W * .7, FLOOR, { f: -1, sq: "land" }), k(.45, STAGE_W * .2, FLOOR), k(.5, STAGE_W * .2, FLOOR, { f: 1, sq: "land" }),
+    ...shake(.52, STAGE_W * .2, 8, 3), k(.7, STAGE_W * .2, FLOOR), k(1, OUT_R, FLOOR)],
+    moods: [[0, "rush"]], fx: [[.05, "alarm", 1], [.5, "alarm", 1]] }),
+  // a song you liked: hops with floating hearts
+  hearts: () => ({ ms: 5500, path: [...melt(0, C), ...hop(.4, C, 12), ...hop(.6, C, 12), ...sink(.8, C)],
+    moods: [[0, "love"]], fx: [[.3, "heart", 3], [.45, "heart", 3], [.65, "heart", 4]] }),
+  // focus mode: floats up slowly, glowing, then drifts down
+  meditate: () => ({ ms: 8000, path: [...melt(0, C), k(.35, C, FLOOR, { e: "ease-in-out" }), k(.55, C, FLOOR - 10, { e: "ease-in-out" }), k(.75, C, FLOOR), ...sink(.82, C)],
+    moods: [[0, "zen"]], cls: "glow", fx: [[.4, "star", 3], [.6, "star", 3]] }),
+  // the first open of the day: walks in with a coffee, sips, waves
+  morning: () => ({ ms: 6000, path: [k(0, OUT_L, FLOOR, { f: 1 }), k(.35, C, FLOOR, { e: "ease-out" }), k(.4, C, FLOOR, { sq: "settle" }), ...hop(.7, C, 8), k(.8, C, FLOOR), k(1, OUT_R, FLOOR)],
+    moods: [[0, "code"], [.36, "hello"], [.8, "code"]], cls: "coffee", fx: [[.45, "steam", 3], [.55, "steam", 3]] }),
+  // music: a jam with notes flying out
+  jam: () => ({ ms: 6500, path: [...melt(0, STAGE_W * .4), ...hop(.3, STAGE_W * .4, 8, .03), k(.4, STAGE_W * .55, FLOOR, { f: 1 }), ...hop(.5, STAGE_W * .55, 8, .03), k(.6, STAGE_W * .4, FLOOR, { f: -1 }), ...hop(.68, STAGE_W * .4, 8, .03), ...sink(.8, STAGE_W * .4)],
+    moods: [[0, "dance"]], fx: [.2, .3, .4, .5, .6, .7].map(t => [t, "note", 2]) }),
+  // idle moments: short, quiet, and frequent
+  stretch: () => ({ ms: 2600, path: [...melt(0, STAGE_W * .3), k(.3, STAGE_W * .3, FLOOR, { sq: "lift", e: "ease-in-out" }), k(.5, STAGE_W * .3, FLOOR, { sq: "lift" }), k(.6, STAGE_W * .3, FLOOR, { sq: "settle" }), ...sink(.8, STAGE_W * .3)],
+    moods: [[0, "idle"]] }),
+  lookabout: () => ({ ms: 3200, path: [...melt(0, STAGE_W * .75), k(.3, STAGE_W * .75, FLOOR, { f: -1 }), k(.5, STAGE_W * .75, FLOOR, { f: 1 }), k(.62, STAGE_W * .75, FLOOR, { f: -1 }), ...sink(.8, STAGE_W * .75)],
+    moods: [[0, "idle"], [.45, "alert"], [.7, "idle"]] }),
+  yawn: () => ({ ms: 3500, path: [...melt(0, STAGE_W * .2), k(.3, STAGE_W * .2, FLOOR, { sq: "lift", e: "ease-in-out" }), k(.55, STAGE_W * .2, FLOOR + 3, { sq: "land" }), ...sink(.8, STAGE_W * .2)],
+    moods: [[0, "sleepy"]], fx: [[.4, "zz", 1]] }),
+});
+// the pill's pet turns to face the cursor while it is over the notch, and back when it leaves
+notch.addEventListener("mousemove", e => {
+  const pet = $("pillPet"), stage = $("stagePet");
+  for (const el of [pet, stage]) if (el && !el.hidden) {
+    const r = el.getBoundingClientRect();
+    el.style.scale = e.clientX < r.left + r.width / 2 - 4 ? "-1 1" : "";
+  }
+});
+notch.addEventListener("mouseleave", () => { $("pillPet").style.scale = ""; $("stagePet").style.scale = ""; });
+// a landing (a "land" squash on the floor) makes the notch itself wobble
+function wobble() {
+  notch.animate([{ scale: "1 1" }, { scale: "1.015 .94" }, { scale: ".995 1.02" }, { scale: "1 1" }], { duration: 380, easing: "ease-out" });
+}
+const MOOD_SCENE = { happy: "victory", ask: "wave", dance: "jam", sleep: "sleep", sleepy: "yawn", sick: "tired", charge: "zoom", plant: "carry",
+  alert: "ooze", hello: "morning", love: "hearts", cold: "shiver", hot: "heat", rush: "rush", zen: "meditate" };
+const IDLE_SCENES = ["stretch", "lookabout", "yawn", "ooze", "peek", "run"], IDLE_EVERY = 30000;
 const SHOW_EVERY = 90000, ASK_EVERY = 20000, THINK_EVERY = 45000;
 let showAt = Date.now() - SHOW_EVERY + 6000, showMood = "", showTimers = [], showAnim = null, shadowAnim = null;
 const pillClosed = () => !["open", "toast", "hidden"].some(c => notch.classList.contains(c));
@@ -836,7 +887,7 @@ function petScene(name) {
     for (let j = 1; j < steps; j++) { const f = j / steps; path.push({ t: p.t + (n.t - p.t) * f, x: p.x + (n.x - p.x) * f, y: p.y - (j % 2 ? 5 : 0), sq: j % 2 ? "settle" : "", bob: true }); }
   });
   // lean: tilt toward where Clawd is heading, harder the faster it goes; lean back when it brakes
-  const speed = i => { const a = path[i], b = path[i + 1]; return b && b.t > a.t ? (b.x - a.x) / ((b.t - a.t) * s.ms) : 0; }; // virtual px per ms
+  const speed = i => { const a = path[i], b = path[i + 1]; return a && b && b.t > a.t ? (b.x - a.x) / ((b.t - a.t) * s.ms) : 0; }; // virtual px per ms
   let face = 1;
   const keys = path.map((p, i) => { if (p.f) face = p.f; const [sx, sy] = SQ[p.sq] || [1, 1], out = outside(p);
     const v = speed(i), braking = Math.abs(v) < Math.abs(speed(i - 1) || 0) * .4;
@@ -854,6 +905,7 @@ function petScene(name) {
     shadowAnim = shadow.animate(shadowKeys, { duration: s.ms, fill: "forwards" });
     for (const [t, mood] of s.moods.slice(1)) showTimers.push(setTimeout(() => window.Pet.paint([stage], mood, theme.petPack), s.ms * t));
     for (const [t, kind, n] of s.fx || []) showTimers.push(setTimeout(() => burst(kind, n), s.ms * t));
+    for (const p of s.path) if (p.sq === "land" && p.y >= FLOOR) showTimers.push(setTimeout(wobble, s.ms * p.t));
     showTimers.push(setTimeout(() => { notch.classList.remove("showtime"); showAnim?.cancel(); shadowAnim?.cancel(); stage.className = "pet stage custom"; fx.textContent = ""; }, s.ms));
   }, GROW));
   return true;
@@ -864,7 +916,10 @@ function burst(kind, n) {
   for (let i = 0; i < n; i++) {
     const p = document.createElement("i");
     p.className = kind;
-    p.textContent = { zz: "z", drop: "💧", code: ["{ }", "</>", ";", "=>", "()", "#", "[ ]", "fn"][Math.floor(Math.random() * 8)], dots: "…", bulb: "💡", check: "✓", cross: "✕", rocket: "🚀", bug: "🐛" }[kind] || "";
+    p.textContent = { zz: "z", drop: "💧", code: ["{ }", "</>", ";", "=>", "()", "#", "[ ]", "fn"][Math.floor(Math.random() * 8)], dots: "…", bulb: "💡", check: "✓", cross: "✕", rocket: "🚀", bug: "🐛",
+      snow: "❄", sun: "☀", alarm: "⏰", heart: "♥", star: "✦", steam: "~", note: ["♪", "♫", "♩"][i % 3] }[kind] || "";
+    if (kind === "snow") { p.style.left = `${Math.random() * notch.clientWidth}px`; p.style.top = "-6px"; fx.append(p); setTimeout(() => p.remove(), 2600); continue; }
+    if (kind === "sun") { p.style.left = `${notch.clientWidth - 30}px`; p.style.top = "2px"; fx.append(p); setTimeout(() => p.remove(), 6000); continue; }
     if (kind === "confetti") p.style.background = ["#63d47a", "#ffd60a", "#7cc4ff", "#ff6b8b", "#c9b8ff"][i % 5];
     if (kind === "bug") { // crawls ahead of Clawd and gets caught near the right
       const W = notch.clientWidth;
@@ -874,7 +929,8 @@ function burst(kind, n) {
       fx.append(p); setTimeout(() => p.remove(), 6000); continue;
     }
     const cx = r.left - b.left + r.width / 2;
-    p.style.left = `${["zz", "drop", "dots", "bulb", "check", "cross"].includes(kind) ? cx + 7 : kind === "code" ? cx - 6 + Math.random() * 12 : cx - 2}px`;
+    p.style.left = `${["zz", "drop", "dots", "bulb", "check", "cross", "alarm", "steam"].includes(kind) ? cx + 7 : kind === "code" ? cx - 6 + Math.random() * 12 : cx - 2}px`;
+    if (kind === "puddle") { p.style.left = `${cx - 13}px`; p.style.top = `${notch.clientHeight - 5}px`; fx.append(p); setTimeout(() => p.remove(), 1600); continue; }
     p.style.top = `${kind === "dust" || kind === "smoke" ? r.bottom - b.top - 5 : kind === "spark" || kind === "confetti" ? r.top - b.top + r.height * .4 : kind === "rocket" ? notch.clientHeight - 14 : Math.max(1, r.top - b.top)}px`;
     if (kind === "rocket") p.style.left = `${notch.clientWidth * .62}px`;
     if (kind === "dust") p.style.setProperty("--dx", `${(i % 2 ? 1 : -1) * (4 + Math.random() * 8)}px`);
@@ -884,14 +940,14 @@ function burst(kind, n) {
     setTimeout(() => p.remove(), 2000);
   }
 }
-function petShow(now, mood) {
+function petShow(now, mood, busy) {
   if (notch.classList.contains("showtime")) return; // a mood change mid-scene waits for the next tick
   const changed = mood !== showMood; showMood = mood;
   if (!pillClosed()) return;
   let scene = changed ? MOOD_SCENE[mood] : "";
   if (!scene && mood === "ask" && now - showAt > ASK_EVERY) scene = "wave"; // keeps waving until you look
   if (!scene && mood === "code" && now - showAt > THINK_EVERY) scene = "thinking"; // an agent is busy: Clawd thinks along
-  if (!scene && now - showAt > SHOW_EVERY) scene = Math.random() < .5 ? "run" : "peek";
+  if (!scene && now - showAt > (busy ? SHOW_EVERY : IDLE_EVERY)) scene = IDLE_SCENES[Math.floor(Math.random() * IDLE_SCENES.length)];
   if (scene && petScene(scene)) showAt = now;
 }
 window.bridge.onPetScene?.(name => { if (pillClosed() && petScene(name)) showAt = Date.now(); });
