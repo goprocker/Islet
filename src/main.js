@@ -843,13 +843,17 @@ ipcMain.handle("devKill", async (_, pid) => {
 });
 ipcMain.on("devOpenPort", (_, port) => { if (Number.isInteger(port) && port > 0 && port < 65536) shell.openExternal(`http://localhost:${port}`); });
 ipcMain.handle("snippetsGet", () => devTools.loadSnippets(app.getPath("userData")));
-ipcMain.handle("snippetsSave", (_, list) => devTools.saveSnippets(app.getPath("userData"), list));
+// snippet saves answer like notes: { ok, value } or { ok: false, error }, and a failed add sends back
+// the list it meant to store, so the panel keeps the edit and can retry it (#256)
+ipcMain.handle("snippetsSave", (_, list) => saveResult("snippets", () => devTools.saveSnippets(app.getPath("userData"), list)));
 ipcMain.on("copySnippet", (_, t) => { if (typeof t === "string" && t.length <= 4000) { lastClip = t; clipboard.writeText(t).catch(e => console.warn("clipboard", e.message)); } });
 ipcMain.handle("devDecode", async () => devTools.decode(await clipboard.readText()));
 ipcMain.handle("snippetFromClipboard", async () => {
   const dir = app.getPath("userData"), text = String(await clipboard.readText()).trim();
-  if (!text) return devTools.loadSnippets(dir);
-  return devTools.saveSnippets(dir, [{ name: text.split(/\r?\n/)[0].slice(0, 60), text }, ...devTools.loadSnippets(dir)]);
+  if (!text) return { ok: true, value: devTools.loadSnippets(dir) };
+  const wanted = devTools.cleanSnippets([{ name: text.split(/\r?\n/)[0].slice(0, 60), text }, ...devTools.loadSnippets(dir)]);
+  const r = saveResult("snippets", () => devTools.saveSnippets(dir, wanted));
+  return r.ok ? r : { ...r, value: wanted };
 });
 ipcMain.on("openLink", (_, url) => { try { if (/^https?:$/.test(new URL(url).protocol)) shell.openExternal(url); } catch {} });
 

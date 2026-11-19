@@ -1293,18 +1293,28 @@ async function drawPorts() {
   }) : [el("li", { className: "none", textContent: "No dev servers running" })]));
 }
 $("portsRefresh").onclick = drawPorts;
-let snippets = [];
+// a failed save (#256) keeps the edit on screen as snipPending and says "Not saved"; clicking the
+// message tries the same list again, and only a successful save goes back to the stored list
+let snippets = [], snipPending = null;
 async function drawSnippets() {
-  snippets = await window.bridge.snippetsGet();
+  if (!snipPending) snippets = await window.bridge.snippetsGet();
   $("snipList").replaceChildren(...snippets.map((sn, i) => {
     const copy = el("button", { className: "snip", title: sn.text }, el("b", { textContent: sn.name }), el("code", { textContent: sn.text }));
     copy.onclick = () => { window.bridge.copySnippet(sn.text); copy.classList.add("copied"); setTimeout(() => copy.classList.remove("copied"), 900); };
     const del = el("button", { className: "link", textContent: "×", title: "Remove" });
-    del.onclick = async () => { snippets.splice(i, 1); await window.bridge.snippetsSave(snippets); drawSnippets(); };
+    del.onclick = () => saveSnips(snippets.filter((_, j) => j !== i));
     return el("li", {}, copy, del);
   }));
 }
-$("snipAdd").onclick = async () => { await window.bridge.snippetFromClipboard(); drawSnippets(); };
+function snipSaved(r, list) {
+  saveError("snipErr", r);
+  snipPending = r.ok ? null : list;
+  if (!r.ok) snippets = list;
+  drawSnippets();
+}
+async function saveSnips(list) { snipSaved(await window.bridge.snippetsSave(list), list); }
+$("snipAdd").onclick = async () => { const r = await window.bridge.snippetFromClipboard(); snipSaved(r, r.value); };
+$("snipErr").onclick = () => { if (snipPending) saveSnips(snipPending); };
 async function drawDecode() {
   const d = await window.bridge.devDecode();
   $("decTitle").textContent = d ? d.title : "";

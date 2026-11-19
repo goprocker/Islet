@@ -60,17 +60,25 @@ function deployment(dep, statuses, repo) {
 }
 
 // what changed since the last poll: { live: running now, finished: running before and done now }
-// `prev` is a Map id -> state; activities seen for the first time already finished are not news
-function diff(prev, list) {
-  const finished = [];
+// `prev` is a Map id -> { state, item, misses }; activities seen for the first time already finished
+// are not news. `failed` lists id prefixes ("run:o/r:") whose gh call failed this time (#257): their
+// activities are not taken as gone, so a run that finishes during a short outage is still reported
+// when gh answers again. They stay, and a running one stays live, for up to MAX_MISSES failed polls.
+const MAX_MISSES = 5;
+function diff(prev, list, failed = list.failed || []) {
+  const finished = [], kept = [];
   for (const a of list) {
-    const was = prev.get(a.id);
+    const was = prev.get(a.id)?.state;
     if (was === "running" && a.state !== "running") finished.push(a);
-    prev.set(a.id, a.state);
+    prev.set(a.id, { state: a.state, item: a, misses: 0 });
   }
   const ids = new Set(list.map(a => a.id));
-  for (const id of prev.keys()) if (!ids.has(id)) prev.delete(id);
-  return { live: list.filter(a => a.state === "running"), finished };
+  for (const [id, e] of prev) {
+    if (ids.has(id)) continue;
+    if (failed.some(f => id.startsWith(f)) && ++e.misses <= MAX_MISSES) { if (e.state === "running") kept.push(e.item); }
+    else prev.delete(id);
+  }
+  return { live: [...list.filter(a => a.state === "running"), ...kept], finished };
 }
 
 // one repo folder -> its activities
@@ -88,12 +96,19 @@ async function collect(cwd, cache, call = gh) {
     call(["api", `repos/${repo}/deployments?per_page=1`], cwd),
   ]);
   const out = runs(list, repo);
+  // a failed call is not an empty answer: say which sources couldn't be read (#257). gh also fails
+  // "pr view" when the branch simply has no PR, so a PR that is gone drops out after MAX_MISSES polls.
+  out.failed = [];
+  if (!Array.isArray(list)) out.failed.push(`run:${repo}:`);
+  if (pr === null) out.failed.push(`pr:${repo}:`);
+  if (!Array.isArray(deps)) out.failed.push(`deploy:${repo}:`);
   const p = prChecks(pr, repo);
   if (p) out.push(p);
   const dep = Array.isArray(deps) ? deps[0] : null;
   if (dep) {
-    const d = deployment(dep, await call(["api", `repos/${repo}/deployments/${dep.id}/statuses?per_page=1`], cwd), repo);
-    if (d) out.push(d);
+    const statuses = await call(["api", `repos/${repo}/deployments/${dep.id}/statuses?per_page=1`], cwd);
+    if (statuses === null) out.failed.push(`deploy:${repo}:`);
+    else { const d = deployment(dep, statuses, repo); if (d) out.push(d); }
   }
   return out;
 }
@@ -106,11 +121,12 @@ function start(cwds, onUpdate, { call = gh, setTimer = setTimeout, clearTimer = 
     let next = SLOW_MS;
     try {
       const dirs = [...new Set(cwds())].slice(0, 4);
-      const all = (await Promise.all(dirs.map(d => collect(d, cache, call)))).flat();
+      const per = await Promise.all(dirs.map(d => collect(d, cache, call)));
       if (stopped) return;
+      const all = per.flat(), failed = per.flatMap(l => l.failed || []);
       const seen = new Set();
       const list = all.filter(a => !seen.has(a.id) && seen.add(a.id)); // two folders of one repo
-      const { live, finished } = diff(prev, list);
+      const { live, finished } = diff(prev, list, failed);
       const key = JSON.stringify(live);
       if (finished.length || key !== lastLive) { lastLive = key; onUpdate({ live, finished }); }
       if (live.length) next = FAST_MS;

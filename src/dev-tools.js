@@ -113,9 +113,13 @@ function cleanSnippets(list) {
 function loadSnippets(dir) {
   try { return cleanSnippets(JSON.parse(fs.readFileSync(path.join(dir, "snippets.json"), "utf8"))) || DEFAULT_SNIPPETS; } catch { return DEFAULT_SNIPPETS; }
 }
+// returns the list as stored; throws when it couldn't be written (#256). It goes to a temp file that
+// is renamed over the old one, so a failed save leaves the stored snippets as they were.
 function saveSnippets(dir, list) {
   const clean = cleanSnippets(list) || [];
-  try { fs.writeFileSync(path.join(dir, "snippets.json"), JSON.stringify(clean, null, 2)); } catch (e) { console.warn("snippets", e.message); }
+  const f = path.join(dir, "snippets.json"), tmp = f + ".tmp";
+  try { fs.writeFileSync(tmp, JSON.stringify(clean, null, 2)); fs.renameSync(tmp, f); }
+  catch (e) { try { fs.rmSync(tmp, { force: true }); } catch {} throw e; }
   return clean;
 }
 

@@ -99,3 +99,24 @@ test("every tool in the search palette opens a panel that exists", () => {
   const docked = [...html.matchAll(/data-panel="(\w+)"/g)].map(m => m[1]);
   for (const p of new Set(docked)) assert.ok(TOOLS.some(t => t.panel === p), `${p} is in the dock but not in search`);
 });
+
+test("snippets: a failed save throws and leaves the stored list as it was (#256)", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "islet-snip-"));
+  try {
+    const kept = dev.saveSnippets(dir, [{ name: "keep", text: "echo kept" }]);
+    // a folder where the temp file goes makes every write fail, the same way a full or read-only disk does
+    fs.mkdirSync(path.join(dir, "snippets.json.tmp"));
+    assert.throws(() => dev.saveSnippets(dir, [{ name: "must persist", text: "echo value" }]));
+    assert.deepEqual(dev.loadSnippets(dir), kept, "the old snippets survive");
+    fs.rmSync(path.join(dir, "snippets.json.tmp"), { recursive: true });
+    // retrying once the problem is gone stores the intended list
+    assert.deepEqual(dev.saveSnippets(dir, [{ name: "must persist", text: "echo value" }]), [{ name: "must persist", text: "echo value" }]);
+    assert.deepEqual(dev.loadSnippets(dir), [{ name: "must persist", text: "echo value" }]);
+    assert.ok(!fs.existsSync(path.join(dir, "snippets.json.tmp")), "no temp file left behind");
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("snippets: a save into a missing folder throws instead of pretending (#256)", () => {
+  const dir = path.join(os.tmpdir(), "islet-snip-missing-" + process.pid, "nope");
+  assert.throws(() => dev.saveSnippets(dir, [{ name: "x", text: "y" }]));
+});
