@@ -196,15 +196,6 @@ footer{background:var(--sea);padding:30px 0;font-size:15px}
 .anim .features .in h3,.anim .features .in li,.anim .rise.in{opacity:1;transform:none}
 @media (max-width:680px){.features>div{grid-template-columns:1fr;align-content:center;min-height:64vh}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
-.top4 h2{max-width:none}
-.top4 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:22px;margin-top:clamp(32px,4vw,52px)}
-.top4 .card{background:#0b0b0c;color:#bdbdbd;border-radius:26px;overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .25s}
-.top4 .card:hover{box-shadow:0 0 0 2px #7c8cff}
-.top4 .card img{display:block;width:100%;aspect-ratio:16/7;object-fit:cover;object-position:center top;background:#000}
-.top4 .card div{padding:22px 24px 26px}
-.top4 .card b{display:block;font:700 12px Figtree,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#7c8cff;margin-bottom:8px}
-.top4 .card h3{color:#fff;font-size:1.45rem;line-height:1.15;margin:0 0 8px}
-.top4 .card p{margin:0;font-size:15.5px;line-height:1.5}
 </style>
 <link rel="stylesheet" href="chrome.css">
 </head>
@@ -275,15 +266,6 @@ footer{background:var(--sea);padding:30px 0;font-size:15px}
       <a href="islet-film.mp4">Download the launch film</a>
     </video><button type="button" id="filmSound" hidden>Tap for sound</button></div>
   </div></section>
-  <section class="top4"><div class="wrap">
-    <h2>Four things it does best.</h2>
-    <div class="cards">
-      <a class="card" href="features.html#agents"><img src="open.png" style="object-position:left top" alt="A Claude Code session working in the notch, with its last actions" loading="lazy"><div><b>AI agents</b><h3>Approve Claude without leaving your work.</h3><p>Every Claude Code and Codex session in one place, with its last actions. Allow or deny a request right from the notch.</p></div></a>
-      <a class="card" href="features.html#desktop"><img src="shots/tool-ai.png" alt="Claude and Codex plan limits: 5-hour and weekly usage rings" loading="lazy"><div><b>AI coding stats</b><h3>Know before you hit the limit.</h3><p>Your Claude and Codex 5-hour and weekly limits as live rings, with the time left until each resets and how full every session's context is.</p></div></a>
-      <a class="card" href="features.html#files"><img src="shots/tool-phone.png" alt="Phone drop QR code in the notch" loading="lazy"><div><b>Phone drop</b><h3>Phone to PC in one scan.</h3><p>Scan a QR code on the same Wi-Fi and photos land on your shelf. No app, no cable, no account.</p></div></a>
-      <a class="card" href="features.html#tools"><img src="shots/search.png" alt="Alt+Space search box in the notch" loading="lazy"><div><b>Search</b><h3>Alt+Space finds anything.</h3><p>Apps, files, Wi-Fi, Bluetooth, clipboard and notes from one box. Type, press Enter, done.</p></div></a>
-    </div>
-  </div></section>
   <section><div class="wrap">
     <h2>Everything in one glance.</h2>
     <p class="intro">Phones and Macs keep live status in one place at the top of the screen. Windows spreads it across the taskbar, the tray, a corner of banners and hidden terminal windows. Islet pulls it into one pill, and lets you act on it there.</p>
@@ -292,9 +274,12 @@ footer{background:var(--sea);padding:30px 0;font-size:15px}
     <div class="features">
       <div><h3>Music</h3><ul><li>Spotify, or any player using Windows media controls</li><li>Album art, with the accent colour taken from it</li><li>Play, skip, seek, scroll for volume, like the song</li><li>A live wave drawn from the player's own audio</li><li>Timed lyrics and an enlarged album view</li></ul></div>
       <div><h3>Claude Code and Codex</h3><ul><li>Sessions from both agents in one column</li><li>Each shows working, needs you or done</li><li>The last 3 actions: tools, edited files, replies</li><li>Allow or Deny Claude Code requests from the notch</li></ul></div>
+      <div><h3>AI coding stats</h3><ul><li>Claude and Codex 5-hour and weekly limits as live rings</li><li>The time left until each limit resets</li><li>How full every session's context window is</li><li>Click a session to open its folder</li></ul></div>
       <div><h3>Notifications</h3><ul><li>Windows toasts become notch pop-ups with real app logos</li><li>The full message, up to about 7 lines</li><li>Windows' own banners come back on the lock screen</li><li>Do Not Disturb, with an optional daily schedule</li></ul></div>
       <div><h3>Battery and system</h3><ul><li>A black hole plays when the charger goes in or out</li><li>A green edge glow while charging</li><li>A one-time low-battery warning</li><li>Mic, camera and screen-capture dots</li><li>Hides behind fullscreen apps</li></ul></div>
       <div><h3>Info</h3><ul><li>Weather by city, with no API key</li><li>Your next event from a private calendar link</li><li>Browser download progress</li><li>A timer, started from the tray</li></ul></div>
+      <div><h3>Phone drop</h3><ul><li>Scan a QR code to send photos and files from your phone</li><li>Send shelf files back the other way</li><li>Same Wi-Fi only: no app, no cable, no account</li><li>Stops by itself after 10 minutes</li></ul></div>
+      <div><h3>Search</h3><ul><li>Alt+Space opens one box for everything</li><li>Apps, files and folders</li><li>Wi-Fi, Bluetooth, clipboard and notes</li><li>Arrow keys move, Enter opens</li></ul></div>
       <div><h3>Tools</h3><ul><li>Clipboard history: last 5 texts, in memory only</li><li>File shelf: drop files in, drag them out</li><li>Ctrl+Alt+N cycles pill, open and hidden</li><li>Ctrl+Alt+M moves Islet to the next monitor</li></ul></div>
     </div>
   </div></section>
@@ -517,7 +502,7 @@ footer{background:var(--sea);padding:30px 0;font-size:15px}
   if (!reduced) {
     document.documentElement.classList.add("anim");
     const blocks = [...document.querySelectorAll(".features>div")];
-    const scenes = ["playing", "needs", "message", "charge", "open", "playing"];
+    const scenes = ["playing", "needs", "needs", "message", "charge", "open", "open", "open", "playing"];
     let active = -1;
     const enter = i => {
       if (i === active) return;
@@ -534,7 +519,7 @@ footer{background:var(--sea);padding:30px 0;font-size:15px}
       reveal.unobserve(e.target);
     }), { rootMargin: "0px 0px -12% 0px" });
     blocks.forEach(b => reveal.observe(b));
-    document.querySelectorAll("h2,.intro,.top4 .card,.dark .grid>div,.facts>div").forEach(el => {
+    document.querySelectorAll("h2,.intro,.dark .grid>div,.facts>div").forEach(el => {
       el.classList.add("rise");
       reveal.observe(el);
     });
