@@ -196,6 +196,15 @@ footer{background:var(--sea);padding:30px 0;font-size:15px}
 .anim .features .in h3,.anim .features .in li,.anim .rise.in{opacity:1;transform:none}
 @media (max-width:680px){.features>div{grid-template-columns:1fr;align-content:center;min-height:64vh}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.top4 h2{max-width:none}
+.top4 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:22px;margin-top:clamp(32px,4vw,52px)}
+.top4 .card{background:#0b0b0c;color:#bdbdbd;border-radius:26px;overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .25s}
+.top4 .card:hover{box-shadow:0 0 0 2px #7c8cff}
+.top4 .card img{display:block;width:100%;aspect-ratio:16/7;object-fit:cover;object-position:center top;background:#000}
+.top4 .card div{padding:22px 24px 26px}
+.top4 .card b{display:block;font:700 12px Figtree,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#7c8cff;margin-bottom:8px}
+.top4 .card h3{color:#fff;font-size:1.45rem;line-height:1.15;margin:0 0 8px}
+.top4 .card p{margin:0;font-size:15.5px;line-height:1.5}
 </style>
 <link rel="stylesheet" href="chrome.css">
 </head>
@@ -259,6 +268,15 @@ footer{background:var(--sea);padding:30px 0;font-size:15px}
 </header>
 
 <main>
+  <section class="top4"><div class="wrap">
+    <h2>Four things it does best.</h2>
+    <div class="cards">
+      <a class="card" href="features.html#agents"><img src="open.png" style="object-position:left top" alt="A Claude Code session working in the notch, with its last actions" loading="lazy"><div><b>AI agents</b><h3>Approve Claude without leaving your work.</h3><p>Every Claude Code and Codex session in one place, with its last actions. Allow or deny a request right from the notch.</p></div></a>
+      <a class="card" href="features.html#desktop"><img src="shots/tool-ai.png" alt="Claude and Codex plan limits: 5-hour and weekly usage rings" loading="lazy"><div><b>AI coding stats</b><h3>Know before you hit the limit.</h3><p>Your Claude and Codex 5-hour and weekly limits as live rings, with the time left until each resets and how full every session's context is.</p></div></a>
+      <a class="card" href="features.html#files"><img src="shots/tool-phone.png" alt="Phone drop QR code in the notch" loading="lazy"><div><b>Phone drop</b><h3>Phone to PC in one scan.</h3><p>Scan a QR code on the same Wi-Fi and photos land on your shelf. No app, no cable, no account.</p></div></a>
+      <a class="card" href="features.html#tools"><img src="shots/search.png" alt="Alt+Space search box in the notch" loading="lazy"><div><b>Search</b><h3>Alt+Space finds anything.</h3><p>Apps, files, Wi-Fi, Bluetooth, clipboard and notes from one box. Type, press Enter, done.</p></div></a>
+    </div>
+  </div></section>
   <section class="film"><div class="wrap">
     <h2>See it in 34 seconds.</h2>
     <div class="filmbox"><video id="film" controls playsinline preload="metadata" poster="islet-film-poster.jpg" aria-label="Islet launch film">
@@ -516,7 +534,7 @@ footer{background:var(--sea);padding:30px 0;font-size:15px}
       reveal.unobserve(e.target);
     }), { rootMargin: "0px 0px -12% 0px" });
     blocks.forEach(b => reveal.observe(b));
-    document.querySelectorAll("h2,.intro,.dark .grid>div,.facts>div").forEach(el => {
+    document.querySelectorAll("h2,.intro,.top4 .card,.dark .grid>div,.facts>div").forEach(el => {
       el.classList.add("rise");
       reveal.observe(el);
     });
