@@ -799,7 +799,7 @@ ipcMain.on("shelfMenu", (e, p) => {
   try { dir = fs.statSync(p).isDirectory(); } catch { return; }
   const items = fileActions.actionsFor(p, dir).map(a => ({ label: a.label, click: async () => {
     try {
-      const out = await fileActions.run(p, a.id, nativeImage);
+      const out = await fileActions.run(p, a.id);
       await shelfAdd([out]);
       send("shelfAction", { ok: true, label: a.label, name: path.basename(out) });
     } catch (err) { send("shelfAction", { ok: false, label: a.label, error: err.message }); }

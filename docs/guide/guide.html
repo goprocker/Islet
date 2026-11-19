@@ -75,7 +75,7 @@ pre.t { padding: 3mm 4mm; margin: 1.5mm 0 1.5mm; font-size: 8pt; }
   <p style="color:#6e6e73">Music, Claude Code and Codex activity, notifications, battery and more,<br>in one small black pill at the top of your screen.</p>
   <div class="meta">
     <div><small>MADE BY</small><b>Gopinath</b></div>
-    <div><small>VERSION</small><b>2.5.0</b></div>
+    <div><small>VERSION</small><b>2.6.1</b></div>
     <div><small>PLATFORM</small><b>Windows 10 / 11</b></div>
     <div><small>BUILT WITH</small><b>Electron 45</b></div>
   </div>
@@ -90,14 +90,14 @@ pre.t { padding: 3mm 4mm; margin: 1.5mm 0 1.5mm; font-size: 8pt; }
     <div><b>04</b>Tech stack</div><div><b>05</b>Architecture</div><div><b>06</b>How each part works</div>
     <div><b>07</b>Repository map</div><div><b>08</b>Install and run</div><div><b>09</b>Using Islet</div>
     <div><b>10</b>Claude Code and Codex</div><div><b>11</b>Settings</div><div><b>12</b>Build, test, debug</div>
-    <div><b>13</b>Privacy, troubleshooting, uninstall</div><div><b>14</b>What's new in 2.0 to 2.5, and for coding</div>
+    <div><b>13</b>Privacy, troubleshooting, uninstall</div><div><b>14</b>What's new in 2.0 to 2.6, and for coding</div>
     <div><b>15</b>Islet in plain English</div><div><b>16</b>Words you need</div><div><b>17</b>Follow the data</div>
     <div><b>18</b>Read the code yourself</div><div><b>19</b>Engineering ideas it shows</div><div><b>20</b>Hard problems and limits</div>
     <div><b>21</b>Interview questions and answers</div><div><b>22</b>Cheat sheet and practice</div>
   </div>
   <div class="stats">
     <div><b>8</b><small>data sources</small></div><div><b>20</b><small>settings</small></div>
-    <div><b>13</b><small>notch states</small></div><div><b>404</b><small>passing tests</small></div>
+    <div><b>13</b><small>notch states</small></div><div><b>415</b><small>passing tests</small></div>
   </div>
   <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
 </section>
@@ -158,7 +158,7 @@ pre.t { padding: 3mm 4mm; margin: 1.5mm 0 1.5mm; font-size: 8pt; }
       <li>Mic, camera and screen-capture dots while in use</li>
       <li>Clock and date column; hides behind fullscreen apps</li></ul></div>
     <div class="card"><h3><span class="d" style="background:#64a8ff"></span>Info</h3><ul>
-      <li>Weather by city (Open-Meteo, no key), C or F</li>
+      <li>Weather by city in the pill and the pet (Open-Meteo, no key), C or F</li>
       <li>Next calendar event from a private ICS link; cancelled events, EXDATEs and moved occurrences handled <span class="new">NEW</span> follows each event's time zone</li>
       <li>Browser download progress and a finished pop-up</li>
       <li>Timer from the tray, shown as a chip</li></ul></div>
@@ -226,8 +226,8 @@ pre.t { padding: 3mm 4mm; margin: 1.5mm 0 1.5mm; font-size: 8pt; }
     <tr><td>Registry</td><td>HKCU Notifications\Settings</td><td>Turning Windows' banners off and back on</td></tr>
     <tr><td>Network</td><td>fetch()</td><td>lrclib.net, Open-Meteo, your ICS link, optional Spotify Web API</td></tr>
     <tr><td>Agent hooks</td><td>HTTP server on 127.0.0.1:47321</td><td>Claude Code and Codex hooks post events</td></tr>
-    <tr><td>Tests</td><td>node --test</td><td>65 files, 411 tests</td></tr>
-    <tr><td>Packaging</td><td>electron-builder 26 (NSIS)</td><td>One-click per-user installer</td></tr></table>
+    <tr><td>Tests</td><td>node --test</td><td>66 files, 415 tests</td></tr>
+    <tr><td>Packaging</td><td>electron-builder 26 (NSIS)</td><td>Assisted per-machine installer</td></tr></table>
   <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
 </section>
 
@@ -389,7 +389,7 @@ npm start</pre>
   <p style="margin-top:3mm;font-size:9pt;color:#6e6e73">If config.json can't be read (for example during a hand edit), Islet keeps the current settings and leaves the file as it is.</p>
   <div class="kick">SECTION 12</div>
   <h1>Build, test, debug</h1>
-  <pre>npm test        # node --test test/*.test.js  (65 files, 411 tests)
+  <pre>npm test        # node --test test/*.test.js  (66 files, 415 tests)
 npm run dist    # NSIS installer, run from PowerShell
 
 # inspect the notch with Chrome DevTools
@@ -477,9 +477,9 @@ node_modules\electron\dist\electron.exe . --remote-debugging-port=9333</pre>
   <h1>The tools, up close</h1>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:5mm;margin-top:4mm">
     <figure style="margin:0"><img src="../tools/tool-dash.png" style="width:100%;display:block;border-radius:3mm"><figcaption style="font-size:7.5pt;color:#6e6e73;margin-top:1mm">Home: greeting, Quick Settings, sliders</figcaption></figure>
-    <figure style="margin:0"><img src="../tools/tool-weather.png" style="width:100%;display:block;border-radius:3mm"><figcaption style="font-size:7.5pt;color:#6e6e73;margin-top:1mm">Weather: now, hours and days</figcaption></figure>
+    <figure style="margin:0"><img src="../tools/tool-weather.png" style="width:100%;display:block;border-radius:3mm"><figcaption style="font-size:7.5pt;color:#6e6e73;margin-top:1mm">Weather: now, hours and days (panel removed in 2.6)</figcaption></figure>
     <figure style="margin:0"><img src="../tools/tool-links.png" style="width:100%;display:block;border-radius:3mm"><figcaption style="font-size:7.5pt;color:#6e6e73;margin-top:1mm">Links: saved sites and web search</figcaption></figure>
-    <figure style="margin:0"><img src="../tools/tool-units.png" style="width:100%;display:block;border-radius:3mm"><figcaption style="font-size:7.5pt;color:#6e6e73;margin-top:1mm">Units: one value in every unit</figcaption></figure>
+    <figure style="margin:0"><img src="../tools/tool-units.png" style="width:100%;display:block;border-radius:3mm"><figcaption style="font-size:7.5pt;color:#6e6e73;margin-top:1mm">Units: one value in every unit (removed in 2.6)</figcaption></figure>
     <figure style="margin:0"><img src="../tools/tool-sys.png" style="width:100%;display:block;border-radius:3mm"><figcaption style="font-size:7.5pt;color:#6e6e73;margin-top:1mm">System: refreshed every second</figcaption></figure>
     <figure style="margin:0"><img src="../tools/tool-ai.png" style="width:100%;display:block;border-radius:3mm"><figcaption style="font-size:7.5pt;color:#6e6e73;margin-top:1mm">AI coding: every agent session</figcaption></figure>
     <figure style="margin:0"><img src="../tools/tool-timer.png" style="width:100%;display:block;border-radius:3mm"><figcaption style="font-size:7.5pt;color:#6e6e73;margin-top:1mm">Timer and focus</figcaption></figure>
@@ -627,6 +627,30 @@ node_modules\electron\dist\electron.exe . --remote-debugging-port=9333</pre>
   <ul style="font-size:9.5pt">
     <li><b>New modules</b>: <code>file-actions.js</code>, <code>bt-connect.js/.ps1</code>, <code>gh-activity.js</code>, <code>mixer.js/.ps1</code> (one PowerShell that stays up and answers lines), <code>recording.js</code>, <code>notif-dismiss.ps1</code>, <code>theme-studio.js</code>, <code>renderer/rec.js</code>.</li>
     <li><b>Tests</b>: 375 → 411.</li>
+  </ul>
+  <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<section class="page">
+  <div class="kick">SECTION 14 · 2.6</div>
+  <h1>What's new in 2.6</h1>
+  <div class="lead">2.6 makes the dock a developer tool: the AI coding panel shows how much room each agent has left, and two general-purpose panels are gone. 2.6.0 and 2.6.1 shipped in November 2026.</div>
+  <h2>AI coding panel</h2>
+  <ul style="font-size:9.5pt">
+    <li><b>Context bar</b>: each Claude Code session shows <b>Context N%</b>, read from the newest assistant turn in its transcript (fresh input plus cache reads and writes). Green, amber past 65%, red past 85%. The window is 200k tokens unless the prompt is already larger, which means the 1M window.</li>
+    <li><b>Plan limits</b>: the panel opens with one card per tool. Claude and Codex each get two rings, 5-hour and weekly, with the percentage used, the time until reset, and amber at 65% and red at 85%. A Codex window that has reset since Codex last ran says "fresh".</li>
+    <li><b>Where the numbers come from</b>: Codex percentages are read from the <code>rate_limits</code> it logs in <code>~/.codex/sessions</code>. Claude percentages come from Anthropic's usage endpoint using the login Claude Code already keeps; it is sent only to api.anthropic.com, at most once a minute, and never refreshed. Tokens and replies over the last 5 hours and 7 days are counted from local transcripts and shown when the plan call is unavailable.</li>
+  </ul>
+  <h2>The dock</h2>
+  <ul style="font-size:9.5pt">
+    <li><b>Weather and Units panels removed</b>: they repeated what a phone or a browser tab already does. Their dock buttons, search entries and <code>renderer/units.js</code> are gone. The weather feed stays for the pill and the pet.</li>
+  </ul>
+  <h2>Around the code</h2>
+  <ul style="font-size:9.5pt">
+    <li><b>Security (2.6.1)</b>: the three open CodeQL alerts are fixed: a notification regex that could backtrack badly (50,000 <code>&lt;</code> now take about 1 ms), a test's HTML script extractor, and an unchecked callback in <code>liveshot.js</code>.</li>
+    <li><b>Installer wording</b>: assisted per-machine, as <code>package.json</code> configures it (<code>oneClick: false</code>, <code>perMachine: true</code>).</li>
+    <li><b>Docs</b>: <code>docs/making-a-pet.md</code> explains the pet format and how a built-in pet is wired in.</li>
+    <li><b>Tests</b>: 411 → 415.</li>
   </ul>
   <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
 </section>

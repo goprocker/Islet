@@ -60,7 +60,7 @@ A rough map of the code:
 - `renderer/` is the notch itself. `notch.js` shows the panels, `pet.js` runs the pet, and `units.js` is the unit converter.
 - `settings/` is the settings window.
 - `src/*.ps1` scripts read Windows state such as media, system stats and radios.
-- `builtin-pets/` holds the pets that ship with the app, and `src/pet-pack.js` loads custom ones.
+- `builtin-pets/` holds the pets that ship with the app, and `src/pet-pack.js` loads custom ones. [docs/making-a-pet.md](docs/making-a-pet.md) explains how to make one.
 - `test/` has one `*.test.js` file per area. `npm test` runs them with Node's built-in test runner.
 
 Put new modules and scripts in `src/`. The installer ships `src/**`, and CI fails if one is left at the repo root.

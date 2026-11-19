@@ -50,25 +50,39 @@ function zip(src, out) {
   });
 }
 
-// run an action; nativeImage is Electron's, passed in so this module stays testable
-async function run(p, id, nativeImage) {
+// image work runs in image-action.ps1, its own process, so decoding, resizing and encoding a large
+// image never blocks Islet's main process (#253). One image job runs at a time, so repeated actions
+// can't pile up memory; the rest wait in order. exec is injectable for tests.
+const SCRIPT = path.join(__dirname, "image-action.ps1");
+const IMAGE_JOB = { half: ["half", null, 90], fit1920: ["fit1920", null, 90], png: ["none", "png", 0], jpg: ["none", "jpg", 90], smaller: ["none", "jpg", 70] };
+const firstLine = s => String(s || "").trim().split(/\r?\n/)[0].trim();
+function runImageScript(env) {
+  return new Promise((resolve, reject) => {
+    execFile("powershell.exe", ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", SCRIPT],
+      { env: { ...process.env, ...env }, windowsHide: true, timeout: 120000 },
+      (err, stdout, stderr) => err ? reject(new Error(firstLine(stderr) || "couldn't process the image")) : resolve(String(stdout).trim()));
+  });
+}
+let queue = Promise.resolve();
+const oneAtATime = job => { const next = queue.then(job, job); queue = next.catch(() => {}); return next; };
+
+// run an action and return the new file's path
+async function run(p, id, { exec = runImageScript } = {}) {
   if (id === "zip") return zip(p, outPath(p, "", ".zip"));
   if (!isImage(p)) throw new Error("not an image");
-  const img = nativeImage.createFromPath(p);
-  if (img.isEmpty()) throw new Error("couldn't read the image");
-  const ext = path.extname(p).toLowerCase();
-  let out, data;
-  if (id === "half" || id === "fit1920") {
-    const sized = img.resize({ ...targetSize(img.getSize(), id), quality: "best" });
-    const jpg = ext === ".jpg" || ext === ".jpeg";
-    out = outPath(p, id === "half" ? " (50%)" : " (1920)", jpg ? ext : ".png");
-    data = jpg ? sized.toJPEG(90) : sized.toPNG();
-  } else if (id === "png") { out = outPath(p, "", ".png"); data = img.toPNG(); }
-  else if (id === "jpg") { out = outPath(p, "", ".jpg"); data = img.toJPEG(90); }
-  else if (id === "smaller") { out = outPath(p, " (small)", ".jpg"); data = img.toJPEG(70); }
-  else throw new Error("unknown action");
-  fs.writeFileSync(out, data, { flag: "wx" });
-  return out;
+  const job = IMAGE_JOB[id];
+  if (!job) throw new Error("unknown action");
+  const ext = path.extname(p).toLowerCase(), jpgIn = ext === ".jpg" || ext === ".jpeg";
+  const [mode, fixed, quality] = job;
+  // resizing keeps a JPG a JPG and makes anything else a PNG, as before
+  const fmt = fixed || (jpgIn ? "jpg" : "png");
+  const tag = { half: " (50%)", fit1920: " (1920)", smaller: " (small)" }[id] || "";
+  const outExt = fixed ? "." + fixed : jpgIn ? ext : ".png";
+  return oneAtATime(async () => {
+    const out = outPath(p, tag, outExt);
+    await exec({ ISLET_SRC: p, ISLET_OUT: out, ISLET_MODE: mode, ISLET_FMT: fmt, ISLET_Q: String(quality || 90) });
+    return out;
+  });
 }
 
 module.exports = { actionsFor, outPath, targetSize, isImage, run };
