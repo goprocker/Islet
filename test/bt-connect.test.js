@@ -82,3 +82,28 @@ test("bt: a failed spawn retries; error plus exit retries only once (#254)", t =
   assert.strictEqual(kids.length, 3);
   bt.stop();
 });
+
+test("bt: a name split across chunks at any byte keeps every character (#255)", () => {
+  // 2-, 3- and 4-byte characters: é, Tamil, an emoji
+  for (const name of ["Café Buds", "தமிழ்", "Buds 🎧"]) {
+    const line = Buffer.from(JSON.stringify([name]) + "\n");
+    for (let cut = 1; cut < line.length; cut++) {
+      const { kids, spawn } = fakes(); const events = [];
+      bt.start(e => events.push(e), { spawn });
+      kids[0].stdout.emit("data", Buffer.from("[]\n"));
+      kids[0].stdout.emit("data", line.subarray(0, cut));
+      kids[0].stdout.emit("data", line.subarray(cut));
+      bt.stop();
+      assert.deepStrictEqual(events, [{ type: "connected", name }], `${name} cut at byte ${cut}`);
+    }
+  }
+});
+
+test("bt: several lines per chunk, and the same list in other chunks, give no false events (#255)", () => {
+  const { kids, spawn } = fakes(); const events = [];
+  bt.start(e => events.push(e), { spawn });
+  const all = Buffer.from('[]\n["தமிழ்"]\n["தமிழ்"]\n["தமிழ்","Mouse"]\n');
+  for (let i = 0; i < all.length; i += 3) kids[0].stdout.emit("data", all.subarray(i, i + 3));
+  bt.stop();
+  assert.deepStrictEqual(events, [{ type: "connected", name: "தமிழ்" }, { type: "connected", name: "Mouse" }]);
+});

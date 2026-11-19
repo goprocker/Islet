@@ -2,6 +2,7 @@
 // prints the connected device names whenever they change; this turns that into events.
 const { spawn } = require("child_process");
 const path = require("path");
+const { StringDecoder } = require("string_decoder");
 
 // one line of output -> sorted list of names, or null for junk
 function parseLine(line) {
@@ -30,11 +31,14 @@ function start(onEvent, { script = path.join(__dirname, "bt-connect.ps1"), spawn
   const run = () => {
     if (!live()) return;
     let buf = "";
+    // one decoder per child: a UTF-8 character split across two chunks is held until its last byte
+    // arrives, instead of each chunk being decoded on its own into replacement characters (#255)
+    const utf8 = new StringDecoder("utf8");
     const kid = me.child = spawnFn("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", script, String(process.pid)], { windowsHide: true });
     const mine = () => live() && me.child === kid;
     kid.stdout?.on("data", d => {
       if (!mine()) return;
-      buf += d;
+      buf += typeof d === "string" ? d : utf8.write(d);
       let i;
       while ((i = buf.indexOf("\n")) >= 0) {
         const list = parseLine(buf.slice(0, i)); buf = buf.slice(i + 1);
