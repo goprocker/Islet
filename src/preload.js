@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld("bridge", {
   onClaude: on("claude"),
   aiLimits: () => ipcRenderer.invoke("aiLimits"),
   onToggle: on("toggle"),
+  onPetScene: on("petScene"),
   onLevels: on("levels"),
   onVolume: on("volume"),
   onVolumeHud: on("volumeHud"),
