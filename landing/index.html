@@ -255,7 +255,7 @@ footer{background:var(--sea);padding:30px 0;font-size:15px}
   <a class="cta" href="/Islet-Setup-2.6.12.exe">Download for Windows</a>
   <p class="note">Free and open source, for Windows 10 and 11.</p>
   <p class="note" data-stats hidden></p>
-  <a class="note" href="https://github.com/goprocker/Islet">Follow Islet on GitHub</a>
+  <p class="note"><a class="star" href="https://github.com/goprocker/Islet" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/></svg>Star Islet on GitHub<span class="sc" data-stars hidden></span></a></p>
 </header>
 
 <main>
@@ -568,5 +568,6 @@ footer{background:var(--sea);padding:30px 0;font-size:15px}
   <small>© 2026 Gopinath. A product by <a href="https://www.loopfound.in">LoopFound</a>, free and open source under the <a href="https://github.com/goprocker/Islet/blob/main/LICENSE">MIT licence</a>. Islet is not affiliated with Apple or Microsoft.</small>
 </div></footer>
 <!-- /site:foot -->
+<script>fetch("https://api.github.com/repos/goprocker/Islet").then(r=>r.ok&&r.json()).then(d=>{if(d&&d.stargazers_count>0)document.querySelectorAll("[data-stars]").forEach(e=>{e.textContent=d.stargazers_count.toLocaleString();e.hidden=false})}).catch(()=>{})</script>
 </body>
 </html>

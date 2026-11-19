@@ -99,6 +99,7 @@ footer{padding:36px 0 48px;text-align:center;font-size:15px;color:var(--soft)}
   </a>
   <p class="meta"><span>Version 2.6.12</span> · <span><code>Islet-Setup-2.6.12.exe</code></span> · <span>112 MB</span></p>
   <p class="meta" data-stats hidden></p>
+  <p class="starask">Like Islet? A star helps more people find it.<br><a class="star" href="https://github.com/goprocker/Islet" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/></svg>Star Islet on GitHub<span class="sc" data-stars hidden></span></a></p>
   <div class="pcnote" id="pcnote"><p>Islet is a Windows app. Open this page on your PC to download it, or send yourself the link.</p><button type="button" id="cplink">Copy link</button></div>
   <ul class="badges"><li>Windows 10 &amp; 11</li><li>MIT licence</li><li>Free &amp; open source</li><li>Auto-updates</li></ul>
 </header>
@@ -150,5 +151,6 @@ if(navigator.share){navigator.share({title:"Islet for Windows",url:u}).catch(fun
 else if(navigator.clipboard){navigator.clipboard.writeText(u).then(done,function(){})}})})();
 </script>
 <script src="stats.js"></script>
+<script>fetch("https://api.github.com/repos/goprocker/Islet").then(r=>r.ok&&r.json()).then(d=>{if(d&&d.stargazers_count>0)document.querySelectorAll("[data-stars]").forEach(e=>{e.textContent=d.stargazers_count.toLocaleString();e.hidden=false})}).catch(()=>{})</script>
 </body>
 </html>
