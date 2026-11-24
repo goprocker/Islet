@@ -162,6 +162,15 @@ ul{padding-left:1.1em;color:var(--soft)}li{margin-bottom:5px}li::marker{color:va
 .dark h3{color:#fff}
 .facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:26px;margin-top:40px}
 .facts dt{color:var(--soft);font-size:15px}.facts dd{margin:0;font:700 1.4rem "Bricolage Grotesque",sans-serif;color:var(--ink)}
+.faq{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:40px 64px;align-items:start}
+.faq h2 span{display:block;color:var(--soft)}
+.faq-list details{border-bottom:1px solid color-mix(in srgb,var(--ink) 14%,transparent)}
+.faq-list summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;gap:16px;padding:18px 0;font-weight:600;color:var(--ink)}
+.faq-list summary::-webkit-details-marker{display:none}
+.faq-list summary::after{content:"+";font-size:1.4rem;line-height:1;color:var(--soft);transition:transform .2s}
+.faq-list details[open] summary::after{transform:rotate(45deg)}
+.faq-list details p{margin:0 0 18px;color:var(--soft);max-width:62ch}
+@media (max-width:820px){.faq{grid-template-columns:1fr}}
 footer{background:var(--sea);padding:30px 0;font-size:15px}
 @media (max-width:680px){
   .v-open{grid-template-columns:1fr 1.3fr;padding:12px;gap:10px}
@@ -260,7 +269,7 @@ footer{background:var(--sea);padding:30px 0;font-size:15px}
 
 <main>
   <section class="film"><div class="wrap">
-    <h2>See it in 34 seconds.</h2>
+    <h2>See it in 42 seconds.</h2>
     <div class="filmbox"><video id="film" controls playsinline preload="metadata" poster="islet-film-poster.jpg" aria-label="Islet launch film">
       <source src="islet-film.mp4" type="video/mp4">
       <a href="islet-film.mp4">Download the launch film</a>
@@ -302,6 +311,26 @@ footer{background:var(--sea);padding:30px 0;font-size:15px}
       <div><dt>Licence</dt><dd>MIT</dd></div>
       <div><dt>Made by</dt><dd>Gopinath</dd></div>
     </dl>
+  </div></section>
+
+  <section id="faq"><div class="wrap faq">
+    <div>
+      <h2>A few things <span>worth knowing.</span></h2>
+      <p class="intro"><a href="https://github.com/goprocker/Islet/issues">Ask us anything ↗</a></p>
+    </div>
+    <div class="faq-list">
+      <details><summary>What is Islet?</summary><p>A Dynamic-Island-style notch for Windows. It sits at the top of your screen and shows music, AI coding sessions, notifications, battery and more in one pill, and lets you act on them there.</p></details>
+      <details><summary>Is it free?</summary><p>Yes. Islet is free and open source under the MIT licence. There is no account, subscription or paid tier.</p></details>
+      <details><summary>Which versions of Windows does it run on?</summary><p>Windows 10 (version 1903 or later) and Windows 11.</p></details>
+      <details><summary>Why does Windows show a SmartScreen warning?</summary><p>The installer is not code-signed yet, so SmartScreen may say "unknown publisher". The code is open on GitHub for you to check. Choose <strong>More info</strong>, then <strong>Run anyway</strong>.</p></details>
+      <details><summary>Does it send my data anywhere?</summary><p>No account, no cloud and no tracking. It only goes online to check GitHub for updates and for extras you use: lyrics from lrclib.net, weather from Open-Meteo, your calendar link, and Spotify if you connect it. See the <a href="privacy.html">privacy page</a>.</p></details>
+      <details><summary>Which AI coding agents does it support?</summary><p>Claude Code and Codex. Sessions from both show in one column with their status and last actions, and you can Allow or Deny Claude Code requests from the notch.</p></details>
+      <details><summary>Which music players work?</summary><p>Spotify, or any player that uses Windows media controls.</p></details>
+      <details><summary>Will it get in the way?</summary><p>No. Clicks pass through everywhere except the notch, it shrinks to a dot when nothing is happening, and it hides behind fullscreen apps. Ctrl+Alt+N cycles it between pill, open and hidden.</p></details>
+      <details><summary>Does it work with more than one monitor?</summary><p>Yes. Ctrl+Alt+M moves Islet to the next monitor.</p></details>
+      <details><summary>How do I send files from my phone?</summary><p>Open Phone drop and scan the QR code. Your phone and PC need to be on the same Wi-Fi. There's no app, cable or account, and it stops by itself after 10 minutes.</p></details>
+      <details><summary>How do I uninstall it?</summary><p>Like any Windows app: Settings, Apps, then Islet, then Uninstall.</p></details>
+    </div>
   </div></section>
 </main>
 
