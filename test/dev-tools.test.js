@@ -73,7 +73,7 @@ test("snippets: defaults, save, and junk filtered", () => {
 });
 
 test("github: only new notifications, with page links", () => {
-  const seen = new Set();
+  const seen = new Map();
   const list = [{ id: "1", reason: "review_requested", repository: { full_name: "o/r" }, subject: { title: "Fix it", url: "https://api.github.com/repos/o/r/pulls/7" } }];
   assert.deepEqual(gh.fresh(list, seen), [{ id: "1", repo: "o/r", title: "Fix it", reason: "Review requested", url: "https://github.com/o/r/pull/7" }]);
   assert.deepEqual(gh.fresh(list, seen), []);
@@ -119,4 +119,14 @@ test("snippets: a failed save throws and leaves the stored list as it was (#256)
 test("snippets: a save into a missing folder throws instead of pretending (#256)", () => {
   const dir = path.join(os.tmpdir(), "islet-snip-missing-" + process.pid, "nope");
   assert.throws(() => dev.saveSnippets(dir, [{ name: "x", text: "y" }]));
+});
+
+test("github: newer activity on a known thread alerts once (#194)", () => {
+  const seen = new Map();
+  const n = (at, reason) => [{ id: "t1", updated_at: at, reason, repository: { full_name: "o/r" }, subject: { title: "X" } }];
+  assert.equal(gh.fresh(n("2026-11-10T10:00:00Z", "mention"), seen).length, 1);
+  assert.equal(gh.fresh(n("2026-11-10T10:00:00Z", "mention"), seen).length, 0);
+  assert.equal(gh.fresh(n("2026-11-11T10:00:00Z", "review_requested"), seen).length, 1);
+  assert.equal(gh.fresh(n("2026-11-09T10:00:00Z", "mention"), seen).length, 0);
+  assert.equal(seen.get("t1"), Date.parse("2026-11-11T10:00:00Z"));
 });

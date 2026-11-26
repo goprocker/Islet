@@ -226,7 +226,7 @@ pre.t { padding: 3mm 4mm; margin: 1.5mm 0 1.5mm; font-size: 8pt; }
     <tr><td>Registry</td><td>HKCU Notifications\Settings</td><td>Turning Windows' banners off and back on</td></tr>
     <tr><td>Network</td><td>fetch()</td><td>lrclib.net, Open-Meteo, your ICS link, optional Spotify Web API</td></tr>
     <tr><td>Agent hooks</td><td>HTTP server on 127.0.0.1:47321</td><td>Claude Code and Codex hooks post events</td></tr>
-    <tr><td>Tests</td><td>node --test</td><td>66 files, 415 tests</td></tr>
+    <tr><td>Tests</td><td>node --test</td><td>68 files, 449 tests</td></tr>
     <tr><td>Packaging</td><td>electron-builder 26 (NSIS)</td><td>Assisted per-machine installer</td></tr></table>
   <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
 </section>
@@ -389,7 +389,7 @@ npm start</pre>
   <p style="margin-top:3mm;font-size:9pt;color:#6e6e73">If config.json can't be read (for example during a hand edit), Islet keeps the current settings and leaves the file as it is.</p>
   <div class="kick">SECTION 12</div>
   <h1>Build, test, debug</h1>
-  <pre>npm test        # node --test test/*.test.js  (66 files, 415 tests)
+  <pre>npm test        # node --test test/*.test.js  (68 files, 449 tests)
 npm run dist    # NSIS installer, run from PowerShell
 
 # inspect the notch with Chrome DevTools
@@ -440,7 +440,7 @@ node_modules\electron\dist\electron.exe . --remote-debugging-port=9333</pre>
     <li><b>Settings</b>: typing during an autosave is kept, and a change made before the settings load no longer saves an empty form.</li>
     <li><b>Shelf and downloads</b>: a damaged shelf.json no longer causes a startup error and is kept as shelf.json.invalid; downloads finishing together each announce their own file.</li>
     <li><b>Agents</b>: emoji and other non-English text in prompts, folders and session names stay intact.</li>
-    <li><b>Tests</b>: 8 files, 43 passing → 19 files, 169 passing.</li>
+    <li><b>Tests</b>: from 8 files and 43 tests to 68 files, 449 tests today.</li>
     <li><b>Added 1 Nov 2026</b>: Electron 45, config checks on load, hook and listener verification, Node 22+ from source</li>
     <li>Launch page: islet26.netlify.app (source in landing/)</li></ul>
   <h2>Also since the first guide</h2>
@@ -836,7 +836,7 @@ if (gen === generation &amp;&amp; text !== null) onEvent(nextEvent(text));</pre>
   <h2>Security</h2>
   <div class="qa"><div><b>What's the security model?</b><p>Page isolated from Node, fixed bridge API, server on loopback only, every external input validated, outside text set with <code>textContent</code>, and link schemes allowlisted.</p></div><div><b>What's the weakest point?</b><p>The hook and listener use mutual HMAC proof keyed by <code>~/.islet-hook-token</code>. Other callers cannot forge messages without that secret; a process running as the same Windows user can read it and impersonate a hook.</p></div><div><b>Could a malicious notification attack the app?</b><p>Its text is only ever shown as text. Clicking it opens a URL only if the scheme is on the allowlist; otherwise it opens the sending app.</p></div></div>
   <h2>Testing and process</h2>
-  <div class="qa"><div><b>How is it tested?</b><p>411 tests in 65 files using Node's built-in <code>node --test</code>, with no extra dependencies. Mostly logic: calendar rules, time zones, lyrics, hook install, and races. Fakes replace the network and <code>http.createServer</code>.</p></div><div><b>How do you test time zones?</b><p>The calendar tests run with the host set to different zones, such as Asia/Kolkata and UTC, including daylight-saving changes.</p></div><div><b>What isn't tested?</b><p>The real screen and mouse, and the PowerShell helpers. I check those by hand, and through Chrome DevTools using <code>--remote-debugging-port=9333</code>.</p></div><div><b>Did you use AI to build this?</b><p>Answer truthfully. A strong answer says what you decided, how you checked the result, and which bugs you found. This guide is there so you can back that up.</p></div></div>
+  <div class="qa"><div><b>How is it tested?</b><p>449 tests in 68 files using Node's built-in <code>node --test</code>, with no extra dependencies. Mostly logic: calendar rules, time zones, lyrics, hook install, and races. Fakes replace the network and <code>http.createServer</code>.</p></div><div><b>How do you test time zones?</b><p>The calendar tests run with the host set to different zones, such as Asia/Kolkata and UTC, including daylight-saving changes.</p></div><div><b>What isn't tested?</b><p>The real screen and mouse, and the PowerShell helpers. I check those by hand, and through Chrome DevTools using <code>--remote-debugging-port=9333</code>.</p></div><div><b>Did you use AI to build this?</b><p>Answer truthfully. A strong answer says what you decided, how you checked the result, and which bugs you found. This guide is there so you can back that up.</p></div></div>
   <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
 </section>
 

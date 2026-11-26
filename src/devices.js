@@ -33,11 +33,16 @@ function newlyLow(list, warned = low) {
   return out;
 }
 
-function poll(onList, onLow) {
+let gen = 0, child = null; // each poll() lifecycle has its own generation (#197)
+
+function poll(onList, onLow, exec = execFile) {
   stop();
+  const mine = gen;
   const run = () => {
-    execFile("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", path.join(__dirname, "devices.ps1")], { windowsHide: true, timeout: 60000 }, (err, out) => {
-      if (timer === null) return; // stopped meanwhile
+    timer = null;
+    child = exec("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", path.join(__dirname, "devices.ps1")], { windowsHide: true, timeout: 60000 }, (err, out) => {
+      if (mine !== gen) return; // stopped or restarted meanwhile: an old reply publishes nothing
+      child = null;
       if (!err) { const list = parse(out); onList(list); for (const d of newlyLow(list)) onLow(d); }
       timer = setTimeout(run, EVERY_MS);
     });
@@ -45,6 +50,11 @@ function poll(onList, onLow) {
   timer = setTimeout(run, 0);
 }
 
-function stop() { clearTimeout(timer); timer = null; }
+function stop() {
+  gen++;
+  clearTimeout(timer); timer = null;
+  try { child?.kill(); } catch {}
+  child = null;
+}
 
 module.exports = { poll, stop, parse, newlyLow, LOW };
