@@ -16,7 +16,9 @@ let likedAt = 0, doneAt = 0, plugAt = 0, openedAt = 0, dndOn = false;
 
 // ---- open / close; window is click-through except over the notch ----
 function setOpen(o) {
-  if (o && !notch.classList.contains("open")) { openedAt = Date.now(); prefetchQuick(); }
+  const was = notch.classList.contains("open");
+  if (o && !was) { openedAt = Date.now(); prefetchQuick(); notch.classList.add("hopin"); setTimeout(() => notch.classList.remove("hopin"), 700); }
+  if (!o && was) setTimeout(() => { if (pillClosed() && !notch.classList.contains("showtime")) petScene("jumpout"); }, 450); // once the pill has shrunk back
   notch.classList.toggle("open", o); notch.setAttribute("aria-expanded", o);
 }
 // Home's tiles and sliders come from PowerShell (~0.7 s): start reading as the notch opens, so the
@@ -282,9 +284,10 @@ const focusing = (now = Date.now()) => timerEnd > now && /focus/i.test(timerLabe
 // a focus phase that ends (Pomodoro moves on to a break, or a focus timer runs out) grows the pet's plant
 let plantUntil = 0, plantedEnd = 0; // plantedEnd: the timer that already grew one
 const PLANT_MS = 10000;
-function growPlant() {
-  if (timerEnd === plantedEnd) return;
-  plantedEnd = timerEnd;
+// key: the finished phase's id from main, so each focus round grows exactly one (#199)
+function growPlant(key) {
+  if (key === plantedEnd) return;
+  plantedEnd = key;
   const today = new Date().toDateString();
   let n = 0;
   try { const p = JSON.parse(localStorage.getItem("petPlant") || "{}"); n = p.day === today ? p.n : 0; } catch {}
@@ -294,10 +297,7 @@ function growPlant() {
   plantUntil = Date.now() + PLANT_MS;
   render();
 }
-window.bridge.onTimerLabel(l => {
-  if (/focus/i.test(timerLabel) && !/focus/i.test(l || "") && timerEnd && timerEnd <= Date.now() + 2000) growPlant();
-  timerLabel = l || "Timer";
-});
+window.bridge.onTimerLabel(l => { timerLabel = l || "Timer"; });
 window.bridge.onStopwatch(t => { stopwatchStart = t || 0; render(); });
 let sideLink = null; // the meeting the right-hand text would join
 $("side").onclick = () => { if (sideLink) window.bridge.joinMeeting(sideLink); };
@@ -387,6 +387,7 @@ window.bridge.onBuild(b => {
   build = { ...b, at: Date.now() };
   if (b.state === "pass") doneAt = Date.now(); // the pet cheers
   if (b.state === "fail") lastToastAt = Date.now(); // the pet startles
+  petCue({ running: "testing", pass: "pass", fail: "fail" }[b.state]);
   if (b.state !== "running" && !focusing()) peek(4000);
   renderBuild(Date.now());
 });
@@ -407,7 +408,9 @@ function renderBuild(now) {
 // ---- screen recording (#224): Windows' capture records plus OBS's own status ----
 let captures = [], obsRec; // obsRec: undefined = not connected to OBS, null = connected, not recording
 let obsAt = 0; // when OBS's duration was read, so the timer keeps running between reads
-window.bridge.onObsRec(({ state }) => { obsRec = state ? { ...state } : null; obsAt = Date.now(); render(); });
+// connected:false -> back to undefined so Windows capture records show OBS again (#231)
+const takeObs = ({ connected, state, at }) => { obsRec = !connected ? undefined : state ? { ...state } : null; obsAt = at || Date.now(); render(); };
+window.bridge.onObsRec(takeObs);
 const REC_WORD = { rec: "Recording", share: "Sharing", capture: "Capturing" };
 function recNow(now) {
   const obsLive = obsRec && { ...obsRec, duration: obsRec.duration + (obsRec.paused ? 0 : now - obsAt) };
@@ -436,7 +439,7 @@ function renderRec(now) {
 $("recShow").onclick = e => { e.stopPropagation(); window.bridge.recControl("show", $("recCard").dataset.proc); };
 $("recPause").onclick = e => { e.stopPropagation(); window.bridge.recControl(obsRec?.paused ? "resume" : "pause"); };
 $("recStop").onclick = e => { e.stopPropagation(); window.bridge.recControl("stop"); };
-window.bridge.obsRec().then(r => { if (r.connected && obsRec === undefined) obsRec = null; });
+window.bridge.obsRec().then(r => { if (r && obsRec === undefined) takeObs(r); }); // current state after a reload (#232)
 
 // ---- developer live activities: GitHub Actions runs, PR checks, deployments (#219) ----
 let ghLive = [];
@@ -449,6 +452,7 @@ window.bridge.onGhLive(({ live, finished }) => {
     toast({ app: "GitHub", svg: a.kind === "run" && ok ? NOTE_ICONS.passed : a.kind === "run" && a.state === "fail" ? NOTE_ICONS.failed : GH_ICON[a.kind] || NOTE_ICONS.github, color: ok ? "#1f883d" : a.state === "fail" ? "#cf222e" : "#57606a",
       title: a.kind === "pr" ? a.label : `${a.label} ${GH_WORD[a.state]}`, body: `${a.detail ? a.detail + " · " : ""}${a.repo}`, open: a.url, ms: 7000 });
     if (ok) doneAt = Date.now(); else if (a.state === "fail") lastToastAt = Date.now();
+    if (ok && (a.kind === "pr" || a.kind === "run")) petCue("ship"); else if (a.state === "fail") petCue("bughunt");
   }
   render();
 });
@@ -489,6 +493,7 @@ window.bridge.onClaude(list => {
       peek(4000);
       if (s.status === "done") doneAt = Date.now();
     }
+    if (was && was !== "working" && s.status === "working") petCue("typing"); // an agent picked up a task
     prevStatus[keyOf(s)] = s.status;
   }
   sessions = list;
@@ -639,9 +644,7 @@ function render() {
     side = chip = `${timerLabel} ${fmt((timerEnd - now) / 1000)}`;
     soon = true;
   } else if (timerEnd && timerEnd <= now) {
-    timerEnd = 0;
-    // Pomodoro phases say it themselves (focusEvent), with the break tip
-    if (!/^(Focus \d|Break|Long break)/.test(timerLabel)) toast({ app: "Timer", svg: NOTE_ICONS.timer, color: "#5e5ce6", title: "Time's up", body: `${timerLabel} has finished.` });
+    timerEnd = 0; // only the display; main announces the finish (timerDone / focusEvent)
   }
   // a running stopwatch counts up when no timer is on
   if (!side && stopwatchStart) {
@@ -703,18 +706,248 @@ function updatePet(now, busy) {
   for (const p of pets) p.hidden = theme.pet === false;
   if (theme.pet === false) return;
   if (busy) quietSince = 0; else if (!quietSince) quietSince = now;
-  if (timerEnd && timerEnd <= now && /focus/i.test(timerLabel)) growPlant(); // a focus timer ran out
   // agents: one asking for you beats one working; a "working" session that went quiet over 2 minutes ago doesn't count
   const agent = sessions.some(x => x.status === "waiting") ? "waiting" : sessions.some(x => x.status === "working" && now - x.time < 120000) ? "working" : "";
   const mood = window.Pet.pick({ now, battery, toastAt: lastToastAt, timerEnd, timerLabel, playing: !!track?.playing, quietSince, agent, plantUntil, app: fgApp,
     likedAt, doneAt, plugAt, openedAt, meetingAt: event?.start || 0, dnd: dndOn, hour: new Date(now).getHours(),
     tempC: wx && !wx.error ? (wx.unit === "F" ? (wx.temp - 32) * 5 / 9 : wx.temp) : NaN });
   window.Pet.paint(pets, mood, theme.petPack);
+  petShow(now, mood, busy);
   // hello once the name has arrived; then a word on each new mood (not the 4-second pop-up startle), or a chat after a quiet spell
   if (!saidMood) { if (theme.name !== undefined) { saidMood = mood; petSay(mood, true); } }
   else if (mood !== saidMood && mood !== "alert" && mood !== "hello") { saidMood = mood; petSay(mood); } // a startle or a hello on opening is too brief for words
   else if (now - lastSaid > CHAT_EVERY && !notch.classList.contains("open")) petSay(mood);
 }
+// ---- Clawd's stage shows: the closed pill grows into a stage (CSS .showtime, 340x78) and a big sprite-sheet pet acts a scene ----
+// Each scene builds keyframes with k(t, x, y, opts): t 0..1, x/y = the sprite's top-left in the stage; opts: f facing (sticks
+// until changed), sq "land" / "lift" squash-stretch, e easing into the next key. Moods pick the sprite row (pet.js MOOD_ROW):
+// code = running, dance = jumping, alert = waving, sick = failed. fx: [t, kind, count] particles (spark, dust, zz, drop).
+const SW = 56, SH = 60, STAGE_W = 340, STAGE_H = 78;
+const FLOOR = STAGE_H - SH - 2, BELOW = STAGE_H + 4, C = STAGE_W / 2 - SW / 2, OUT_L = -SW - 8, OUT_R = STAGE_W + 8;
+const SQ = { land: [1.2, .8], lift: [.86, 1.14], crouch: [1.12, .86], settle: [.96, 1.04], flat: [1.5, .12] };
+const k = (t, x, y, o = {}) => ({ t, x, y, ...o });
+// a jump: crouch (anticipation), stretch up, hang, squash on landing, overshoot and settle
+const hop = (t, x, h, gap = .04) => [k(t - gap * 1.6, x, FLOOR, { e: "ease-out" }), k(t - gap * 1.1, x, FLOOR, { sq: "crouch", e: "cubic-bezier(.3,.6,.5,1)" }), k(t - gap * .6, x, FLOOR - h * .5, { sq: "lift", e: "cubic-bezier(.2,.6,.4,1)" }),
+  k(t, x, FLOOR - h, { e: "cubic-bezier(.6,0,.8,.5)" }), k(t + gap, x, FLOOR, { sq: "land", e: "ease-out" }), k(t + gap * 1.4, x, FLOOR, { sq: "settle" }), k(t + gap * 1.8, x, FLOOR)];
+const SCENES = {
+  // runs in, skids to a stop, one happy hop, runs off
+  run: () => ({ ms: 4600, path: [k(0, OUT_L, FLOOR, { f: 1 }), k(.34, C, FLOOR, { e: "cubic-bezier(.2,.7,.3,1)" }), k(.38, C, FLOOR, { sq: "land" }), k(.42, C, FLOOR), ...hop(.52, C, 16), k(.64, C, FLOOR, { e: "ease-in" }), k(1, OUT_R, FLOOR)],
+    moods: [[0, "code"], [.36, "idle"], [.46, "dance"], [.64, "code"]], fx: [[.36, "dust", 6], [.56, "dust", 5]] }),
+  // rises out of the bottom edge at the right, looks left, looks right, ducks back down
+  peek: () => ({ ms: 5200, path: [k(0, STAGE_W * .66, BELOW, { f: 1, e: "cubic-bezier(.2,.9,.3,1.2)" }), k(.14, STAGE_W * .66, FLOOR + 22), k(.3, STAGE_W * .66, FLOOR + 22, { f: -1 }), k(.32, STAGE_W * .66, FLOOR + 20),
+    k(.5, STAGE_W * .66, FLOOR + 20, { f: 1 }), k(.52, STAGE_W * .66, FLOOR + 22), k(.62, STAGE_W * .66, FLOOR + 6, { sq: "lift" }), k(.7, STAGE_W * .66, FLOOR + 6), k(.82, STAGE_W * .66, FLOOR + 8, { e: "ease-in" }), k(1, STAGE_W * .66, BELOW)],
+    moods: [[0, "idle"], [.6, "alert"], [.8, "idle"]] }),
+  // agent finished: runs in, two big jumps with sparkles, runs off
+  victory: () => ({ ms: 5600, path: [k(0, OUT_L, FLOOR, { f: 1 }), k(.26, C, FLOOR, { e: "cubic-bezier(.2,.7,.3,1)" }), k(.29, C, FLOOR, { sq: "land" }), ...hop(.38, C, 22, .05), ...hop(.56, C, 22, .05), k(.7, C, FLOOR, { e: "ease-in" }), k(1, OUT_R, FLOOR)],
+    moods: [[0, "code"], [.29, "happy"], [.7, "code"]], fx: [[.28, "dust", 6], [.38, "spark", 14], [.43, "dust", 5], [.56, "spark", 14], [.61, "dust", 5]] }),
+  // agent needs you: pops up in the middle and waves
+  wave: () => ({ ms: 5200, path: [k(0, C, BELOW, { f: 1, e: "cubic-bezier(.2,.9,.3,1.3)" }), k(.12, C, FLOOR), k(.15, C, FLOOR, { sq: "land" }), k(.18, C, FLOOR), k(.86, C, FLOOR, { sq: "lift", e: "ease-in" }), k(1, C, BELOW)],
+    moods: [[0, "alert"]] }),
+  // music: shuffles left and right with hops, then leaves
+  dance: () => ({ ms: 7000, path: [k(0, OUT_L, FLOOR, { f: 1 }), k(.14, STAGE_W * .2, FLOOR), ...hop(.22, STAGE_W * .2, 10), k(.34, STAGE_W * .55, FLOOR, { f: 1 }), ...hop(.42, STAGE_W * .55, 10),
+    k(.5, STAGE_W * .55, FLOOR, { f: -1 }), k(.58, STAGE_W * .3, FLOOR), ...hop(.66, STAGE_W * .3, 12), k(.74, STAGE_W * .3, FLOOR, { f: 1 }), k(1, OUT_R, FLOOR)],
+    moods: [[0, "code"], [.14, "dance"], [.74, "code"]], fx: [[.26, "dust", 4], [.46, "dust", 4], [.7, "dust", 4]] }),
+  // late night: plods to the middle, settles down, sleeps with drifting z's, sinks away
+  sleep: () => ({ ms: 9000, path: [k(0, OUT_L, FLOOR, { f: 1 }), k(.3, C, FLOOR, { e: "ease-out" }), k(.36, C, FLOOR + 4, { sq: "land" }), k(.4, C, FLOOR + 6), k(.86, C, FLOOR + 6, { e: "ease-in" }), k(1, C, BELOW)],
+    moods: [[0, "idle"], [.36, "sleep"]], fx: [[.42, "zz", 1], [.52, "zz", 1], [.62, "zz", 1], [.72, "zz", 1]] }),
+  // low battery: drags itself across, sagging, with a sweat drop
+  tired: () => ({ ms: 8000, path: [k(0, OUT_L, FLOOR + 4, { f: 1 }), k(.2, STAGE_W * .25, FLOOR + 6, { sq: "land" }), k(.3, STAGE_W * .32, FLOOR + 4), k(.45, STAGE_W * .5, FLOOR + 7, { sq: "land" }),
+    k(.55, STAGE_W * .55, FLOOR + 4), k(.72, STAGE_W * .75, FLOOR + 7, { sq: "land" }), k(.8, STAGE_W * .78, FLOOR + 4), k(1, OUT_R, FLOOR + 5)],
+    moods: [[0, "sick"]], fx: [[.25, "drop", 1], [.6, "drop", 1]] }),
+  // plugged in: zooms across leaving a green streak
+  zoom: () => ({ ms: 1500, path: [k(0, OUT_L - 60, FLOOR, { f: 1, sq: "lift" }), k(1, OUT_R + 60, FLOOR, { sq: "lift" })], moods: [[0, "code"]], cls: "trail", fx: [[.45, "dust", 8]] }),
+  // focus done: carries the plant in, shows it off, carries it off
+  carry: () => ({ ms: 6000, path: [k(0, OUT_L - 10, FLOOR, { f: 1 }), k(.38, C, FLOOR, { e: "cubic-bezier(.2,.7,.3,1)" }), k(.41, C, FLOOR, { sq: "land" }), ...hop(.52, C, 12), k(.66, C, FLOOR, { e: "ease-in" }), k(1, OUT_R + 10, FLOOR)],
+    moods: [[0, "code"], [.41, "plant"], [.66, "code"]], cls: "carry", fx: [[.52, "spark", 10], [.56, "dust", 5]] }),
+  // notch closed: springs up from below and leaps out through the top
+  jumpout: () => ({ ms: 1500, path: [k(0, C, BELOW, { f: 1, e: "cubic-bezier(.2,.9,.3,1)" }), k(.3, C, FLOOR), k(.38, C, FLOOR + 4, { sq: "land" }), k(.46, C, FLOOR + 2, { sq: "lift", e: "cubic-bezier(.3,.7,.6,1)" }), k(1, C, -SH - 10, { sq: "lift" })],
+    moods: [[0, "dance"]], fx: [[.44, "dust", 6]] }),
+};
+// ---- coding scenes: played by agent and build events (petCue), not by moods ----
+const shake = (t, x, n = 6, w = 4, step = .015) => Array.from({ length: n }, (_, i) => k(t + i * step, x + (i % 2 ? w : -w), FLOOR));
+Object.assign(SCENES, {
+  // an agent starts working: Clawd sits down at a laptop and types, code flying up
+  typing: () => ({ ms: 6500, path: [k(0, C, FLOOR, { f: 1, sq: "lift" }), k(.06, C, FLOOR, { sq: "land" }), k(.1, C, FLOOR), k(.9, C, FLOOR), k(1, C, FLOOR, { sq: "lift" })],
+    moods: [[0, "work"]], cls: "laptop", fx: [.12, .22, .32, .42, .52, .62, .72, .82].map(t => [t, "code", 1]) }),
+  // the agent is still busy: Clawd paces, stops to think, paces back
+  thinking: () => ({ ms: 7000, path: [k(0, STAGE_W * .25, FLOOR, { f: 1 }), k(.25, STAGE_W * .6, FLOOR, { e: "ease-in-out" }), k(.3, STAGE_W * .6, FLOOR), k(.55, STAGE_W * .6, FLOOR, { f: -1 }),
+    k(.8, STAGE_W * .25, FLOOR, { e: "ease-in-out" }), k(.85, STAGE_W * .25, FLOOR, { f: 1 }), k(1, STAGE_W * .25, FLOOR)],
+    moods: [[0, "code"], [.27, "ask"], [.55, "code"], [.82, "idle"]], fx: [[.32, "dots", 1], [.42, "dots", 1], [.86, "bulb", 1]] }),
+  // tests running: running in place, faster and faster, a progress trail of dots
+  testing: () => ({ ms: 5000, path: [k(0, C, FLOOR, { f: 1 }), ...Array.from({ length: 10 }, (_, i) => k(.08 + i * .09, C + (i % 2 ? 6 : -6), FLOOR - (i % 2 ? 4 : 0), { e: "ease-in-out" })), k(1, C, FLOOR)],
+    moods: [[0, "code"]], fx: [.1, .25, .4, .55, .7, .85].map(t => [t, "dust", 3]) }),
+  // tests passed: a big green tick, a jump, green confetti
+  pass: () => ({ ms: 4800, path: [k(0, C, FLOOR, { f: 1 }), k(.15, C, FLOOR + 4, { sq: "land" }), ...hop(.3, C, 24, .06), ...hop(.55, C, 14, .05), k(.75, C, FLOOR), k(1, C, FLOOR)],
+    moods: [[0, "idle"], [.18, "happy"]], fx: [[.2, "check", 1], [.3, "confetti", 16], [.55, "confetti", 10], [.36, "dust", 5]] }),
+  // tests failed: a red cross, Clawd flinches, shakes and slumps, a puff of smoke
+  fail: () => ({ ms: 5200, path: [k(0, C, FLOOR, { f: 1 }), k(.12, C, FLOOR, { sq: "lift" }), k(.16, C - 10, FLOOR, { sq: "land" }), ...shake(.2, C - 10, 8, 4),
+    k(.36, C - 10, FLOOR), k(.5, C - 10, FLOOR + 6, { sq: "land" }), k(.9, C - 10, FLOOR + 6), k(1, C - 10, FLOOR)],
+    moods: [[0, "alert"], [.16, "sick"]], fx: [[.14, "cross", 1], [.3, "smoke", 5], [.55, "smoke", 3]] }),
+  // a CI run failed on GitHub: a bug crawls across, Clawd chases it and stomps it
+  bughunt: () => ({ ms: 6500, path: [k(0, STAGE_W * .02, FLOOR, { f: 1 }), k(.15, STAGE_W * .1, FLOOR), k(.6, STAGE_W * .66, FLOOR, { e: "ease-in" }), ...hop(.68, STAGE_W * .72, 18, .05), k(.78, STAGE_W * .72, FLOOR + 4, { sq: "land" }),
+    k(.85, STAGE_W * .72, FLOOR), ...hop(.92, STAGE_W * .72, 10, .03)],
+    moods: [[0, "alert"], [.15, "code"], [.74, "happy"]], fx: [[0, "bug", 1], [.73, "smoke", 6], [.75, "spark", 10]] }),
+  // a pull request merged or a CI run passed: a rocket launches, Clawd waves it off
+  ship: () => ({ ms: 5500, path: [k(0, OUT_L, FLOOR, { f: 1 }), k(.25, STAGE_W * .3, FLOOR, { e: "cubic-bezier(.2,.7,.3,1)" }), k(.28, STAGE_W * .3, FLOOR, { sq: "land" }), k(.32, STAGE_W * .3, FLOOR),
+    ...hop(.75, STAGE_W * .3, 16), k(.85, STAGE_W * .3, FLOOR), k(1, STAGE_W * .3, FLOOR)],
+    moods: [[0, "code"], [.28, "alert"], [.7, "happy"]], fx: [[.3, "rocket", 1], [.32, "smoke", 6], [.7, "confetti", 12]] }),
+});
+// coding events wait for the pill to close (a peek or a toast often shows first), up to 15 s, then play
+let cueTimer = 0;
+function petCue(name, tries = 30) {
+  clearTimeout(cueTimer);
+  if (pillClosed() && !notch.classList.contains("showtime")) { if (petScene(name)) showAt = Date.now(); return; }
+  if (tries > 0) cueTimer = setTimeout(() => petCue(name, tries - 1), 500);
+}
+// which scene a new mood plays; any other lively mood gets the plain run
+// ---- more scenes: melting in and out of the notch, weather, feelings, and small idle moments ----
+const melt = (t, x) => [k(t, x, FLOOR + 30, { f: 1, sq: "flat" }), k(t + .1, x, FLOOR + 8, { sq: "crouch", e: "cubic-bezier(.3,1.4,.5,1)" }), k(t + .16, x, FLOOR, { sq: "lift" }), k(t + .2, x, FLOOR, { sq: "settle" }), k(t + .23, x, FLOOR)];
+const sink = (t, x) => [k(t, x, FLOOR, { sq: "settle" }), k(t + .06, x, FLOOR + 2, { sq: "land" }), k(t + .16, x, FLOOR + 30, { sq: "flat", e: "ease-in" })];
+Object.assign(SCENES, {
+  // oozes up out of the notch's floor like ink, looks around, then melts back into it
+  ooze: () => ({ ms: 5000, path: [...melt(0, C), k(.5, C, FLOOR, { f: -1 }), k(.62, C, FLOOR, { f: 1 }), ...sink(.8, C)],
+    moods: [[0, "idle"], [.3, "alert"], [.6, "idle"]], fx: [[0, "puddle", 1], [.8, "puddle", 1]] }),
+  // cold: shivers in the middle while snow falls
+  shiver: () => ({ ms: 6000, path: [...melt(0, C), ...shake(.3, C, 14, 2, .02), ...shake(.6, C, 10, 2, .02), ...sink(.82, C)],
+    moods: [[0, "cold"]], fx: [.05, .15, .25, .35, .45, .55, .65, .75].map(t => [t, "snow", 3]) }),
+  // hot: drags along under a sun, wiping sweat, sinks into the cool notch
+  heat: () => ({ ms: 6500, path: [k(0, OUT_L, FLOOR + 3, { f: 1 }), k(.55, STAGE_W * .5, FLOOR + 3, { e: "ease-out" }), k(.62, STAGE_W * .5, FLOOR + 5, { sq: "land" }), ...sink(.8, STAGE_W * .5)],
+    moods: [[0, "hot"]], fx: [[.05, "sun", 1], [.3, "drop", 1], [.5, "drop", 1], [.7, "drop", 1], [.8, "puddle", 1]] }),
+  // a meeting soon: rushes back and forth with an alarm clock ringing
+  rush: () => ({ ms: 5000, path: [k(0, OUT_L, FLOOR, { f: 1 }), k(.2, STAGE_W * .7, FLOOR), k(.25, STAGE_W * .7, FLOOR, { f: -1, sq: "land" }), k(.45, STAGE_W * .2, FLOOR), k(.5, STAGE_W * .2, FLOOR, { f: 1, sq: "land" }),
+    ...shake(.52, STAGE_W * .2, 8, 3), k(.7, STAGE_W * .2, FLOOR), k(1, OUT_R, FLOOR)],
+    moods: [[0, "rush"]], fx: [[.05, "alarm", 1], [.5, "alarm", 1]] }),
+  // a song you liked: hops with floating hearts
+  hearts: () => ({ ms: 5500, path: [...melt(0, C), ...hop(.4, C, 12), ...hop(.6, C, 12), ...sink(.8, C)],
+    moods: [[0, "love"]], fx: [[.3, "heart", 3], [.45, "heart", 3], [.65, "heart", 4]] }),
+  // focus mode: floats up slowly, glowing, then drifts down
+  meditate: () => ({ ms: 8000, path: [...melt(0, C), k(.35, C, FLOOR, { e: "ease-in-out" }), k(.55, C, FLOOR - 10, { e: "ease-in-out" }), k(.75, C, FLOOR), ...sink(.82, C)],
+    moods: [[0, "zen"]], cls: "glow", fx: [[.4, "star", 3], [.6, "star", 3]] }),
+  // the first open of the day: walks in with a coffee, sips, waves
+  morning: () => ({ ms: 6000, path: [k(0, OUT_L, FLOOR, { f: 1 }), k(.35, C, FLOOR, { e: "ease-out" }), k(.4, C, FLOOR, { sq: "settle" }), ...hop(.7, C, 8), k(.8, C, FLOOR), k(1, OUT_R, FLOOR)],
+    moods: [[0, "code"], [.36, "hello"], [.8, "code"]], cls: "coffee", fx: [[.45, "steam", 3], [.55, "steam", 3]] }),
+  // music: a jam with notes flying out
+  jam: () => ({ ms: 6500, path: [...melt(0, STAGE_W * .4), ...hop(.3, STAGE_W * .4, 8, .03), k(.4, STAGE_W * .55, FLOOR, { f: 1 }), ...hop(.5, STAGE_W * .55, 8, .03), k(.6, STAGE_W * .4, FLOOR, { f: -1 }), ...hop(.68, STAGE_W * .4, 8, .03), ...sink(.8, STAGE_W * .4)],
+    moods: [[0, "dance"]], fx: [.2, .3, .4, .5, .6, .7].map(t => [t, "note", 2]) }),
+  // idle moments: short, quiet, and frequent
+  stretch: () => ({ ms: 2600, path: [...melt(0, STAGE_W * .3), k(.3, STAGE_W * .3, FLOOR, { sq: "lift", e: "ease-in-out" }), k(.5, STAGE_W * .3, FLOOR, { sq: "lift" }), k(.6, STAGE_W * .3, FLOOR, { sq: "settle" }), ...sink(.8, STAGE_W * .3)],
+    moods: [[0, "idle"]] }),
+  lookabout: () => ({ ms: 3200, path: [...melt(0, STAGE_W * .75), k(.3, STAGE_W * .75, FLOOR, { f: -1 }), k(.5, STAGE_W * .75, FLOOR, { f: 1 }), k(.62, STAGE_W * .75, FLOOR, { f: -1 }), ...sink(.8, STAGE_W * .75)],
+    moods: [[0, "idle"], [.45, "alert"], [.7, "idle"]] }),
+  yawn: () => ({ ms: 3500, path: [...melt(0, STAGE_W * .2), k(.3, STAGE_W * .2, FLOOR, { sq: "lift", e: "ease-in-out" }), k(.55, STAGE_W * .2, FLOOR + 3, { sq: "land" }), ...sink(.8, STAGE_W * .2)],
+    moods: [[0, "sleepy"]], fx: [[.4, "zz", 1]] }),
+});
+// the pill's pet turns to face the cursor while it is over the notch, and back when it leaves
+notch.addEventListener("mousemove", e => {
+  const pet = $("pillPet"), stage = $("stagePet");
+  for (const el of [pet, stage]) if (el && !el.hidden) {
+    const r = el.getBoundingClientRect();
+    el.style.scale = e.clientX < r.left + r.width / 2 - 4 ? "-1 1" : "";
+  }
+});
+notch.addEventListener("mouseleave", () => { $("pillPet").style.scale = ""; $("stagePet").style.scale = ""; });
+// a landing (a "land" squash on the floor) makes the notch itself wobble
+function wobble() {
+  notch.animate([{ scale: "1 1" }, { scale: "1.015 .94" }, { scale: ".995 1.02" }, { scale: "1 1" }], { duration: 380, easing: "ease-out" });
+}
+const MOOD_SCENE = { happy: "victory", ask: "wave", dance: "jam", sleep: "sleep", sleepy: "yawn", sick: "tired", charge: "zoom", plant: "carry",
+  alert: "ooze", hello: "morning", love: "hearts", cold: "shiver", hot: "heat", rush: "rush", zen: "meditate" };
+const IDLE_SCENES = ["stretch", "lookabout", "yawn", "ooze", "peek", "run"], IDLE_EVERY = 30000;
+const SHOW_EVERY = 90000, ASK_EVERY = 20000, THINK_EVERY = 45000;
+let showAt = Date.now() - SHOW_EVERY + 6000, showMood = "", showTimers = [], showAnim = null, shadowAnim = null;
+const pillClosed = () => !["open", "toast", "hidden"].some(c => notch.classList.contains(c));
+function petScene(name) {
+  const make = SCENES[name], stage = $("stagePet"), fx = $("stageFx");
+  if (!make || !theme.petPack || theme.pet === false || matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
+  showTimers.forEach(clearTimeout); showTimers = []; showAnim?.cancel(); shadowAnim?.cancel(); fx.textContent = "";
+  const s = make(), shadow = $("stageShadow");
+  stage.dataset.mood = ""; // className below drops the mood class, so paint() must set it again
+  stage.className = "pet stage custom" + (s.cls ? " " + s.cls : ""); // keep "custom": paint() adds it only when the pet kind changes
+  window.Pet.paint([stage], s.moods[0][1], theme.petPack);
+  stage.style.opacity = "0";
+  notch.classList.add("showtime"); // the notch keeps its size: only the pill's content fades out
+  const GROW = 200;
+  // scenes are authored on a 340x78 stage with a 56x60 sprite; map them onto the real pill (its width, 30px tall, 26x28 sprite)
+  // Clawd never leaves the notch: positions are clamped inside it, and where a scene went off an edge it fades / shrinks instead
+  const PW = 22, PH = 24, W = notch.clientWidth, H = notch.clientHeight, PAD = 8;
+  const sx0 = (W - PW - 2 * PAD) / (STAGE_W - SW), u = 9 / 22; // a 22px jump in the scene = 9px here, which still fits under the top
+  const ground = H - PH - 1;
+  const outside = p => p.x < 0 || p.x > STAGE_W - SW || p.y > FLOOR + 30 || p.y < -SH / 2;
+  const mx = x => PAD + Math.min(W - PW - 2 * PAD, Math.max(0, x * sx0)), my = y => Math.max(0, Math.min(ground, ground + (y - FLOOR) * u));
+  // walking: on every stretch where Clawd moves along the floor, add a step bob (up on each stride) every ~140 ms
+  const path = [];
+  s.path.forEach((p, i) => {
+    path.push(p);
+    const n = s.path[i + 1];
+    if (!n || p.y !== n.y || Math.abs(n.x - p.x) < 20) return;
+    const steps = Math.floor((n.t - p.t) * s.ms / 140);
+    for (let j = 1; j < steps; j++) { const f = j / steps; path.push({ t: p.t + (n.t - p.t) * f, x: p.x + (n.x - p.x) * f, y: p.y - (j % 2 ? 5 : 0), sq: j % 2 ? "settle" : "", bob: true }); }
+  });
+  // lean: tilt toward where Clawd is heading, harder the faster it goes; lean back when it brakes
+  const speed = i => { const a = path[i], b = path[i + 1]; return a && b && b.t > a.t ? (b.x - a.x) / ((b.t - a.t) * s.ms) : 0; }; // virtual px per ms
+  let face = 1;
+  const keys = path.map((p, i) => { if (p.f) face = p.f; const [sx, sy] = SQ[p.sq] || [1, 1], out = outside(p);
+    const v = speed(i), braking = Math.abs(v) < Math.abs(speed(i - 1) || 0) * .4;
+    const lean = Math.max(-10, Math.min(10, (braking ? -(speed(i - 1) || 0) * 15 : v * 30)));
+    return { offset: Math.min(1, Math.max(0, p.t)), easing: p.bob ? "ease-in-out" : p.e || "linear", opacity: out ? 0 : 1,
+      transform: `translate(${mx(p.x)}px, ${my(p.y)}px) rotate(${lean}deg) scale(${face * sx * (out ? .6 : 1)}, ${sy * (out ? .6 : 1)})` }; });
+  keys.sort((a, b) => a.offset - b.offset);
+  // the shadow stays on the floor under Clawd, smaller and fainter the higher it is; gone when Clawd is below the edge
+  const shadowKeys = s.path.map(p => { const lift = Math.max(0, FLOOR - p.y), gone = p.y > FLOOR + 12 || p.y < -SH / 2;
+    return { offset: Math.min(1, Math.max(0, p.t)), easing: p.e || "linear", transform: `translateX(${mx(p.x) + PW / 2 - 9}px) scaleX(${Math.max(.4, 1 - lift / 30)})`, opacity: gone || outside(p) ? 0 : Math.max(.15, .55 - lift / 50) }; });
+  shadowKeys.sort((a, b) => a.offset - b.offset);
+  showTimers.push(setTimeout(() => {
+    stage.style.opacity = "";
+    showAnim = stage.animate(keys, { duration: s.ms, fill: "forwards" });
+    shadowAnim = shadow.animate(shadowKeys, { duration: s.ms, fill: "forwards" });
+    for (const [t, mood] of s.moods.slice(1)) showTimers.push(setTimeout(() => window.Pet.paint([stage], mood, theme.petPack), s.ms * t));
+    for (const [t, kind, n] of s.fx || []) showTimers.push(setTimeout(() => burst(kind, n), s.ms * t));
+    for (const p of s.path) if (p.sq === "land" && p.y >= FLOOR) showTimers.push(setTimeout(wobble, s.ms * p.t));
+    showTimers.push(setTimeout(() => { notch.classList.remove("showtime"); showAnim?.cancel(); shadowAnim?.cancel(); stage.className = "pet stage custom"; fx.textContent = ""; }, s.ms));
+  }, GROW));
+  return true;
+}
+// particles at Clawd's current spot
+function burst(kind, n) {
+  const stage = $("stagePet"), fx = $("stageFx"), r = stage.getBoundingClientRect(), b = notch.getBoundingClientRect();
+  for (let i = 0; i < n; i++) {
+    const p = document.createElement("i");
+    p.className = kind;
+    p.textContent = { zz: "z", drop: "💧", code: ["{ }", "</>", ";", "=>", "()", "#", "[ ]", "fn"][Math.floor(Math.random() * 8)], dots: "…", bulb: "💡", check: "✓", cross: "✕", rocket: "🚀", bug: "🐛",
+      snow: "❄", sun: "☀", alarm: "⏰", heart: "♥", star: "✦", steam: "~", note: ["♪", "♫", "♩"][i % 3] }[kind] || "";
+    if (kind === "snow") { p.style.left = `${Math.random() * notch.clientWidth}px`; p.style.top = "-6px"; fx.append(p); setTimeout(() => p.remove(), 2600); continue; }
+    if (kind === "sun") { p.style.left = `${notch.clientWidth - 30}px`; p.style.top = "2px"; fx.append(p); setTimeout(() => p.remove(), 6000); continue; }
+    if (kind === "confetti") p.style.background = ["#63d47a", "#ffd60a", "#7cc4ff", "#ff6b8b", "#c9b8ff"][i % 5];
+    if (kind === "bug") { // crawls ahead of Clawd and gets caught near the right
+      const W = notch.clientWidth;
+      p.style.left = "0px"; p.style.top = `${notch.clientHeight - 13}px`;
+      p.animate([{ transform: `translateX(${W * .12}px)` }, { transform: `translateX(${W * .45}px)`, offset: .4 }, { transform: `translateX(${W * .7}px)`, offset: .7 }, { transform: `translateX(${W * .7}px) scale(1.3, .2)`, opacity: 0 }],
+        { duration: 6500 * .78, fill: "forwards" });
+      fx.append(p); setTimeout(() => p.remove(), 6000); continue;
+    }
+    const cx = r.left - b.left + r.width / 2;
+    p.style.left = `${["zz", "drop", "dots", "bulb", "check", "cross", "alarm", "steam"].includes(kind) ? cx + 7 : kind === "code" ? cx - 6 + Math.random() * 12 : cx - 2}px`;
+    if (kind === "puddle") { p.style.left = `${cx - 13}px`; p.style.top = `${notch.clientHeight - 5}px`; fx.append(p); setTimeout(() => p.remove(), 1600); continue; }
+    p.style.top = `${kind === "dust" || kind === "smoke" ? r.bottom - b.top - 5 : kind === "spark" || kind === "confetti" ? r.top - b.top + r.height * .4 : kind === "rocket" ? notch.clientHeight - 14 : Math.max(1, r.top - b.top)}px`;
+    if (kind === "rocket") p.style.left = `${notch.clientWidth * .62}px`;
+    if (kind === "dust") p.style.setProperty("--dx", `${(i % 2 ? 1 : -1) * (4 + Math.random() * 8)}px`);
+    const a = Math.random() * Math.PI * 2, d = 10 + Math.random() * 14;
+    if (kind !== "dust") p.style.setProperty("--dx", `${Math.cos(a) * d}px`); p.style.setProperty("--dy", `${Math.sin(a) * d * .6}px`);
+    fx.append(p);
+    setTimeout(() => p.remove(), 2000);
+  }
+}
+function petShow(now, mood, busy) {
+  if (notch.classList.contains("showtime")) return; // a mood change mid-scene waits for the next tick
+  const changed = mood !== showMood; showMood = mood;
+  if (!pillClosed()) return;
+  let scene = changed ? MOOD_SCENE[mood] : "";
+  if (!scene && mood === "ask" && now - showAt > ASK_EVERY) scene = "wave"; // keeps waving until you look
+  if (!scene && mood === "code" && now - showAt > THINK_EVERY) scene = "thinking"; // an agent is busy: Clawd thinks along
+  if (!scene && now - showAt > (busy ? SHOW_EVERY : IDLE_EVERY)) scene = IDLE_SCENES[Math.floor(Math.random() * IDLE_SCENES.length)];
+  if (scene && petScene(scene)) showAt = now;
+}
+window.bridge.onPetScene?.(name => { if (pillClosed() && petScene(name)) showAt = Date.now(); });
 // closed pill: as wide as what it shows, no empty black on either side
 let fittedPillWidth = 0;
 function fitPill() {
@@ -1185,7 +1418,15 @@ function drawFocusStats(line) {
   if (line) $("focusStats").textContent = line;
   else window.bridge.focusStats().then(l => { $("focusStats").textContent = l; });
 }
+let lastPhaseDone = 0;
+window.bridge.onTimerDone(e => {
+  if (!e || e.id === lastPhaseDone) return;
+  lastPhaseDone = e.id;
+  toast({ app: "Timer", svg: NOTE_ICONS.timer, color: "#5e5ce6", title: "Time's up", body: `${e.label} has finished.` });
+});
 window.bridge.onFocusEvent(e => {
+  if (e.id) { if (e.id === lastPhaseDone) return; lastPhaseDone = e.id; }
+  if (e.plant) growPlant(e.id);
   drawFocusStats(e.stats);
   const svg = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/></svg>';
   if (e.kind === "summary") toast({ id: "focus", app: "Focus", svg, color: "#5e5ce6", title: "Focus session done", body: `${e.body} ${e.stats}.` });
@@ -1418,7 +1659,7 @@ function short(n) { return n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `$
 setInterval(() => {
   if (!theme.petPack || theme.pet === false || document.hidden) return;
   const open = notch.classList.contains("open");
-  window.Pet.tick([open ? (notch.classList.contains("dash") ? null : $("fullPet")) : $("pillPet")].filter(Boolean), Date.now());
+  window.Pet.tick([open ? (notch.classList.contains("dash") ? null : $("fullPet")) : notch.classList.contains("showtime") ? $("stagePet") : $("pillPet")].filter(Boolean), Date.now());
 }, 125);
 
 // ---- the window's shape follows the notch (shape.js in main): only the notch takes the mouse, so a file
