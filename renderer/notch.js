@@ -410,7 +410,9 @@ function renderBuild(now) {
 // ---- screen recording (#224): Windows' capture records plus OBS's own status ----
 let captures = [], obsRec; // obsRec: undefined = not connected to OBS, null = connected, not recording
 let obsAt = 0; // when OBS's duration was read, so the timer keeps running between reads
-window.bridge.onObsRec(({ state }) => { obsRec = state ? { ...state } : null; obsAt = Date.now(); render(); });
+// connected:false -> back to undefined so Windows capture records show OBS again (#231)
+const takeObs = ({ connected, state, at }) => { obsRec = !connected ? undefined : state ? { ...state } : null; obsAt = at || Date.now(); render(); };
+window.bridge.onObsRec(takeObs);
 const REC_WORD = { rec: "Recording", share: "Sharing", capture: "Capturing" };
 function recNow(now) {
   const obsLive = obsRec && { ...obsRec, duration: obsRec.duration + (obsRec.paused ? 0 : now - obsAt) };
@@ -439,7 +441,7 @@ function renderRec(now) {
 $("recShow").onclick = e => { e.stopPropagation(); window.bridge.recControl("show", $("recCard").dataset.proc); };
 $("recPause").onclick = e => { e.stopPropagation(); window.bridge.recControl(obsRec?.paused ? "resume" : "pause"); };
 $("recStop").onclick = e => { e.stopPropagation(); window.bridge.recControl("stop"); };
-window.bridge.obsRec().then(r => { if (r.connected && obsRec === undefined) obsRec = null; });
+window.bridge.obsRec().then(r => { if (r && obsRec === undefined) takeObs(r); }); // current state after a reload (#232)
 
 // ---- developer live activities: GitHub Actions runs, PR checks, deployments (#219) ----
 let ghLive = [];

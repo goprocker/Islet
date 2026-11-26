@@ -668,16 +668,26 @@ function mixerAsk(cmd) {
     if (!mixerProc) {
       mixerProc = spawn("powershell.exe", [...PS, path.join(__dirname, "mixer.ps1"), "serve"], { windowsHide: true });
       mixerProc.stdout.setEncoding("utf8");
-      mixerProc.on("exit", () => { mixerProc = null; });
-      mixerProc.on("error", e => console.warn("mixer", e.message));
+      const me = mixerProc;
+      me.on("exit", () => { if (mixerProc === me) mixerProc = null; });
+      me.on("error", e => { console.warn("mixer", e.message); if (mixerProc === me) mixerProc = null; });
+      me.stdin.on("error", () => {});
     }
     const p = mixerProc;
-    let buf = "";
-    const done = v => { clearTimeout(t); p.stdout.off("data", onData); resolve(v); };
+    let buf = "", settled = false;
+    // one way out: a reply, the helper exiting or failing, or the timeout (#233)
+    const done = v => {
+      if (settled) return; settled = true;
+      clearTimeout(t); p.stdout.off("data", onData); p.off("exit", onGone); p.off("error", onGone); p.stdin.off("error", onGone);
+      resolve(v);
+    };
+    const onGone = () => { if (mixerProc === p) mixerProc = null; done(null); };
     const onData = d => { buf += d; const i = buf.indexOf("\n"); if (i >= 0) { try { done(JSON.parse(buf.slice(0, i))); } catch { done(null); } } };
-    const t = setTimeout(() => { p.kill(); done(null); }, 15000);
+    const t = setTimeout(() => { if (mixerProc === p) mixerProc = null; p.kill(); done(null); }, 15000);
     p.stdout.on("data", onData);
-    p.stdin.write(cmd.join("\t") + "\n");
+    p.once("exit", onGone); p.once("error", onGone); p.stdin.once("error", onGone);
+    if (p.exitCode !== null) return onGone();
+    try { p.stdin.write(cmd.join("\t") + "\n"); } catch { onGone(); }
   });
   mixerChain = mixerChain.then(ask, ask); // one question at a time
   clearTimeout(mixerIdle);
@@ -689,9 +699,9 @@ app.on("will-quit", () => mixerProc?.kill());
 // ---- screen recording (#224): OBS through its WebSocket server, "Show" for any recorder ----
 const OBS_WS = path.join(process.env.APPDATA || "", "obs-studio", "plugin_config", "obs-websocket", "config.json");
 const obs = recording.obsClient(() => { try { return JSON.parse(fs.readFileSync(OBS_WS, "utf8")); } catch { return null; } },
-  s => send("obsRec", { connected: true, state: s }));
+  (s, connected) => send("obsRec", { connected, state: s ?? null, at: Date.now() }));
 app.on("will-quit", () => obs.stop());
-ipcMain.handle("obsRec", () => ({ connected: obs.connected(), state: null }));
+ipcMain.handle("obsRec", () => obs.snapshot());
 ipcMain.handle("recControl", (_, action, proc) => {
   if (action === "show") {
     if (!mixer.validApp(proc)) return false;
