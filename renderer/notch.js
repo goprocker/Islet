@@ -284,9 +284,10 @@ const focusing = (now = Date.now()) => timerEnd > now && /focus/i.test(timerLabe
 // a focus phase that ends (Pomodoro moves on to a break, or a focus timer runs out) grows the pet's plant
 let plantUntil = 0, plantedEnd = 0; // plantedEnd: the timer that already grew one
 const PLANT_MS = 10000;
-function growPlant() {
-  if (timerEnd === plantedEnd) return;
-  plantedEnd = timerEnd;
+// key: the finished phase's id from main, so each focus round grows exactly one (#199)
+function growPlant(key) {
+  if (key === plantedEnd) return;
+  plantedEnd = key;
   const today = new Date().toDateString();
   let n = 0;
   try { const p = JSON.parse(localStorage.getItem("petPlant") || "{}"); n = p.day === today ? p.n : 0; } catch {}
@@ -296,10 +297,7 @@ function growPlant() {
   plantUntil = Date.now() + PLANT_MS;
   render();
 }
-window.bridge.onTimerLabel(l => {
-  if (/focus/i.test(timerLabel) && !/focus/i.test(l || "") && timerEnd && timerEnd <= Date.now() + 2000) growPlant();
-  timerLabel = l || "Timer";
-});
+window.bridge.onTimerLabel(l => { timerLabel = l || "Timer"; });
 window.bridge.onStopwatch(t => { stopwatchStart = t || 0; render(); });
 let sideLink = null; // the meeting the right-hand text would join
 $("side").onclick = () => { if (sideLink) window.bridge.joinMeeting(sideLink); };
@@ -646,9 +644,7 @@ function render() {
     side = chip = `${timerLabel} ${fmt((timerEnd - now) / 1000)}`;
     soon = true;
   } else if (timerEnd && timerEnd <= now) {
-    timerEnd = 0;
-    // Pomodoro phases say it themselves (focusEvent), with the break tip
-    if (!/^(Focus \d|Break|Long break)/.test(timerLabel)) toast({ app: "Timer", svg: NOTE_ICONS.timer, color: "#5e5ce6", title: "Time's up", body: `${timerLabel} has finished.` });
+    timerEnd = 0; // only the display; main announces the finish (timerDone / focusEvent)
   }
   // a running stopwatch counts up when no timer is on
   if (!side && stopwatchStart) {
@@ -710,7 +706,6 @@ function updatePet(now, busy) {
   for (const p of pets) p.hidden = theme.pet === false;
   if (theme.pet === false) return;
   if (busy) quietSince = 0; else if (!quietSince) quietSince = now;
-  if (timerEnd && timerEnd <= now && /focus/i.test(timerLabel)) growPlant(); // a focus timer ran out
   // agents: one asking for you beats one working; a "working" session that went quiet over 2 minutes ago doesn't count
   const agent = sessions.some(x => x.status === "waiting") ? "waiting" : sessions.some(x => x.status === "working" && now - x.time < 120000) ? "working" : "";
   const mood = window.Pet.pick({ now, battery, toastAt: lastToastAt, timerEnd, timerLabel, playing: !!track?.playing, quietSince, agent, plantUntil, app: fgApp,
@@ -1423,7 +1418,15 @@ function drawFocusStats(line) {
   if (line) $("focusStats").textContent = line;
   else window.bridge.focusStats().then(l => { $("focusStats").textContent = l; });
 }
+let lastPhaseDone = 0;
+window.bridge.onTimerDone(e => {
+  if (!e || e.id === lastPhaseDone) return;
+  lastPhaseDone = e.id;
+  toast({ app: "Timer", svg: NOTE_ICONS.timer, color: "#5e5ce6", title: "Time's up", body: `${e.label} has finished.` });
+});
 window.bridge.onFocusEvent(e => {
+  if (e.id) { if (e.id === lastPhaseDone) return; lastPhaseDone = e.id; }
+  if (e.plant) growPlant(e.id);
   drawFocusStats(e.stats);
   const svg = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/></svg>';
   if (e.kind === "summary") toast({ id: "focus", app: "Focus", svg, color: "#5e5ce6", title: "Focus session done", body: `${e.body} ${e.stats}.` });

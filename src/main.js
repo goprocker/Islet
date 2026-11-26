@@ -1059,13 +1059,15 @@ function startWeather() {
 // replaces `config` before the file watcher fires.
 let applied = null;
 function applyServices() {
-  const now = { ics: config.calendarIcsUrl, wx: [config.weatherCity, config.weatherUnit].join("|"), dl: config.downloadsFolder, shots: config.screenshotShelf, agents: config.agentUpdates };
+  const now = { ics: config.calendarIcsUrl, wx: [config.weatherCity, config.weatherUnit].join("|"), dl: config.downloadsFolder, shots: config.screenshotShelf, agents: config.agentUpdates, focusDnd: config.focusDnd };
   if (!applied) { applied = now; return; } // first run: started by did-finish-load / startDownloads()
   if (now.ics !== applied.ics) calendar.poll(config.calendarIcsUrl, ev => send("calendar", ev));
   if (now.wx !== applied.wx) startWeather();
   if (now.dl !== applied.dl) startDownloads();
   if (now.shots !== applied.shots) startScreenshots();
   if (now.agents !== applied.agents) startAgentUpdates();
+  // the Focus DND setting applies to the phase already running (#201); manual/scheduled DND is separate
+  if (now.focusDnd !== applied.focusDnd) { focusDnd = pomodoro.wantsDnd(pomo, config.focusDnd && timerEnd > Date.now()); sendDnd(); }
   applied = now;
 }
 function startDownloads() {
@@ -1109,7 +1111,7 @@ function startDevices() {
 }
 
 // ---- timer + pomodoro ----
-let timerEnd = 0, timerDone, timerLabel = "Timer", pomo = null;
+let timerEnd = 0, timerDone, timerLabel = "Timer", pomo = null, phaseId = 0; // phaseId: each finished phase is announced once (#199)
 // Focus Mode 2.0 (#226): what this Pomodoro session focused, and the daily log in userData/focus.json
 let focusSession = null, phaseStart = 0;
 const focusPath = () => path.join(app.getPath("userData"), "focus.json");
@@ -1138,19 +1140,20 @@ function runTimer(min, label) {
   send("timerLabel", timerLabel); send("timer", timerEnd); buildMenu();
   clearTimeout(timerDone);
   if (!min) return;
-  // a pomodoro moves straight to its next phase; the page shows "Time's up" itself, a plain timer is just marked finished afterwards
+  // main alone decides that a phase finished and says so once, with an id; the page never infers it from the deadline
   timerDone = setTimeout(() => {
+    const id = ++phaseId;
     if (pomo) {
       const done = pomo;
       if (done.phase === "focus") logFocus(done.min, true);
       pomo = pomodoro.next(pomo);
       send("focusEvent", done.phase === "focus"
-        ? { kind: "break", title: `${done.label} done`, body: `${pomo.label}, ${pomo.min} min. ${focusLog.breakTip(done.round)}`, stats: focusStats() }
-        : { kind: "focus", title: "Break's over", body: `${pomo.label} starts now, ${pomo.min} min.`, stats: focusStats() });
+        ? { id, kind: "break", plant: true, title: `${done.label} done`, body: `${pomo.label}, ${pomo.min} min. ${focusLog.breakTip(done.round)}`, stats: focusStats() }
+        : { id, kind: "focus", title: "Break's over", body: `${pomo.label} starts now, ${pomo.min} min.`, stats: focusStats() });
       runTimer(pomo.min, pomo.label);
     }
-    else { timerEnd = 0; buildMenu(); }
-  }, min * 60000 + (pomo ? 0 : 2000));
+    else { const label = timerLabel; timerEnd = 0; send("timer", 0); send("timerDone", { id, label }); buildMenu(); }
+  }, min * 60000);
 }
 function setTimer(min) { endFocusSession(); pomo = null; runTimer(min, "Timer"); }
 function startPomodoro() { endFocusSession(); focusSession = { rounds: 0, min: 0 }; pomo = pomodoro.next(null); runTimer(pomo.min, pomo.label); }
