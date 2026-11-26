@@ -14,6 +14,10 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    groups:
+      # init and analyze must be the same version, or CodeQL fails
+      codeql:
+        patterns: ["github/codeql-action*"]
 
   - package-ecosystem: "npm"
     directory: "/landing"
@@ -24,3 +28,7 @@ updates:
     directory: "/launch-film"
     schedule:
       interval: "weekly"
+    groups:
+      # the @remotion packages share one lockfile; one PR keeps them from conflicting
+      remotion:
+        patterns: ["remotion", "@remotion/*"]
