@@ -668,16 +668,26 @@ function mixerAsk(cmd) {
     if (!mixerProc) {
       mixerProc = spawn("powershell.exe", [...PS, path.join(__dirname, "mixer.ps1"), "serve"], { windowsHide: true });
       mixerProc.stdout.setEncoding("utf8");
-      mixerProc.on("exit", () => { mixerProc = null; });
-      mixerProc.on("error", e => console.warn("mixer", e.message));
+      const me = mixerProc;
+      me.on("exit", () => { if (mixerProc === me) mixerProc = null; });
+      me.on("error", e => { console.warn("mixer", e.message); if (mixerProc === me) mixerProc = null; });
+      me.stdin.on("error", () => {});
     }
     const p = mixerProc;
-    let buf = "";
-    const done = v => { clearTimeout(t); p.stdout.off("data", onData); resolve(v); };
+    let buf = "", settled = false;
+    // one way out: a reply, the helper exiting or failing, or the timeout (#233)
+    const done = v => {
+      if (settled) return; settled = true;
+      clearTimeout(t); p.stdout.off("data", onData); p.off("exit", onGone); p.off("error", onGone); p.stdin.off("error", onGone);
+      resolve(v);
+    };
+    const onGone = () => { if (mixerProc === p) mixerProc = null; done(null); };
     const onData = d => { buf += d; const i = buf.indexOf("\n"); if (i >= 0) { try { done(JSON.parse(buf.slice(0, i))); } catch { done(null); } } };
-    const t = setTimeout(() => { p.kill(); done(null); }, 15000);
+    const t = setTimeout(() => { if (mixerProc === p) mixerProc = null; p.kill(); done(null); }, 15000);
     p.stdout.on("data", onData);
-    p.stdin.write(cmd.join("\t") + "\n");
+    p.once("exit", onGone); p.once("error", onGone); p.stdin.once("error", onGone);
+    if (p.exitCode !== null) return onGone();
+    try { p.stdin.write(cmd.join("\t") + "\n"); } catch { onGone(); }
   });
   mixerChain = mixerChain.then(ask, ask); // one question at a time
   clearTimeout(mixerIdle);
@@ -689,9 +699,9 @@ app.on("will-quit", () => mixerProc?.kill());
 // ---- screen recording (#224): OBS through its WebSocket server, "Show" for any recorder ----
 const OBS_WS = path.join(process.env.APPDATA || "", "obs-studio", "plugin_config", "obs-websocket", "config.json");
 const obs = recording.obsClient(() => { try { return JSON.parse(fs.readFileSync(OBS_WS, "utf8")); } catch { return null; } },
-  s => send("obsRec", { connected: true, state: s }));
+  (s, connected) => send("obsRec", { connected, state: s ?? null, at: Date.now() }));
 app.on("will-quit", () => obs.stop());
-ipcMain.handle("obsRec", () => ({ connected: obs.connected(), state: null }));
+ipcMain.handle("obsRec", () => obs.snapshot());
 ipcMain.handle("recControl", (_, action, proc) => {
   if (action === "show") {
     if (!mixer.validApp(proc)) return false;
@@ -1049,13 +1059,15 @@ function startWeather() {
 // replaces `config` before the file watcher fires.
 let applied = null;
 function applyServices() {
-  const now = { ics: config.calendarIcsUrl, wx: [config.weatherCity, config.weatherUnit].join("|"), dl: config.downloadsFolder, shots: config.screenshotShelf, agents: config.agentUpdates };
+  const now = { ics: config.calendarIcsUrl, wx: [config.weatherCity, config.weatherUnit].join("|"), dl: config.downloadsFolder, shots: config.screenshotShelf, agents: config.agentUpdates, focusDnd: config.focusDnd };
   if (!applied) { applied = now; return; } // first run: started by did-finish-load / startDownloads()
   if (now.ics !== applied.ics) calendar.poll(config.calendarIcsUrl, ev => send("calendar", ev));
   if (now.wx !== applied.wx) startWeather();
   if (now.dl !== applied.dl) startDownloads();
   if (now.shots !== applied.shots) startScreenshots();
   if (now.agents !== applied.agents) startAgentUpdates();
+  // the Focus DND setting applies to the phase already running (#201); manual/scheduled DND is separate
+  if (now.focusDnd !== applied.focusDnd) { focusDnd = pomodoro.wantsDnd(pomo, config.focusDnd && timerEnd > Date.now()); sendDnd(); }
   applied = now;
 }
 function startDownloads() {
@@ -1099,7 +1111,7 @@ function startDevices() {
 }
 
 // ---- timer + pomodoro ----
-let timerEnd = 0, timerDone, timerLabel = "Timer", pomo = null;
+let timerEnd = 0, timerDone, timerLabel = "Timer", pomo = null, phaseId = 0; // phaseId: each finished phase is announced once (#199)
 // Focus Mode 2.0 (#226): what this Pomodoro session focused, and the daily log in userData/focus.json
 let focusSession = null, phaseStart = 0;
 const focusPath = () => path.join(app.getPath("userData"), "focus.json");
@@ -1128,19 +1140,20 @@ function runTimer(min, label) {
   send("timerLabel", timerLabel); send("timer", timerEnd); buildMenu();
   clearTimeout(timerDone);
   if (!min) return;
-  // a pomodoro moves straight to its next phase; the page shows "Time's up" itself, a plain timer is just marked finished afterwards
+  // main alone decides that a phase finished and says so once, with an id; the page never infers it from the deadline
   timerDone = setTimeout(() => {
+    const id = ++phaseId;
     if (pomo) {
       const done = pomo;
       if (done.phase === "focus") logFocus(done.min, true);
       pomo = pomodoro.next(pomo);
       send("focusEvent", done.phase === "focus"
-        ? { kind: "break", title: `${done.label} done`, body: `${pomo.label}, ${pomo.min} min. ${focusLog.breakTip(done.round)}`, stats: focusStats() }
-        : { kind: "focus", title: "Break's over", body: `${pomo.label} starts now, ${pomo.min} min.`, stats: focusStats() });
+        ? { id, kind: "break", plant: true, title: `${done.label} done`, body: `${pomo.label}, ${pomo.min} min. ${focusLog.breakTip(done.round)}`, stats: focusStats() }
+        : { id, kind: "focus", title: "Break's over", body: `${pomo.label} starts now, ${pomo.min} min.`, stats: focusStats() });
       runTimer(pomo.min, pomo.label);
     }
-    else { timerEnd = 0; buildMenu(); }
-  }, min * 60000 + (pomo ? 0 : 2000));
+    else { const label = timerLabel; timerEnd = 0; send("timer", 0); send("timerDone", { id, label }); buildMenu(); }
+  }, min * 60000);
 }
 function setTimer(min) { endFocusSession(); pomo = null; runTimer(min, "Timer"); }
 function startPomodoro() { endFocusSession(); focusSession = { rounds: 0, min: 0 }; pomo = pomodoro.next(null); runTimer(pomo.min, pomo.label); }
@@ -1229,6 +1242,13 @@ function buildMenu() {
     { label: "Open settings file", click: () => shell.openPath(configPath()) },
     // the guide ships beside app.asar (extraResources); from source it is at the repo root
     { label: "User guide (PDF)", click: () => shell.openPath(app.isPackaged ? path.join(process.resourcesPath, "Islet-Guide.pdf") : path.resolve(__dirname, "..", "Islet-Guide.pdf")) },
+    // play one of the custom pet's stage scenes now (notch.js SCENES), to see it without waiting for its trigger
+    { label: "Play pet animation", submenu: [["Run across", "run"], ["Peek-a-boo", "peek"], ["Agent finished", "victory"], ["Agent needs you", "wave"],
+      ["Music dance", "dance"], ["Sleepy", "sleep"], ["Low battery", "tired"], ["Charging zoom", "zoom"], ["Focus plant", "carry"], ["Jump out", "jumpout"],
+      ["Coding: typing", "typing"], ["Coding: thinking", "thinking"], ["Tests running", "testing"], ["Tests passed", "pass"], ["Tests failed", "fail"], ["CI failed: bug hunt", "bughunt"], ["Shipped", "ship"],
+      ["Ooze from the notch", "ooze"], ["Cold: shiver", "shiver"], ["Hot day", "heat"], ["Meeting rush", "rush"], ["Loved song", "hearts"], ["Focus: meditate", "meditate"],
+      ["Good morning", "morning"], ["Music jam", "jam"], ["Idle: stretch", "stretch"], ["Idle: look about", "lookabout"], ["Idle: yawn", "yawn"]]
+      .map(([label, id]) => ({ label, click: () => send("petScene", id) })) },
     { label: "Start with Windows", type: "checkbox", checked: login(), click: () => { setLogin(!login()); buildMenu(); } },
     { type: "separator" },
     { label: "Quit", click: () => { app.isQuitting = true; app.quit(); } },

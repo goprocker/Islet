@@ -30,3 +30,8 @@
 
 /* bigger thumb targets for text links on phones: inline padding widens the hit area without moving the text */
 @media (max-width:560px){p a,li a,dd a,small a,.maker a,.foot a{padding-block:.5em}.foot ul{gap:4px}}
+.star{display:inline-flex;align-items:center;gap:7px;margin-top:6px;padding:8px 14px;border:1.5px solid #000;border-radius:999px;color:#000;background:#fff;font:600 15px Figtree,sans-serif;text-decoration:none}
+.star:hover{background:#000;color:#fff}
+.star svg{color:#e3a008}
+.star .sc{padding-left:8px;border-left:1px solid currentColor;font-variant-numeric:tabular-nums}
+.starask{margin-top:18px;font-size:15px;color:#555;line-height:1.5}
