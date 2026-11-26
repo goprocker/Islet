@@ -18,7 +18,7 @@ A Dynamic-Island-style pill at the top of your screen for **music**, **Claude Co
 <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-blue?style=flat-square"></a>
 <img alt="Windows 10 / 11" src="https://img.shields.io/badge/Windows-10%20%7C%2011-0078d4?style=flat-square&logo=windows11&logoColor=white">
 <img alt="Electron 45" src="https://img.shields.io/badge/Electron-45-47848f?style=flat-square&logo=electron&logoColor=white">
-<img alt="295 tests passing" src="https://img.shields.io/badge/tests-412%20passing-34c759?style=flat-square">
+<img alt="449 tests passing" src="https://img.shields.io/badge/tests-449%20passing-34c759?style=flat-square">
 
 <br><br>
 
