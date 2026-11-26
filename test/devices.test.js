@@ -24,3 +24,20 @@ test("devices: a low battery is warned about once until it charges again", () =>
   assert.deepStrictEqual(newlyLow([{ name: "Mouse", battery: 90 }], warned), []);
   assert.deepStrictEqual(newlyLow([{ name: "Mouse", battery: 20 }], warned).map(d => d.name), ["Mouse"]);
 });
+
+test("devices: a reply from a stopped poll publishes nothing and leaves no timer (#197)", async () => {
+  const devices = require("../src/devices");
+  const calls = [];
+  const exec = (_c, _a, _o, cb) => { calls.push(cb); return { kill() {} }; };
+  const lists = [];
+  devices.poll(l => lists.push(["A", l]), () => {}, exec);
+  await new Promise(r => setTimeout(r, 5));
+  devices.stop();
+  devices.poll(l => lists.push(["B", l]), () => {}, exec);
+  await new Promise(r => setTimeout(r, 5));
+  assert.equal(calls.length, 2);
+  calls[0](null, '[{"name":"Old","battery":5}]');
+  calls[1](null, '[{"name":"New","battery":50}]');
+  assert.deepEqual(lists, [["B", [{ name: "New", battery: 50 }]]]);
+  devices.stop();
+});
