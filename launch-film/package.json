@@ -9,17 +9,17 @@
   },
   "private": true,
   "dependencies": {
-    "@remotion/cli": "4.0.543",
-    "@remotion/effects": "4.0.544",
-    "@remotion/google-fonts": "4.0.539",
-    "@remotion/media": "4.0.539",
-    "@remotion/transitions": "4.0.544",
+    "@remotion/cli": "4.0.546",
+    "@remotion/effects": "4.0.546",
+    "@remotion/google-fonts": "4.0.546",
+    "@remotion/media": "4.0.546",
+    "@remotion/transitions": "4.0.546",
     "react": "19.3.1",
     "react-dom": "19.2.3",
-    "remotion": "4.0.544"
+    "remotion": "4.0.546"
   },
   "devDependencies": {
-    "@remotion/eslint-config-flat": "4.0.539",
+    "@remotion/eslint-config-flat": "4.0.546",
     "@types/react": "19.3.0",
     "@types/web": "0.0.366",
     "eslint": "10.15.0",
