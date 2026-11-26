@@ -58,12 +58,15 @@ test("obs: identifies, reports recording, controls, and goes quiet when OBS clos
   assert.strictEqual(ws.sent[1].d.requestType, "GetRecordStatus");
   ws.msg({ op: 7, d: { requestType: "GetRecordStatus", requestStatus: { result: true }, responseData: { outputActive: true, outputPaused: false, outputDuration: 1500 } } });
   ws.msg({ op: 7, d: { requestType: "GetRecordStatus", requestStatus: { result: true }, responseData: { outputActive: true, outputPaused: false, outputDuration: 1500 } } });
-  assert.deepStrictEqual(states, [{ active: true, paused: false, duration: 1500 }]); // repeats are not re-sent
+  assert.deepStrictEqual(states, [null, { active: true, paused: false, duration: 1500 }]); // repeats are not re-sent
+  assert.deepStrictEqual({ ...c.snapshot(), at: 0 }, { connected: true, state: { active: true, paused: false, duration: 1500 }, at: 0 });
   assert.strictEqual(c.control("stop"), true);
   assert.strictEqual(ws.sent.at(-1).d.requestType, "StopRecord");
   assert.strictEqual(c.control("explode"), false);
   ws.close();
-  assert.deepStrictEqual(states.at(-1), null);
+  assert.strictEqual(states.at(-1), undefined); // disconnected, not "connected and idle" (#231)
+  assert.strictEqual(c.snapshot().connected, false);
+  assert.strictEqual(current([{ app: "C:#obs64.exe", start: 100 }], states.at(-1), 2000).id.startsWith("obs"), true);
   assert.strictEqual(timers.at(-1), 10000);
   c.stop();
 });
