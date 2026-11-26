@@ -31,25 +31,27 @@ a{color:inherit}
 <!-- site:top -->
 <header class="top"><div class="sbar">
   <a class="brand" href="./" aria-label="Islet"><img src="favicon-32.png" alt="" width="22" height="22">Islet</a>
-  <nav aria-label="Site"><a href="features.html">Features</a><a href="changelog.html">Changelog</a><a href="about.html">About</a><a class="get" href="/Islet-Setup-2.5.0.exe">Get Islet</a></nav>
+  <nav aria-label="Site"><a href="features.html">Features</a><a href="changelog.html">Changelog</a><a href="about.html">About</a><a class="get" href="/Islet-Setup-2.6.12.exe">Get Islet</a></nav>
 </div></header>
 <!-- /site:top -->
 
 <main>
 <h1>Privacy Policy</h1>
-<p>Last updated: 4 November 2026</p>
+<p>Last updated: 19 November 2026</p>
 <p>This policy covers the Islet app for Windows and this website. Islet is made by Gopinath.</p>
 
 <h2>The Islet app</h2>
 <p>Islet has no account, no analytics and no tracking. Its data stays on your PC, and none of it is sent to us. That includes settings, notifications, agent activity, clipboard history and shelf file paths.</p>
 <p>Clipboard history is kept in memory only and never written to disk. The agent hook server listens on your PC only (127.0.0.1).</p>
-<p><strong>Phone drop:</strong> when you open it, Islet starts a temporary server on your local network so your phone can send files. The QR secret stays in the browser fragment and every list, upload and download uses a one-time signed proof, so captured HTTP requests cannot reveal or replay that reusable capability. File contents still travel over local HTTP, so use Phone drop only on a private network you trust. Files go straight from your phone to your PC without passing through any outside server, and the server stops when you close Phone drop or after 10 minutes.</p>
+<p><strong>Phone drop:</strong> when you open it, Islet starts a temporary server on your local network so your phone can send files. The QR secret stays in the browser fragment and every list, upload and download uses a one-time signed proof, so captured HTTP requests cannot reveal or replay that reusable capability. File contents still travel over local HTTP without encryption, so someone else on the same network could see or change a file in transit. Use Phone drop only on a private network you trust, such as your home Wi-Fi, and not on public or shared Wi-Fi. Files go straight from your phone to your PC without passing through any outside server, and the server stops when you close Phone drop or after 10 minutes.</p>
 <p>The installed app checks GitHub for updates and downloads them from there. GitHub receives your IP address when it does, and this check can't be turned off. Otherwise, the app only goes online for these optional features:</p>
 <ul>
 <li><strong>Lyrics:</strong> sends the song title and artist to lrclib.net.</li>
 <li><strong>Weather:</strong> sends the city you enter to Open-Meteo.</li>
 <li><strong>Calendar:</strong> downloads the calendar link you enter from its provider.</li>
 <li><strong>Spotify:</strong> connects to Spotify if you choose to connect your account.</li>
+<li><strong>AI plan limits:</strong> if you use Claude Code, the AI coding panel asks Anthropic (api.anthropic.com) for your plan usage, at most once a minute, with the login Claude Code already keeps on your PC. That login is sent only to Anthropic. Codex limits are read from Codex's own local logs and never leave your PC.</li>
+<li><strong>GitHub activity:</strong> if the GitHub CLI (<code>gh</code>) is installed and signed in, Islet uses it to check CI runs, pull request checks and deployments for the repositories your coding agents work in. These requests go to GitHub under your own <code>gh</code> login.</li>
 </ul>
 <p>Those services have their own privacy policies.</p>
 
@@ -60,8 +62,8 @@ a{color:inherit}
 <p>This site doesn't set advertising cookies or use analytics.</p>
 
 <h2>Your choices</h2>
-<p>You can turn off each optional online feature in the app's settings, and uninstalling removes the app. You can also use the site without clicking the button.</p>
-<p>We can't match a stored hash to you without knowing your IP address. To ask about your data, include the IP address you used.</p>
+<p>You can turn off each optional online feature in the app's settings, and uninstalling removes the app.</p>
+<p>To ask about your data, open an issue on GitHub (see below).</p>
 
 <h2>Changes and contact</h2>
 <p>We'll update this page and its date if this policy changes. For questions, <a href="https://github.com/goprocker/Islet/issues">open an issue on GitHub</a>.</p>

@@ -8,13 +8,16 @@ const REASON = {
   assign: "Assigned", author: "Activity", comment: "Comment", state_change: "State changed", security_alert: "Security alert",
 };
 
-// gh's JSON -> new notifications only ([{ id, repo, title, reason, url }]); `seen` is a Set of ids
+// gh's JSON -> new notifications only ([{ id, repo, title, reason, url }]); `seen` maps each
+// thread id to its last updated_at, so newer activity on a known thread alerts again (#194)
 function fresh(list, seen) {
   if (!Array.isArray(list)) return [];
   const out = [];
   for (const n of list) {
-    if (!n || typeof n.id !== "string" || seen.has(n.id)) continue;
-    seen.add(n.id);
+    if (!n || typeof n.id !== "string") continue;
+    const at = Date.parse(n.updated_at) || 0;
+    if (seen.has(n.id) && at <= seen.get(n.id)) continue;
+    seen.set(n.id, at);
     const repo = n.repository?.full_name || "";
     // API URLs point at api.github.com; turn the common ones into pages people can open
     const api = n.subject?.url || "";
@@ -26,7 +29,7 @@ function fresh(list, seen) {
 }
 
 function start(onNew, run = (cb) => execFile("gh", ["api", "notifications"], { windowsHide: true, timeout: 20000 }, cb)) {
-  const seen = new Set();
+  const seen = new Map();
   let first = true, timer = null, stopped = false;
   const poll = () => {
     run((err, stdout) => {

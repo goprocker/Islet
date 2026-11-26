@@ -13,7 +13,8 @@ let stopCurrent = () => {};
 function stop() { stopCurrent(); stopCurrent = () => {}; }
 
 // tracker(dir).next(): images that appeared since the last call. Files already there at the
-// start, old files copied in, and empty ones still being written are not announced.
+// start, old files copied in, and empty ones still being written are not announced. A name
+// that has left the folder is forgotten, so a later capture that reuses it is announced again.
 function tracker(dir) {
   const list = () => { try { return fs.readdirSync(dir).filter(n => IMAGE.test(n)); } catch { return null; } };
   const seen = new Set(list() || []);
@@ -21,6 +22,8 @@ function tracker(dir) {
     next() {
       const names = list();
       if (!names) return [];
+      const present = new Set(names);
+      for (const n of seen) if (!present.has(n)) seen.delete(n);
       const out = [];
       for (const n of names) {
         if (seen.has(n)) continue;

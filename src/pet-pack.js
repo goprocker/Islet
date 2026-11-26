@@ -4,7 +4,7 @@
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
-const { execFileSync } = require("child_process");
+const { execFile } = require("child_process");
 
 const SHEETS = { 1: { w: 1536, h: 1872 }, 2: { w: 1536, h: 2288 } };
 const MAX_SHEET = 20 * 1024 * 1024;
@@ -53,40 +53,65 @@ try { $n = $z.Entries.Count; $b = [long]($z.Entries | Measure-Object -Property L
 if ($n -gt ${MAX_ENTRIES} -or $b -gt ${MAX_UNZIPPED}) { exit 3 }
 Expand-Archive -LiteralPath $env:ISLET_ZIP -DestinationPath $env:ISLET_OUT -Force`;
 
+// runs the unzip script in its own process; resolves when it ends, so the main process keeps
+// serving timers and IPC while a zip unpacks (#203). exec is injectable for tests.
+function runUnzip(file, tmp) {
+  return new Promise((resolve, reject) => {
+    execFile("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", UNZIP],
+      { windowsHide: true, timeout: 30000, env: { ...process.env, PSModulePath: undefined, ISLET_ZIP: file, ISLET_OUT: tmp } },
+      err => err ? reject(err) : resolve());
+  });
+}
+
 // -> { dir: the folder holding pet.json, tmp: the temp folder to remove afterwards (zips only) }
-function unpack(file) {
+async function unpack(file, exec) {
   if (!/\.zip$/i.test(file)) return { dir: path.dirname(file) };
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "islet-pet-"));
+  const tmp = await fs.promises.mkdtemp(path.join(os.tmpdir(), "islet-pet-"));
   try {
     // paths travel in the environment, never in the command text, so spaces and quotes are safe;
     // PSModulePath is dropped because one inherited from PowerShell 7 makes 5.1 load the wrong Expand-Archive
-    try {
-      execFileSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", UNZIP], { windowsHide: true, timeout: 30000, stdio: "pipe", env: { ...process.env, PSModulePath: undefined, ISLET_ZIP: file, ISLET_OUT: tmp } });
-    } catch (e) {
-      throw new Error(e.status === 3 ? "That zip is too big to be a pet." : "Couldn't unpack that zip.");
+    try { await exec(file, tmp); } catch (e) {
+      throw new Error(e.code === 3 ? "That zip is too big to be a pet." : "Couldn't unpack that zip.");
     }
     if (fs.existsSync(path.join(tmp, "pet.json"))) return { dir: tmp, tmp };
-    const sub = fs.readdirSync(tmp, { withFileTypes: true }).find(d => d.isDirectory() && fs.existsSync(path.join(tmp, d.name, "pet.json")));
+    const sub = (await fs.promises.readdir(tmp, { withFileTypes: true })).find(d => d.isDirectory() && fs.existsSync(path.join(tmp, d.name, "pet.json")));
     if (!sub) throw new Error("No pet.json inside that zip.");
     return { dir: path.join(tmp, sub.name), tmp };
   } catch (e) {
-    fs.rmSync(tmp, { recursive: true, force: true });
+    await fs.promises.rm(tmp, { recursive: true, force: true });
     throw e;
   }
 }
 
-// checks the picked file and copies the pack into petsDir/<id>/; returns its info
-function importPack(file, petsDir) {
-  const { dir, tmp } = unpack(file);
+// checks the picked file and installs the pack as petsDir/<id>/; resolves to its info.
+// The pack is built in a staging folder and swapped in only when complete, so a failed import
+// leaves an installed pet with the same id as it was. One import runs at a time (#203).
+let importing = Promise.resolve();
+function importPack(file, petsDir, { exec = runUnzip } = {}) {
+  const job = () => installPack(file, petsDir, exec);
+  const next = importing.then(job, job);
+  importing = next.catch(() => {});
+  return next;
+}
+async function installPack(file, petsDir, exec) {
+  const { dir, tmp } = await unpack(file, exec);
+  let stage = null;
   try {
     const pack = readPack(dir);
     const dest = path.join(petsDir, pack.id);
-    fs.mkdirSync(dest, { recursive: true });
-    fs.copyFileSync(pack.sheet, path.join(dest, "sheet" + pack.ext));
-    fs.writeFileSync(path.join(dest, "pet.json"), JSON.stringify({ id: pack.id, displayName: pack.name, spritesheetPath: "sheet" + pack.ext, ...(pack.version === 2 ? { spriteVersionNumber: 2 } : {}) }));
+    await fs.promises.mkdir(petsDir, { recursive: true });
+    stage = await fs.promises.mkdtemp(path.join(petsDir, ".import-"));
+    await fs.promises.copyFile(pack.sheet, path.join(stage, "sheet" + pack.ext));
+    await fs.promises.writeFile(path.join(stage, "pet.json"), JSON.stringify({ id: pack.id, displayName: pack.name, spritesheetPath: "sheet" + pack.ext, ...(pack.version === 2 ? { spriteVersionNumber: 2 } : {}) }));
+    const old = fs.existsSync(dest) ? dest + ".old-" + process.pid + "-" + Date.now() : null;
+    if (old) await fs.promises.rename(dest, old);
+    try { await fs.promises.rename(stage, dest); stage = null; }
+    catch (e) { if (old) await fs.promises.rename(old, dest); throw e; }
+    if (old) await fs.promises.rm(old, { recursive: true, force: true });
     return { id: pack.id, name: pack.name };
   } finally {
-    if (tmp) fs.rmSync(tmp, { recursive: true, force: true });
+    if (stage) await fs.promises.rm(stage, { recursive: true, force: true });
+    if (tmp) await fs.promises.rm(tmp, { recursive: true, force: true });
   }
 }
 

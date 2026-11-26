@@ -63,6 +63,15 @@ test("plain ASCII input is unchanged", async () => {
   assert.strictEqual(posted.session, "s1");
   assert.strictEqual(posted.cwd, "C:/x");
 });
+test("a failed shell command is passed on to Islet", async () => {
+  const send = tool_response => runHook("PostToolUse", [JSON.stringify({ session_id: "s1", tool_name: "Bash", tool_response })]);
+  assert.strictEqual((await send({ stdout: "ok", exit_code: 1 })).posted.failed, true);
+  assert.strictEqual((await send({ stdout: "ok", exitCode: 2 })).posted.failed, true);
+  assert.strictEqual((await send({ stdout: "ok", is_error: true })).posted.failed, true);
+  assert.strictEqual((await send({ stdout: "ok", exit_code: 0 })).posted.failed, false);
+  assert.strictEqual((await send({ stdout: "ok" })).posted.failed, false);
+  assert.strictEqual((await send("plain text")).posted.failed, false);
+});
 for (const decision of ["allow", "deny"]) {
   test(`${decision} from the notch still reaches Claude Code`, async () => {
     const { stdout } = await runHook("PermissionRequest", [JSON.stringify({ session_id: "s1", tool_name: "Bash" })], n => JSON.stringify({ decision, proof: auth.sign("secret", decision, n) }));

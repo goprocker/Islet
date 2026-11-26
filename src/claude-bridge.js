@@ -68,6 +68,7 @@ function validEvent(e) {
   if (typeof e.event !== "string" || !e.event || typeof e.session !== "string" || !e.session) return false;
   if (e.agent !== undefined && e.agent !== "claude" && e.agent !== "codex") return false;
   if (TEXT.some(k => e[k] !== undefined && typeof e[k] !== "string")) return false;
+  if (e.failed !== undefined && typeof e.failed !== "boolean") return false;
   return e.toolInput === undefined || e.toolInput === null || (typeof e.toolInput === "object" && !Array.isArray(e.toolInput));
 }
 
@@ -81,7 +82,7 @@ function buildEvent(e) {
   if (!k) return null;
   const base = { session: e.session, kind: k, project: e.cwd ? path.basename(path.resolve(e.cwd)) : "" };
   if (e.event === "PreToolUse") return { ...base, state: "running", label: k === "test" ? "Running tests" : "Building" };
-  const r = build.result(e.output);
+  const r = build.result(e.output, e.failed === true);
   return { ...base, state: r.ok ? "pass" : "fail", label: build.label(k, r), passed: r.passed, failed: r.failed };
 }
 

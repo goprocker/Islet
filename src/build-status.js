@@ -12,12 +12,14 @@ function kind(command) {
   return "";
 }
 
-// first pattern that matches wins; each returns [passed, failed]
+// first runner whose pattern matches wins; each returns [passed, failed]. A pattern with a third value `true` (the
+// global flag is set) is counted for every match in the output: a go package or a cargo test binary prints a summary
+// of its own, so one that passed must not hide one that failed.
 const COUNTS = [
   // node --test (TAP summary)
   [/^# pass (\d+)[\s\S]*?^# fail (\d+)/m, m => [+m[1], +m[2]]],
   // cargo
-  [/test result: \w+\. (\d+) passed; (\d+) failed/, m => [+m[1], +m[2]]],
+  [/test result: \w+\. (\d+) passed; (\d+) failed/g, m => [+m[1], +m[2]], true],
   // jest: "Tests:       1 failed, 12 passed, 13 total"
   [/Tests:\s+(?:(\d+) failed, )?(?:\d+ \w+, )*(\d+) passed/, m => [+m[2], +(m[1] || 0)]],
   // vitest: "Tests  2 failed | 10 passed (12)"
@@ -28,29 +30,34 @@ const COUNTS = [
   // mocha
   [/(\d+) passing(?:[\s\S]*?(\d+) failing)?/, m => [+m[1], +(m[2] || 0)]],
   // go test
-  [/^(ok|FAIL)\s+\S+/m, m => (m[1] === "ok" ? [1, 0] : [0, 1])],
+  [/^(ok|FAIL)[ \t]+\S+/gm, m => (m[1] === "ok" ? [1, 0] : [0, 1]), true],
   // dotnet: "Failed: 1, Passed: 20"
   [/Failed:\s+(\d+), Passed:\s+(\d+)/, m => [+m[2], +m[1]]],
 ];
 const BROKE = /\b(error(\[E\d+\])?:|error [A-Z]+\d+:|ERR!|FAILED|BUILD FAILED|failed to compile|Build failed|exit code [1-9])/i;
 
-// output: what the command printed; failedTool: the agent marked the call as failed.
+// output: what the command printed; failedTool: the agent marked the call as failed (a non-zero exit), which wins
+// over a summary that looks like a pass.
 // -> { ok, passed, failed } (counts are null when the output doesn't say)
 function result(output, failedTool = false) {
   const text = typeof output === "string" ? output : "";
-  for (const [re, get] of COUNTS) {
-    const m = text.match(re);
-    if (m) {
-      const [passed, failed] = get(m);
-      return { ok: failed === 0 && !failedTool, passed, failed };
+  for (const [re, get, every] of COUNTS) {
+    const found = every ? [...text.matchAll(re)] : [text.match(re)].filter(Boolean);
+    if (!found.length) continue;
+    let passed = 0, failed = 0;
+    for (const m of found) {
+      const [p, f] = get(m);
+      passed += p;
+      failed += f;
     }
+    return { ok: failed === 0 && !failedTool, passed, failed };
   }
   return { ok: !failedTool && !BROKE.test(text), passed: null, failed: null };
 }
 
 // "12 passed" / "2 of 14 failed" / "Build passed" / "Tests failed"
 function label(k, r) {
-  if (r.passed !== null && r.failed !== null) {
+  if (r.passed !== null && r.failed !== null && (r.ok || r.failed)) {
     return r.failed ? `${r.failed} of ${r.passed + r.failed} failed` : `${r.passed} passed`;
   }
   return `${k === "test" ? "Tests" : "Build"} ${r.ok ? "passed" : "failed"}`;

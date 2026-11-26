@@ -29,12 +29,12 @@ test("reads PNG and WebP (VP8X) sizes from their headers", () => {
   assert.strictEqual(imageSize(Buffer.from("not an image at all, just text....")), null);
 });
 
-test("a v1 pack with the right sheet size is accepted and imported", () => {
+test("a v1 pack with the right sheet size is accepted and imported", async () => {
   const dir = pack({ id: "Tiny Robot!", displayName: "Tiny Robot", spritesheetPath: "spritesheet.png" }, png(1536, 1872));
   const p = readPack(dir);
   assert.strictEqual(p.id, "tiny-robot"); assert.strictEqual(p.version, 1);
   const pets = fs.mkdtempSync(path.join(os.tmpdir(), "pets-"));
-  assert.deepStrictEqual(importPack(path.join(dir, "pet.json"), pets), { id: "tiny-robot", name: "Tiny Robot" });
+  assert.deepStrictEqual(await importPack(path.join(dir, "pet.json"), pets), { id: "tiny-robot", name: "Tiny Robot" });
   const loaded = loadPack(pets, "tiny-robot");
   assert.strictEqual(loaded.rows, 9);
   assert.ok(loaded.sheet.startsWith("data:image/png;base64,"));
@@ -65,21 +65,59 @@ function zip(dir) {
 }
 const unpacked = () => new Set(fs.readdirSync(os.tmpdir()).filter(n => n.startsWith("islet-pet-")));
 
-test("imports a zipped pack and removes its temp folder", { skip: process.platform !== "win32" }, () => {
+test("imports a zipped pack and removes its temp folder", { skip: process.platform !== "win32" }, async () => {
   const before = unpacked();
   const file = zip(pack({ id: "zipped", spritesheetPath: "s.png" }, png(1536, 1872)));
   const pets = fs.mkdtempSync(path.join(os.tmpdir(), "pets-"));
-  assert.strictEqual(importPack(file, pets).id, "zipped");
+  assert.strictEqual((await importPack(file, pets)).id, "zipped");
   assert.ok(fs.existsSync(path.join(pets, "zipped", "sheet.png")));
   assert.deepStrictEqual([...unpacked()].filter(n => !before.has(n)), []);
 });
 
-test("refuses a zip that unpacks too big, before writing it", { skip: process.platform !== "win32" }, () => {
+test("refuses a zip that unpacks too big, before writing it", { skip: process.platform !== "win32" }, async () => {
   const before = unpacked();
   const dir = pack({ id: "bomb", spritesheetPath: "s.png" }, png(1536, 1872));
   fs.writeFileSync(path.join(dir, "filler.bin"), Buffer.alloc(65 * 1024 * 1024));
   const file = zip(dir);
   assert.ok(fs.statSync(file).size < 1024 * 1024);
-  assert.throws(() => importPack(file, os.tmpdir()), /too big/);
+  await assert.rejects(importPack(file, os.tmpdir()), /too big/);
   assert.deepStrictEqual([...unpacked()].filter(n => !before.has(n)), []);
+});
+
+// #203: the unzip runs as its own process, so timers keep firing while it works
+test("a zip import doesn't block the event loop", async () => {
+  const dir = pack({ id: "slow", spritesheetPath: "s.png" }, png(1536, 1872));
+  const pets = fs.mkdtempSync(path.join(os.tmpdir(), "pets-"));
+  const exec = (_zip, tmp) => new Promise(r => setTimeout(() => {
+    fs.copyFileSync(path.join(dir, "pet.json"), path.join(tmp, "pet.json"));
+    fs.copyFileSync(path.join(dir, "s.png"), path.join(tmp, "s.png"));
+    r();
+  }, 150));
+  let beats = 0;
+  const hb = setInterval(() => beats++, 10);
+  const id = (await importPack("x.zip", pets, { exec })).id;
+  clearInterval(hb);
+  assert.strictEqual(id, "slow");
+  assert.ok(beats >= 5, `heartbeat ran ${beats} times`);
+});
+
+test("a failed import keeps the installed pet and leaves no staging folders", async () => {
+  const pets = fs.mkdtempSync(path.join(os.tmpdir(), "pets-"));
+  await importPack(path.join(pack({ id: "keep", spritesheetPath: "s.png" }, png(1536, 1872)), "pet.json"), pets);
+  const before = fs.readFileSync(path.join(pets, "keep", "pet.json"), "utf8");
+  await assert.rejects(importPack("bad.zip", pets, { exec: () => Promise.reject(Object.assign(new Error("x"), { code: 1 })) }), /Couldn't unpack/);
+  await assert.rejects(importPack("big.zip", pets, { exec: () => Promise.reject(Object.assign(new Error("x"), { code: 3 })) }), /too big/);
+  await assert.rejects(importPack(path.join(pack({ id: "keep", spritesheetPath: "s.png" }, png(10, 10)), "pet.json"), pets), /should be/);
+  assert.strictEqual(fs.readFileSync(path.join(pets, "keep", "pet.json"), "utf8"), before);
+  assert.deepStrictEqual(fs.readdirSync(pets), ["keep"]);
+});
+
+test("two imports of one pet at once don't mix into a partial pack", async () => {
+  const pets = fs.mkdtempSync(path.join(os.tmpdir(), "pets-"));
+  const a = path.join(pack({ id: "twin", displayName: "A", spritesheetPath: "s.png" }, png(1536, 1872)), "pet.json");
+  const b = path.join(pack({ id: "twin", displayName: "B", spriteVersionNumber: 2, spritesheetPath: "s.webp" }, png(1536, 2288)), "pet.json");
+  const r = await Promise.all([importPack(a, pets), importPack(b, pets)]);
+  assert.deepStrictEqual(r.map(x => x.name), ["A", "B"]);
+  assert.deepStrictEqual(fs.readdirSync(pets), ["twin"]);
+  assert.deepStrictEqual(fs.readdirSync(path.join(pets, "twin")).sort(), ["pet.json", "sheet.webp"]);
 });

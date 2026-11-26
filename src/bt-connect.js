@@ -2,6 +2,7 @@
 // prints the connected device names whenever they change; this turns that into events.
 const { spawn } = require("child_process");
 const path = require("path");
+const { StringDecoder } = require("string_decoder");
 
 // one line of output -> sorted list of names, or null for junk
 function parseLine(line) {
@@ -17,16 +18,27 @@ function diff(prev, next) {
   return { connected: next.filter(n => !prev.includes(n)), disconnected: prev.filter(n => !next.includes(n)) };
 }
 
-let child = null, retry = null, stopped = true;
-function start(onEvent, { script = path.join(__dirname, "bt-connect.ps1") } = {}) {
+// Each start() is a new run with its own token. A child, its output and its exit only count while
+// they belong to the current run and are still that run's child, so a late exit from a watcher that
+// stop() killed can't clear the new one or start a second one (#254). "error" and "exit" go through
+// one ended() that acts once, so a failed spawn (error and maybe no exit) still retries once.
+let current = null; // { child, retry }
+function start(onEvent, { script = path.join(__dirname, "bt-connect.ps1"), spawn: spawnFn = spawn, retryMs = 10000 } = {}) {
   stop();
-  stopped = false;
-  let prev = null, buf = "", fails = 0;
+  const me = current = { child: null, retry: null };
+  let prev = null, fails = 0;
+  const live = () => current === me;
   const run = () => {
-    child = spawn("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", script, String(process.pid)], { windowsHide: true });
-    child.on("error", () => {});
-    child.stdout.on("data", d => {
-      buf += d;
+    if (!live()) return;
+    let buf = "";
+    // one decoder per child: a UTF-8 character split across two chunks is held until its last byte
+    // arrives, instead of each chunk being decoded on its own into replacement characters (#255)
+    const utf8 = new StringDecoder("utf8");
+    const kid = me.child = spawnFn("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", script, String(process.pid)], { windowsHide: true });
+    const mine = () => live() && me.child === kid;
+    kid.stdout?.on("data", d => {
+      if (!mine()) return;
+      buf += typeof d === "string" ? d : utf8.write(d);
       let i;
       while ((i = buf.indexOf("\n")) >= 0) {
         const list = parseLine(buf.slice(0, i)); buf = buf.slice(i + 1);
@@ -38,17 +50,28 @@ function start(onEvent, { script = path.join(__dirname, "bt-connect.ps1") } = {}
         for (const name of disconnected) onEvent({ type: "disconnected", name });
       }
     });
-    child.on("exit", () => {
-      child = null; buf = "";
-      if (!stopped && ++fails <= 5) retry = setTimeout(run, 10000 * fails);
-    });
+    let done = false;
+    const ended = () => {
+      if (done) return;
+      done = true;
+      if (!mine()) return;
+      me.child = null;
+      if (++fails <= 5) me.retry = setTimeout(run, retryMs * fails);
+    };
+    kid.on("error", ended);
+    kid.on("exit", ended);
   };
   run();
 }
 function stop() {
-  stopped = true;
-  clearTimeout(retry);
-  if (child) { try { child.kill(); } catch {} child = null; }
+  const old = current;
+  current = null;
+  if (!old) return;
+  clearTimeout(old.retry);
+  const kid = old.child;
+  old.child = null;
+  if (kid) { try { kid.kill(); } catch {} }
 }
+const running = () => !!current?.child;
 
-module.exports = { start, stop, parseLine, diff };
+module.exports = { start, stop, running, parseLine, diff };

@@ -3,7 +3,12 @@
 // or null when the action doesn't apply (bad JSON, not Base64, nothing to change).
 const TRACKERS = /^(utm_\w+|fbclid|gclid|gclsrc|dclid|msclkid|mc_cid|mc_eid|igshid|yclid|_hsenc|_hsmi|mkt_tok|ref_src|si|spm|oly_enc_id|oly_anon_id|vero_id|wickedid|__s)$/i;
 
-const words = t => t.replace(/([a-z0-9])([A-Z])/g, "$1 $2").split(/[^A-Za-z0-9]+/).filter(Boolean).map(w => w.toLowerCase());
+// words for the case actions: any script's letters, digits and combining marks (\p{M}) count, so Tamil
+// or accented text is kept rather than dropped; a lower-to-upper step splits camelCase
+const words = t => t.replace(/([\p{Ll}\p{N}])(\p{Lu})/gu, "$1 $2").split(/[^\p{L}\p{M}\p{N}]+/u).filter(Boolean).map(w => w.toLowerCase());
+const cap = w => { const [c, ...rest] = w; return c.toUpperCase() + rest.join(""); };
+// a case action that would leave nothing (only symbols) is not offered
+const joined = (t, f) => { const r = f(words(t)); return r ? r : null; };
 const lines = t => t.split(/\r?\n/);
 const isUrl = t => /^https?:\/\/\S+$/i.test(t.trim());
 
@@ -22,7 +27,22 @@ function b64decode(t) {
   const out = Buffer.from(s, "base64").toString("utf8");
   return /[�\x00-\x08\x0E-\x1F]/.test(out) ? null : out;
 }
-function json(t, space) { try { return JSON.stringify(JSON.parse(t), null, space); } catch { return null; } }
+// numbers keep their exact text: JSON.parse would round 9007199254740993 and turn 1e400 into null,
+// so each number is passed back to stringify as its raw source (JSON.rawJSON); without that support
+// a number that would not survive the round trip makes the action decline instead of changing it
+function json(t, space) {
+  try {
+    let lossy = false;
+    const raw = typeof JSON.rawJSON === "function";
+    const v = JSON.parse(t, (k, val, ctx) => {
+      if (typeof val !== "number" || !ctx || typeof ctx.source !== "string") return val;
+      if (raw) return JSON.rawJSON(ctx.source);
+      if (JSON.stringify(val) !== ctx.source) lossy = true;
+      return val;
+    });
+    return lossy ? null : JSON.stringify(v, null, space);
+  } catch { return null; }
+}
 
 const ACTIONS = [
   { id: "cleanUrl", label: "Clean link", when: isUrl, run: cleanUrl },
@@ -31,9 +51,9 @@ const ACTIONS = [
   { id: "upper", label: "UPPER", when: t => !isUrl(t), run: t => t.toUpperCase() },
   { id: "lower", label: "lower", when: t => !isUrl(t), run: t => t.toLowerCase() },
   { id: "title", label: "Title Case", when: t => !isUrl(t), run: t => t.toLowerCase().replace(/(^|[\s\-(["'])(\p{L})/gu, (_, a, b) => a + b.toUpperCase()) },
-  { id: "camel", label: "camelCase", when: t => t.length <= 200 && !isUrl(t), run: t => words(t).map((w, i) => i ? w[0].toUpperCase() + w.slice(1) : w).join("") },
-  { id: "snake", label: "snake_case", when: t => t.length <= 200 && !isUrl(t), run: t => words(t).join("_") },
-  { id: "kebab", label: "kebab-case", when: t => t.length <= 200 && !isUrl(t), run: t => words(t).join("-") },
+  { id: "camel", label: "camelCase", when: t => t.length <= 200 && !isUrl(t), run: t => joined(t, ws => ws.map((w, i) => i ? cap(w) : w).join("")) },
+  { id: "snake", label: "snake_case", when: t => t.length <= 200 && !isUrl(t), run: t => joined(t, ws => ws.join("_")) },
+  { id: "kebab", label: "kebab-case", when: t => t.length <= 200 && !isUrl(t), run: t => joined(t, ws => ws.join("-")) },
   { id: "sortLines", label: "Sort lines", when: t => lines(t).length > 1, run: t => lines(t).sort((a, b) => a.localeCompare(b)).join("\n") },
   { id: "uniqLines", label: "Remove duplicate lines", when: t => lines(t).length > 1, run: t => [...new Set(lines(t))].join("\n") },
   { id: "jsonPretty", label: "Format JSON", when: t => /^\s*[[{]/.test(t), run: t => json(t, 2) },

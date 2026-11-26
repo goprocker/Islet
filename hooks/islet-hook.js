@@ -45,6 +45,13 @@ function output(r) {
   return text.slice(-4000);
 }
 
+// whether the tool says the command failed: a non-zero exit code, or an error flag
+function failed(r) {
+  if (!r || typeof r !== "object") return false;
+  const code = [r.exit_code, r.exitCode].find(x => typeof x === "number");
+  return r.is_error === true || r.isError === true || (code !== undefined && code !== 0);
+}
+
 function post(input, token, nonce) {
   const body = JSON.stringify({
     event,
@@ -59,6 +66,7 @@ function post(input, token, nonce) {
     prompt: typeof input.prompt === "string" ? input.prompt.slice(0, 300) : "",
     lastMessage: typeof input.last_assistant_message === "string" ? input.last_assistant_message.slice(0, 300) : "",
     output: output(input.tool_response),
+    failed: failed(input.tool_response),
   });
   const req = http.request(
     { host: "127.0.0.1", port: PORT, path: "/claude", method: "POST", timeout: WAIT, headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body), "X-Islet-Proof": auth.sign(token, "event", body) } },

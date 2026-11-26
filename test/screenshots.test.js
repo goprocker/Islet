@@ -43,3 +43,49 @@ test("screenshots: old images copied in are skipped, and a missing folder is not
     assert.deepStrictEqual(tracker(path.join(dir, "nope")).next(), []);
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
+
+test("screenshots: a name that was deleted and used again is announced again", () => {
+  const dir = tmp();
+  try {
+    const t = tracker(dir);
+    const shot = path.join(dir, "Screenshot (1).png");
+    write(dir, "Screenshot (1).png");
+    assert.deepStrictEqual(t.next(), [shot]);
+    fs.rmSync(shot);
+    assert.deepStrictEqual(t.next(), []);
+    write(dir, "Screenshot (1).png");
+    assert.deepStrictEqual(t.next(), [shot]);
+    assert.deepStrictEqual(t.next(), []);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("screenshots: names reused after the folder was emptied are all announced", () => {
+  const dir = tmp();
+  try {
+    const t = tracker(dir);
+    const names = Array.from({ length: 50 }, (_, i) => `Screenshot (${i}).png`);
+    for (const n of names) write(dir, n);
+    assert.strictEqual(t.next().length, 50);
+    for (const n of names) fs.rmSync(path.join(dir, n));
+    assert.deepStrictEqual(t.next(), []);
+    for (const n of names) write(dir, n);
+    assert.strictEqual(t.next().length, 50);
+    assert.deepStrictEqual(t.next(), []);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("screenshots: unchanged files stay quiet and a name that was already there at the start is not announced", () => {
+  const dir = tmp();
+  try {
+    write(dir, "before.png");
+    const t = tracker(dir);
+    write(dir, "after.png");
+    assert.deepStrictEqual(t.next(), [path.join(dir, "after.png")]);
+    for (let i = 0; i < 3; i++) assert.deepStrictEqual(t.next(), []);
+    // a folder that cannot be read for a moment does not make the files look new
+    fs.renameSync(dir, dir + "-gone");
+    assert.deepStrictEqual(t.next(), []);
+    fs.renameSync(dir + "-gone", dir);
+    assert.deepStrictEqual(t.next(), []);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); fs.rmSync(dir + "-gone", { recursive: true, force: true }); }
+});

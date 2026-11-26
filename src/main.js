@@ -385,6 +385,58 @@ function readSession(t, entries) {
   if (!actions.length) return null;
   return { id: t.p, agent: "claude", project: cwd ? path.basename(cwd) : "Claude", cwd, status, actions, time: actions[0].time, context: usage.contextOf(entries) };
 }
+// ---- plan limits and usage for the AI coding panel ----
+// Codex: the limits it logs itself. Claude: tokens from local transcripts over the plan windows.
+const turnCache = new Map(); // path -> { m, turns }
+async function claudeUsage() {
+  if (!transcriptCandidates.size) await recentTranscripts(true);
+  const all = [];
+  for (const p of transcriptCandidates) {
+    const t = await statTranscript(p);
+    if (!t || Date.now() - t.m > 7 * 864e5) { turnCache.delete(p); continue; }
+    let c = turnCache.get(p);
+    if (!c || c.m !== t.m) {
+      try { c = { m: t.m, turns: usage.claudeTurns(await fs.promises.readFile(p, "utf8")) }; } catch { continue; }
+      turnCache.set(p, c);
+    }
+    all.push(...c.turns);
+  }
+  return usage.tally(all);
+}
+async function codexLimits() {
+  const root = path.join(os.homedir(), ".codex", "sessions");
+  const newest = async dir => (await fs.promises.readdir(dir).catch(() => [])).sort().reverse();
+  // sessions/YYYY/MM/DD/rollout-*.jsonl: newest few days, newest log that has limits
+  let checked = 0;
+  for (const y of await newest(root)) for (const mo of await newest(path.join(root, y))) for (const d of await newest(path.join(root, y, mo))) {
+    const dir = path.join(root, y, mo, d);
+    const files = await Promise.all((await newest(dir)).filter(f => f.endsWith(".jsonl")).map(f => statTranscript(path.join(dir, f))));
+    for (const f of files.filter(Boolean).sort((a, b) => b.m - a.m)) {
+      if (++checked > 20) return null;
+      const l = usage.codexLimits(await fs.promises.readFile(f.p, "utf8").catch(() => ""));
+      if (l) return l;
+    }
+  }
+  return null;
+}
+// Uses the login Claude Code already keeps; the token only ever goes to api.anthropic.com.
+// Never refreshed here: an expired token just means no percentages until Claude Code renews it.
+let planCache = { at: 0, v: null };
+async function claudePlan() {
+  if (Date.now() - planCache.at < 60000) return planCache.v;
+  planCache.at = Date.now();
+  try {
+    const c = JSON.parse(await fs.promises.readFile(path.join(os.homedir(), ".claude", ".credentials.json"), "utf8")).claudeAiOauth;
+    if (!c?.accessToken || (c.expiresAt && c.expiresAt < Date.now())) return (planCache.v = null);
+    const r = await fetch("https://api.anthropic.com/api/oauth/usage", { headers: { Authorization: `Bearer ${c.accessToken}`, "anthropic-beta": "oauth-2025-04-20" }, signal: AbortSignal.timeout(8000) });
+    planCache.v = r.ok ? usage.claudeLimits(await r.json()) : null;
+  } catch { planCache.v = null; }
+  return planCache.v;
+}
+ipcMain.handle("aiLimits", async () => {
+  const [claude, codex, claudePlanNow] = await Promise.all([claudeUsage().catch(() => null), codexLimits().catch(() => null), claudePlan()]);
+  return { claude, codex, claudePlan: claudePlanNow };
+});
 // Codex sessions come straight from its hooks (claude-bridge.js)
 function codexSessions() {
   const out = [];
@@ -616,16 +668,26 @@ function mixerAsk(cmd) {
     if (!mixerProc) {
       mixerProc = spawn("powershell.exe", [...PS, path.join(__dirname, "mixer.ps1"), "serve"], { windowsHide: true });
       mixerProc.stdout.setEncoding("utf8");
-      mixerProc.on("exit", () => { mixerProc = null; });
-      mixerProc.on("error", e => console.warn("mixer", e.message));
+      const me = mixerProc;
+      me.on("exit", () => { if (mixerProc === me) mixerProc = null; });
+      me.on("error", e => { console.warn("mixer", e.message); if (mixerProc === me) mixerProc = null; });
+      me.stdin.on("error", () => {});
     }
     const p = mixerProc;
-    let buf = "";
-    const done = v => { clearTimeout(t); p.stdout.off("data", onData); resolve(v); };
+    let buf = "", settled = false;
+    // one way out: a reply, the helper exiting or failing, or the timeout (#233)
+    const done = v => {
+      if (settled) return; settled = true;
+      clearTimeout(t); p.stdout.off("data", onData); p.off("exit", onGone); p.off("error", onGone); p.stdin.off("error", onGone);
+      resolve(v);
+    };
+    const onGone = () => { if (mixerProc === p) mixerProc = null; done(null); };
     const onData = d => { buf += d; const i = buf.indexOf("\n"); if (i >= 0) { try { done(JSON.parse(buf.slice(0, i))); } catch { done(null); } } };
-    const t = setTimeout(() => { p.kill(); done(null); }, 15000);
+    const t = setTimeout(() => { if (mixerProc === p) mixerProc = null; p.kill(); done(null); }, 15000);
     p.stdout.on("data", onData);
-    p.stdin.write(cmd.join("\t") + "\n");
+    p.once("exit", onGone); p.once("error", onGone); p.stdin.once("error", onGone);
+    if (p.exitCode !== null) return onGone();
+    try { p.stdin.write(cmd.join("\t") + "\n"); } catch { onGone(); }
   });
   mixerChain = mixerChain.then(ask, ask); // one question at a time
   clearTimeout(mixerIdle);
@@ -637,9 +699,9 @@ app.on("will-quit", () => mixerProc?.kill());
 // ---- screen recording (#224): OBS through its WebSocket server, "Show" for any recorder ----
 const OBS_WS = path.join(process.env.APPDATA || "", "obs-studio", "plugin_config", "obs-websocket", "config.json");
 const obs = recording.obsClient(() => { try { return JSON.parse(fs.readFileSync(OBS_WS, "utf8")); } catch { return null; } },
-  s => send("obsRec", { connected: true, state: s }));
+  (s, connected) => send("obsRec", { connected, state: s ?? null, at: Date.now() }));
 app.on("will-quit", () => obs.stop());
-ipcMain.handle("obsRec", () => ({ connected: obs.connected(), state: null }));
+ipcMain.handle("obsRec", () => obs.snapshot());
 ipcMain.handle("recControl", (_, action, proc) => {
   if (action === "show") {
     if (!mixer.validApp(proc)) return false;
@@ -747,7 +809,7 @@ ipcMain.on("shelfMenu", (e, p) => {
   try { dir = fs.statSync(p).isDirectory(); } catch { return; }
   const items = fileActions.actionsFor(p, dir).map(a => ({ label: a.label, click: async () => {
     try {
-      const out = await fileActions.run(p, a.id, nativeImage);
+      const out = await fileActions.run(p, a.id);
       await shelfAdd([out]);
       send("shelfAction", { ok: true, label: a.label, name: path.basename(out) });
     } catch (err) { send("shelfAction", { ok: false, label: a.label, error: err.message }); }
@@ -791,13 +853,17 @@ ipcMain.handle("devKill", async (_, pid) => {
 });
 ipcMain.on("devOpenPort", (_, port) => { if (Number.isInteger(port) && port > 0 && port < 65536) shell.openExternal(`http://localhost:${port}`); });
 ipcMain.handle("snippetsGet", () => devTools.loadSnippets(app.getPath("userData")));
-ipcMain.handle("snippetsSave", (_, list) => devTools.saveSnippets(app.getPath("userData"), list));
+// snippet saves answer like notes: { ok, value } or { ok: false, error }, and a failed add sends back
+// the list it meant to store, so the panel keeps the edit and can retry it (#256)
+ipcMain.handle("snippetsSave", (_, list) => saveResult("snippets", () => devTools.saveSnippets(app.getPath("userData"), list)));
 ipcMain.on("copySnippet", (_, t) => { if (typeof t === "string" && t.length <= 4000) { lastClip = t; clipboard.writeText(t).catch(e => console.warn("clipboard", e.message)); } });
 ipcMain.handle("devDecode", async () => devTools.decode(await clipboard.readText()));
 ipcMain.handle("snippetFromClipboard", async () => {
   const dir = app.getPath("userData"), text = String(await clipboard.readText()).trim();
-  if (!text) return devTools.loadSnippets(dir);
-  return devTools.saveSnippets(dir, [{ name: text.split(/\r?\n/)[0].slice(0, 60), text }, ...devTools.loadSnippets(dir)]);
+  if (!text) return { ok: true, value: devTools.loadSnippets(dir) };
+  const wanted = devTools.cleanSnippets([{ name: text.split(/\r?\n/)[0].slice(0, 60), text }, ...devTools.loadSnippets(dir)]);
+  const r = saveResult("snippets", () => devTools.saveSnippets(dir, wanted));
+  return r.ok ? r : { ...r, value: wanted };
 });
 ipcMain.on("openLink", (_, url) => { try { if (/^https?:$/.test(new URL(url).protocol)) shell.openExternal(url); } catch {} });
 
@@ -843,7 +909,7 @@ const settingsView = () => ({ ...config, hooks: bridge.installed(), login: login
 ipcMain.handle("settings:pickPet", async () => {
   const r = await dialog.showOpenDialog(settingsWin, { title: "Choose a pet", properties: ["openFile"], filters: [{ name: "Pet (zip or pet.json)", extensions: ["zip", "json"] }] });
   if (r.canceled || !r.filePaths[0]) return settingsView();
-  const pet = petPack.importPack(r.filePaths[0], petsDir()); // a bad pack throws; the window shows the message
+  const pet = await petPack.importPack(r.filePaths[0], petsDir()); // unpacks off the main thread (#203); a bad pack throws and the window shows the message
   config = { ...config, customPet: pet.id, pet: true };
   saveConfig(); sendTheme();
   return settingsView();
@@ -942,7 +1008,11 @@ function sendTheme() {
 }
 // the name the pet and the dashboard greet you by: the one from settings, else the Windows account name
 function displayName() {
-  const n = (config.userName || os.userInfo().username || "").trim().split(/[\s._-]/)[0];
+  // a non-string name (a config changed while running) or a failing account lookup must not break the theme (#200)
+  let account = "";
+  try { account = os.userInfo().username; } catch {}
+  const name = typeof config.userName === "string" && config.userName.trim() ? config.userName : account;
+  const n = String(name || "").trim().split(/[\s._-]/)[0];
   return n ? n[0].toUpperCase() + n.slice(1) : "";
 }
 
@@ -989,13 +1059,15 @@ function startWeather() {
 // replaces `config` before the file watcher fires.
 let applied = null;
 function applyServices() {
-  const now = { ics: config.calendarIcsUrl, wx: [config.weatherCity, config.weatherUnit].join("|"), dl: config.downloadsFolder, shots: config.screenshotShelf, agents: config.agentUpdates };
+  const now = { ics: config.calendarIcsUrl, wx: [config.weatherCity, config.weatherUnit].join("|"), dl: config.downloadsFolder, shots: config.screenshotShelf, agents: config.agentUpdates, focusDnd: config.focusDnd };
   if (!applied) { applied = now; return; } // first run: started by did-finish-load / startDownloads()
   if (now.ics !== applied.ics) calendar.poll(config.calendarIcsUrl, ev => send("calendar", ev));
   if (now.wx !== applied.wx) startWeather();
   if (now.dl !== applied.dl) startDownloads();
   if (now.shots !== applied.shots) startScreenshots();
   if (now.agents !== applied.agents) startAgentUpdates();
+  // the Focus DND setting applies to the phase already running (#201); manual/scheduled DND is separate
+  if (now.focusDnd !== applied.focusDnd) { focusDnd = pomodoro.wantsDnd(pomo, config.focusDnd && timerEnd > Date.now()); sendDnd(); }
   applied = now;
 }
 function startDownloads() {
@@ -1039,7 +1111,7 @@ function startDevices() {
 }
 
 // ---- timer + pomodoro ----
-let timerEnd = 0, timerDone, timerLabel = "Timer", pomo = null;
+let timerEnd = 0, timerDone, timerLabel = "Timer", pomo = null, phaseId = 0; // phaseId: each finished phase is announced once (#199)
 // Focus Mode 2.0 (#226): what this Pomodoro session focused, and the daily log in userData/focus.json
 let focusSession = null, phaseStart = 0;
 const focusPath = () => path.join(app.getPath("userData"), "focus.json");
@@ -1068,19 +1140,20 @@ function runTimer(min, label) {
   send("timerLabel", timerLabel); send("timer", timerEnd); buildMenu();
   clearTimeout(timerDone);
   if (!min) return;
-  // a pomodoro moves straight to its next phase; the page shows "Time's up" itself, a plain timer is just marked finished afterwards
+  // main alone decides that a phase finished and says so once, with an id; the page never infers it from the deadline
   timerDone = setTimeout(() => {
+    const id = ++phaseId;
     if (pomo) {
       const done = pomo;
       if (done.phase === "focus") logFocus(done.min, true);
       pomo = pomodoro.next(pomo);
       send("focusEvent", done.phase === "focus"
-        ? { kind: "break", title: `${done.label} done`, body: `${pomo.label}, ${pomo.min} min. ${focusLog.breakTip(done.round)}`, stats: focusStats() }
-        : { kind: "focus", title: "Break's over", body: `${pomo.label} starts now, ${pomo.min} min.`, stats: focusStats() });
+        ? { id, kind: "break", plant: true, title: `${done.label} done`, body: `${pomo.label}, ${pomo.min} min. ${focusLog.breakTip(done.round)}`, stats: focusStats() }
+        : { id, kind: "focus", title: "Break's over", body: `${pomo.label} starts now, ${pomo.min} min.`, stats: focusStats() });
       runTimer(pomo.min, pomo.label);
     }
-    else { timerEnd = 0; buildMenu(); }
-  }, min * 60000 + (pomo ? 0 : 2000));
+    else { const label = timerLabel; timerEnd = 0; send("timer", 0); send("timerDone", { id, label }); buildMenu(); }
+  }, min * 60000);
 }
 function setTimer(min) { endFocusSession(); pomo = null; runTimer(min, "Timer"); }
 function startPomodoro() { endFocusSession(); focusSession = { rounds: 0, min: 0 }; pomo = pomodoro.next(null); runTimer(pomo.min, pomo.label); }
@@ -1169,6 +1242,13 @@ function buildMenu() {
     { label: "Open settings file", click: () => shell.openPath(configPath()) },
     // the guide ships beside app.asar (extraResources); from source it is at the repo root
     { label: "User guide (PDF)", click: () => shell.openPath(app.isPackaged ? path.join(process.resourcesPath, "Islet-Guide.pdf") : path.resolve(__dirname, "..", "Islet-Guide.pdf")) },
+    // play one of the custom pet's stage scenes now (notch.js SCENES), to see it without waiting for its trigger
+    { label: "Play pet animation", submenu: [["Run across", "run"], ["Peek-a-boo", "peek"], ["Agent finished", "victory"], ["Agent needs you", "wave"],
+      ["Music dance", "dance"], ["Sleepy", "sleep"], ["Low battery", "tired"], ["Charging zoom", "zoom"], ["Focus plant", "carry"], ["Jump out", "jumpout"],
+      ["Coding: typing", "typing"], ["Coding: thinking", "thinking"], ["Tests running", "testing"], ["Tests passed", "pass"], ["Tests failed", "fail"], ["CI failed: bug hunt", "bughunt"], ["Shipped", "ship"],
+      ["Ooze from the notch", "ooze"], ["Cold: shiver", "shiver"], ["Hot day", "heat"], ["Meeting rush", "rush"], ["Loved song", "hearts"], ["Focus: meditate", "meditate"],
+      ["Good morning", "morning"], ["Music jam", "jam"], ["Idle: stretch", "stretch"], ["Idle: look about", "lookabout"], ["Idle: yawn", "yawn"]]
+      .map(([label, id]) => ({ label, click: () => send("petScene", id) })) },
     { label: "Start with Windows", type: "checkbox", checked: login(), click: () => { setLogin(!login()); buildMenu(); } },
     { type: "separator" },
     { label: "Quit", click: () => { app.isQuitting = true; app.quit(); } },

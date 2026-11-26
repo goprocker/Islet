@@ -67,3 +67,54 @@ test("collect asks gh once for the repo, then runs, PR and deployments", async (
   assert.strictEqual(calls.filter(c => c === "repo view").length, 1);
   assert.deepStrictEqual(await collect("C:\q", new Map([["C:\q", null]]), call), []);
 });
+
+// a gh stand-in: the repo, then whatever runs() returns for the current stage (null = gh failed)
+const fakeGh = runsNow => async args => args[0] === "repo" ? { nameWithOwner: "o/r" } : args[0] === "run" ? runsNow() : null;
+const run1 = (status, conclusion = null) => [{ databaseId: 1, status, conclusion, workflowName: "CI" }];
+
+test("a failed poll keeps a watched run, and its result comes when gh answers again (#257)", async () => {
+  const prev = new Map(), cache = new Map();
+  let now = run1("in_progress");
+  const call = fakeGh(() => now);
+  let u = diff(prev, await collect("p", cache, call));
+  assert.deepStrictEqual(u.live.map(a => a.id), ["run:o/r:1"]);
+  now = null;                                   // gh fails (timeout, network, signed out)
+  u = diff(prev, await collect("p", cache, call));
+  assert.deepStrictEqual(u.live.map(a => a.id), ["run:o/r:1"], "still shown as running");
+  assert.deepStrictEqual(u.finished, []);
+  now = run1("completed", "failure");           // gh is back and the run is done
+  u = diff(prev, await collect("p", cache, call));
+  assert.deepStrictEqual(u.finished.map(a => [a.id, a.state]), [["run:o/r:1", "fail"]], "reported exactly once");
+  u = diff(prev, await collect("p", cache, call));
+  assert.deepStrictEqual(u.finished, []);
+});
+
+test("repeated failed polls give no false result, and a watched run expires after a bounded time (#257)", async () => {
+  const prev = new Map(), cache = new Map();
+  let now = run1("in_progress");
+  const call = fakeGh(() => now);
+  diff(prev, await collect("p", cache, call));
+  now = null;
+  for (let i = 0; i < 5; i++) {
+    const u = diff(prev, await collect("p", cache, call));
+    assert.deepStrictEqual(u.finished, []);
+    assert.strictEqual(u.live.length, 1);
+  }
+  const u = diff(prev, await collect("p", cache, call));
+  assert.deepStrictEqual(u.live, [], "dropped after too many failures");
+  assert.strictEqual(prev.size, 0);
+});
+
+test("a successful empty answer still removes, and one failed source leaves the others alone (#257)", () => {
+  const prev = new Map();
+  diff(prev, [{ id: "run:o/r:1", state: "running" }, { id: "pr:o/r:7", state: "running" }]);
+  // the run list failed, the PR answered and finished
+  const list = [{ id: "pr:o/r:7", state: "pass" }]; list.failed = ["run:o/r:"];
+  let u = diff(prev, list);
+  assert.deepStrictEqual(u.finished.map(a => a.id), ["pr:o/r:7"]);
+  assert.deepStrictEqual(u.live.map(a => a.id), ["run:o/r:1"]);
+  // now everything answers, with the run gone: it is removed
+  u = diff(prev, []);
+  assert.deepStrictEqual(u.live, []);
+  assert.strictEqual(prev.size, 0);
+});

@@ -8,6 +8,8 @@ const time = v => v === "" || clock(v);
 const number = v => typeof v === "number" && Number.isFinite(v);
 const CHECKS = {
   spotifyClientId: text, calendarIcsUrl: text, weatherCity: text, downloadsFolder: text,
+  // the theme trims userName and customPet names a pets folder: a number or object there broke startup (#200)
+  userName: text, customPet: text,
   displayId: v => v === null || number(v),
   notifications: bool, hideInFullscreen: bool, lyrics: bool, dnd: bool, clipboardHistory: bool, volumeHud: bool, focusDnd: bool, universalSearch: bool,
   idleHide: bool, hideWindowsBanners: bool, screenshotShelf: bool, agentUpdates: bool, powerAnim: bool, pet: bool,

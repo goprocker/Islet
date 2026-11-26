@@ -35,7 +35,10 @@ test("the reusable secret stays in the QR fragment and API traffic is authentica
     assert.ok(/^[0-9a-f]{64}$/.test(u.hash.slice(1)));
     assert.ok(!u.pathname.includes(u.hash.slice(1)));
     assert.ok(!html.includes("secret.txt"));
-    const script = html.match(/<script>([\s\S]+)<\/script>/)[1];
+    // the page's one inline script, cut out by position (this is our own page, not untrusted HTML)
+    const open = html.indexOf(">", html.indexOf("<script")) + 1;
+    const script = html.slice(open, html.indexOf("</script", open));
+    assert.ok(open > 0 && script.length > 0);
     const element = {};
     const context = { location: { hash: u.hash, pathname: u.pathname, href: url }, history: { replaceState() {} }, TextEncoder, URL, Uint8Array, Uint32Array, DataView, crypto: { getRandomValues: b => b.fill(1) }, fetch: async () => ({ ok: false }), document: { getElementById: () => element }, setTimeout };
     vm.runInNewContext(`${script};globalThis.browserHmac=(key,message)=>hx(hmac(bytes(key),enc.encode(message)))`, context);
@@ -78,7 +81,9 @@ test("an aborted authenticated upload leaves no partial file", { skip: !lan }, a
       s.write(`POST ${target} HTTP/1.1\r\nHost:x\r\n${headers}Content-Length: 100\r\n\r\nPARTIAL`);
       setTimeout(() => s.destroy(), 100);
     });
+    // the partial file is removed once the server sees the abort; a slow CI runner can take a while
     await new Promise(r => setTimeout(r, 400));
+    for (let t = 0; t < 30 && fs.readdirSync(d).length; t++) await new Promise(r => setTimeout(r, 100));
     assert.deepStrictEqual(fs.readdirSync(d), []);
     assert.strictEqual(calls, 0);
   } finally { pd.stop(); }

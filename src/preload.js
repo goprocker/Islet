@@ -4,7 +4,9 @@ const on = ch => fn => ipcRenderer.on(ch, (_, d) => fn(d));
 contextBridge.exposeInMainWorld("bridge", {
   onMedia: on("media"),
   onClaude: on("claude"),
+  aiLimits: () => ipcRenderer.invoke("aiLimits"),
   onToggle: on("toggle"),
+  onPetScene: on("petScene"),
   onLevels: on("levels"),
   onVolume: on("volume"),
   onVolumeHud: on("volumeHud"),
@@ -22,6 +24,7 @@ contextBridge.exposeInMainWorld("bridge", {
   onTimer: on("timer"),
   onTimerLabel: on("timerLabel"),
   onFocusEvent: on("focusEvent"),
+  onTimerDone: on("timerDone"),
   focusStats: () => ipcRenderer.invoke("focusStats"),
   onStopwatch: on("stopwatch"),
   onSpotifyIcon: on("spotifyIcon"),
