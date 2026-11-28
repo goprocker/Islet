@@ -75,11 +75,11 @@ pre.t { padding: 3mm 4mm; margin: 1.5mm 0 1.5mm; font-size: 8pt; }
   <p style="color:#6e6e73">Music, Claude Code and Codex activity, notifications, battery and more,<br>in one small black pill at the top of your screen.</p>
   <div class="meta">
     <div><small>MADE BY</small><b>Gopinath</b></div>
-    <div><small>VERSION</small><b>2.6.11</b></div>
+    <div><small>VERSION</small><b>2.6.13</b></div>
     <div><small>PLATFORM</small><b>Windows 10 / 11</b></div>
     <div><small>BUILT WITH</small><b>Electron 45</b></div>
   </div>
-  <div class="foot"><span>© 2026 Gopinath. All rights reserved.</span><span>Updated 6 Nov 2026 · islet.loopfound.in · github.com/goprocker/Islet</span></div>
+  <div class="foot"><span>© 2026 Gopinath. All rights reserved.</span><span>Updated 28 Nov 2026 · islet.loopfound.in · github.com/goprocker/Islet</span></div>
 </section>
 
 <section class="page">
@@ -635,7 +635,7 @@ node_modules\electron\dist\electron.exe . --remote-debugging-port=9333</pre>
 <section class="page">
   <div class="kick">SECTION 14 · 2.6</div>
   <h1>What's new in 2.6</h1>
-  <div class="lead">2.6 makes the dock a developer tool: the AI coding panel shows how much room each agent has left, and two general-purpose panels are gone. 2.6.0, 2.6.1 and 2.6.11 shipped in November 2026.</div>
+  <div class="lead">2.6 makes the dock a developer tool: the AI coding panel shows how much room each agent has left, and two general-purpose panels are gone. 2.6.0 to 2.6.13 shipped in November 2026.</div>
   <h2>AI coding panel</h2>
   <ul style="font-size:9.5pt">
     <li><b>Context bar</b>: each Claude Code session shows <b>Context N%</b>, read from the newest assistant turn in its transcript (fresh input plus cache reads and writes). Green, amber past 65%, red past 85%. The window is 200k tokens unless the prompt is already larger, which means the 1M window.</li>
@@ -650,9 +650,11 @@ node_modules\electron\dist\electron.exe . --remote-debugging-port=9333</pre>
   <ul style="font-size:9.5pt">
     <li><b>Security (2.6.11)</b>: the three open CodeQL alerts are fixed: a notification regex that could backtrack badly (50,000 <code>&lt;</code> now take about 1 ms), a test's HTML script extractor, and an unchecked callback in <code>liveshot.js</code>.</li>
     <li><b>Fixes (2.6.11)</b>: clipboard case actions keep non-English letters and Format JSON keeps numbers exact; shelf image actions and pet zip imports run in their own process, so neither freezes Islet; Dev snippets say <b>Not saved</b> and keep the edit; a failed <code>gh</code> poll no longer drops a watched CI run; Bluetooth keeps UTF-8 names and runs one watcher; a non-text <code>userName</code> in <code>config.json</code> no longer stops startup. Electron is 45.3.4.</li>
+    <li><b>Pill and pet scenes (2.6.12)</b>: the closed notch is a floating, glossy pill that gives a soft wobble when it reacts, and a custom sprite-sheet pet acts out 28 scenes across it.</li>
+    <li><b>Fixes (2.6.13)</b>: a finished timer or Pomodoro phase gives exactly one alert and one plant, and a cancelled one none; Focus DND follows its setting mid-phase; volume mixer actions no longer wait out a 15 s timeout when the helper exits; OBS recording state survives a reload or a dropped connection; Bluetooth ignores replies from a stopped poll after sleep; GitHub alerts again when a known thread gets new activity. Electron is 45.4.1.</li>
     <li><b>Installer wording</b>: assisted per-machine, as <code>package.json</code> configures it (<code>oneClick: false</code>, <code>perMachine: true</code>).</li>
     <li><b>Docs</b>: <code>docs/making-a-pet.md</code> explains the pet format and how a built-in pet is wired in.</li>
-    <li><b>Tests</b>: 411 → 437.</li>
+    <li><b>Tests</b>: 411 → 449.</li>
   </ul>
   <div class="foot"><span>Islet · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
 </section>
